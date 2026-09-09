@@ -7,17 +7,17 @@
   <style>
     :root {
       --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
-      --danger: #ef4444; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.75);
+      --danger: #ef4444; --cyan: #06b6d4; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.75);
       --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 80%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
-    .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 20px; border-bottom: 1px solid var(--card-border); margin-bottom: 20px; }
+    .container { max-width: 950px; margin: 0 auto; padding: 20px 16px 80px; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 20px; border-bottom: 1px solid var(--card-border); margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
     h1 { margin: 0; font-size: 1.6rem; font-weight: 900; }
     h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
     .nav-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
-    .tab-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+    .tab-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
     .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
@@ -29,20 +29,23 @@
     .form-group { margin-bottom: 14px; text-align: left; }
     label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
     input, select { width: 100%; padding: 12px 14px; background: rgba(15,23,42,0.6); border: 1.5px solid var(--card-border); border-radius: 12px; font-size: 0.95rem; color: #fff; outline: none; }
-    button.btn { padding: 11px 18px; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 800; cursor: pointer; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    button.btn { padding: 10px 16px; border: none; border-radius: 12px; font-size: 0.88rem; font-weight: 800; cursor: pointer; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.2s; }
+    button.btn:hover { opacity: 0.9; }
     .btn-blue { background: linear-gradient(135deg, #6366f1, #4f46e5); }
     .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
     .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .btn-gray { background: rgba(255,255,255,0.1); color: #cbd5e1; }
+    .btn-google { background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); }
     td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; }
     .badge { font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
     .badge-reward { background: rgba(16,185,129,0.2); color: #34d399; }
     .badge-penalty { background: rgba(239,68,68,0.2); color: #fca5a5; }
+    .badge-transfer { background: rgba(6,182,212,0.2); color: #67e8f9; }
   </style>
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
@@ -51,20 +54,25 @@
     <div class="header-bar">
       <div>
         <h1 id="familyHeaderTitle">Family Allowance Hub</h1>
-        <span style="font-size:0.82rem; color:var(--text-muted);">Firestore Realtime Admin Console</span>
+        <span style="font-size:0.82rem; color:var(--text-muted);">Firestore Parent Admin Console</span>
       </div>
-      <div>
-        <a id="childAppLinkBtn" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none;">Open Child App ↗</a>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
+        <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
+        <a id="childAppLinkBtn" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none; display:none;">Open Child App ↗</a>
       </div>
     </div>
 
-    <!-- ONBOARDING MODAL IF NO FAMILY ID -->
-    <div id="onboardSection" class="card" style="display:none; text-align:center; padding:30px;">
-      <h2>🚀 Welcome to Family Allowance SaaS</h2>
-      <p style="color:var(--text-muted); font-size:0.9rem;">Start your family hub in 2 seconds with zero setup.</p>
-      <div style="max-width:350px; margin:0 auto;">
+    <!-- ONBOARDING SECTION -->
+    <div id="onboardSection" class="card" style="display:none; text-align:center; padding:36px 20px;">
+      <div style="font-size:3rem; margin-bottom:10px;">🏦</div>
+      <h2>Create Your Family Hub</h2>
+      <p style="color:var(--text-muted); font-size:0.9rem; max-width:400px; margin:0 auto 20px;">
+        Start a real-time Firestore family workspace with zero spreadsheet lag.
+      </p>
+      <div style="max-width:360px; margin:0 auto;">
         <input type="text" id="initFamilyName" placeholder="e.g. Khan Family" style="margin-bottom:12px;">
-        <button class="btn btn-green" style="width:100%;" onclick="createNewFamilyTenant()">✨ Provision Family Hub</button>
+        <button class="btn btn-green" style="width:100%;" onclick="createNewFamilyTenant()">✨ Provision Family Workspace</button>
       </div>
     </div>
 
@@ -76,10 +84,10 @@
         <button class="tab-btn" onclick="switchTab('tab-behavior', this)">⭐ Rules & Actions</button>
         <button class="tab-btn" onclick="switchTab('tab-schedules', this)">📅 Schedules</button>
         <button class="tab-btn" onclick="switchTab('tab-members', this)">👨‍👩‍👧‍👦 Members</button>
-        <button class="tab-btn" onclick="switchTab('tab-settings', this)">⚙️ Settings</button>
+        <button class="tab-btn" onclick="switchTab('tab-settings', this)">⚙️ Settings & Closing</button>
       </div>
 
-      <!-- OVERVIEW -->
+      <!-- TAB 1: OVERVIEW -->
       <div id="tab-overview" class="tab-pane active">
         <div class="stats-grid">
           <div class="stat-box" style="border-top: 3px solid var(--primary);">
@@ -109,43 +117,45 @@
         </div>
       </div>
 
-      <!-- CHORES -->
+      <!-- TAB 2: CHORES & APPROVALS -->
       <div id="tab-chores" class="tab-pane">
         <div class="card" style="border-left: 4px solid var(--warning);">
-          <h3>⏳ Pending Chore Approvals</h3>
+          <h3>⏳ Pending Chore Submissions</h3>
           <table>
             <thead><tr><th>Date</th><th>Child</th><th>Chore</th><th>Reward</th><th>Actions</th></tr></thead>
             <tbody id="pendingChoresTable"></tbody>
           </table>
         </div>
+
         <div class="card">
           <h3>🧹 Chores Catalog</h3>
           <table>
-            <thead><tr><th>Title</th><th>Reward</th><th>Action</th></tr></thead>
+            <thead><tr><th>Title</th><th>Reward</th><th>Actions</th></tr></thead>
             <tbody id="choresCatalogTable"></tbody>
           </table>
         </div>
+
         <div class="card">
           <h3>+ Add Chore</h3>
           <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; align-items:flex-end;">
-            <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newChoreTitle" placeholder="e.g. Wash Dishes"></div>
-            <div class="form-group" style="margin:0;"><label>Reward</label><input type="number" id="newChoreReward" placeholder="50"></div>
+            <div class="form-group" style="margin:0;"><label>Chore Title</label><input type="text" id="newChoreTitle" placeholder="e.g. Wash Family Car"></div>
+            <div class="form-group" style="margin:0;"><label>Reward Amount</label><input type="number" id="newChoreReward" placeholder="100"></div>
             <button class="btn btn-green" onclick="addChore()">Add</button>
           </div>
         </div>
       </div>
 
-      <!-- RULES & ACTIONS -->
+      <!-- TAB 3: RULES & QUICK ACTIONS -->
       <div id="tab-behavior" class="tab-pane">
         <div class="card">
           <h3>⚡ Quick Action</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Child</label><select id="actionChildSelect"></select></div>
-            <div class="form-group"><label>Type</label><select id="actionTypeSelect" onchange="filterPresetRules()"><option value="Reward">🎁 Reward</option><option value="Penalty">🛑 Penalty</option></select></div>
+            <div class="form-group"><label>Action Type</label><select id="actionTypeSelect" onchange="filterPresetRules()"><option value="Reward">🎁 Reward</option><option value="Penalty">🛑 Penalty</option></select></div>
           </div>
-          <div class="form-group"><label>Preset Rule</label><select id="actionPresetSelect" onchange="applyPresetRule()"><option value="">-- Custom --</option></select></div>
+          <div class="form-group"><label>Preset Rule</label><select id="actionPresetSelect" onchange="applyPresetRule()"><option value="">-- Custom Action --</option></select></div>
           <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
-            <div class="form-group"><label>Title</label><input type="text" id="actionTitle"></div>
+            <div class="form-group"><label>Reason / Title</label><input type="text" id="actionTitle"></div>
             <div class="form-group"><label>Amount</label><input type="number" id="actionAmount"></div>
           </div>
           <button class="btn btn-blue" onclick="applyBehaviorAction()">Apply Action</button>
@@ -154,36 +164,40 @@
         <div class="card">
           <h3>📜 Behavior Rules Preset Catalog</h3>
           <table>
-            <thead><tr><th>Type</th><th>Title</th><th>Amount</th><th>Action</th></tr></thead>
+            <thead><tr><th>Type</th><th>Title</th><th>Amount</th><th>Actions</th></tr></thead>
             <tbody id="rulesCatalogTable"></tbody>
           </table>
         </div>
 
-        <div class="card" style="border-left:4px solid var(--accent);">
-          <h3>+ Add Behavior Rule</h3>
-          <div style="display:grid; grid-template-columns: 1fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
+        <div class="card" style="border-left: 4px solid var(--accent);">
+          <h3>+ Add Preset Rule</h3>
+          <div style="display:grid; grid-template-columns: 1.2fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
             <div class="form-group" style="margin:0;"><label>Type</label><select id="newRuleType"><option value="Reward">Reward</option><option value="Penalty">Penalty</option></select></div>
             <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newRuleTitle" placeholder="e.g. Bedtime Delay"></div>
-            <div class="form-group" style="margin:0;"><label>Amount</label><input type="number" id="newRuleAmount" placeholder="100"></div>
-            <button class="btn btn-green" onclick="addBehaviorRule()">Save</button>
+            <div class="form-group" style="margin:0;"><label>Default Amount</label><input type="number" id="newRuleAmount" placeholder="100"></div>
+            <button class="btn btn-green" onclick="addBehaviorRule()">Save Rule</button>
           </div>
         </div>
       </div>
 
-      <!-- SCHEDULES -->
+      <!-- TAB 4: SCHEDULES -->
       <div id="tab-schedules" class="tab-pane">
         <div class="card">
-          <h3>📅 Active Payout Schedules</h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;">📅 Active Payout Schedules</h3>
+            <button class="btn btn-gray" onclick="processDueSchedules()">⚡ Process Today's Due Payouts</button>
+          </div>
           <table>
-            <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Day/Date</th><th>Amount</th><th>Action</th></tr></thead>
+            <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Schedule Day/Date</th><th>Amount</th><th>Actions</th></tr></thead>
             <tbody id="schedulesTable"></tbody>
           </table>
         </div>
+
         <div class="card">
           <h3>+ Add Schedule</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="Weekly Pocket Money"></div>
-            <div class="form-group"><label>Target</label><select id="schedTargetSelect"><option value="all">All Children</option></select></div>
+            <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="e.g. Weekly Pocket Money, Birthday Gift"></div>
+            <div class="form-group"><label>Target Recipient</label><select id="schedTargetSelect"><option value="all">All Children</option></select></div>
           </div>
           <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Frequency</label><select id="schedFrequency"><option value="WEEKLY">WEEKLY</option><option value="MONTHLY">MONTHLY</option><option value="ANNUAL_DATE">ANNUAL_DATE</option></select></div>
@@ -194,69 +208,70 @@
         </div>
       </div>
 
-      <!-- MEMBERS -->
+      <!-- TAB 5: MEMBERS -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
           <h3>👨‍👩‍👧‍👦 Family Members</h3>
-          <table><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody id="membersTable"></tbody></table>
+          <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
         </div>
+
         <div class="card">
           <h3>+ Add Family Member</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div class="form-group"><label>Name</label><input type="text" id="memName" placeholder="Child Name"></div>
-            <div class="form-group"><label>Email</label><input type="email" id="memEmail" placeholder="child@gmail.com"></div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="memName" placeholder="e.g. Abdullah, Mom"></div>
+            <div class="form-group"><label>Email Address</label><input type="email" id="memEmail" placeholder="member@gmail.com"></div>
           </div>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div class="form-group"><label>Role</label><select id="memRole" onchange="document.getElementById('pinWrap').style.display = this.value==='Child'?'block':'none'"><option value="Child">Child</option><option value="Parent">Parent</option></select></div>
-            <div class="form-group" id="pinWrap"><label>4-Digit PIN</label><input type="password" id="memPin" placeholder="••••" maxlength="6"></div>
+            <div class="form-group"><label>Role</label><select id="memRole" onchange="document.getElementById('pinWrap').style.display = (this.value==='Child'?'block':'none')"><option value="Child">Child (PiggyBank App)</option><option value="Parent">Parent (Admin Access)</option></select></div>
+            <div class="form-group" id="pinWrap"><label>Child 4-Digit Login PIN</label><input type="password" id="memPin" placeholder="••••" maxlength="6"></div>
           </div>
           <button class="btn btn-blue" onclick="addMember()">Add Member</button>
         </div>
       </div>
 
-      <!-- SETTINGS -->
+      <!-- TAB 6: SETTINGS & PERIOD CLOSING -->
       <div id="tab-settings" class="tab-pane">
         <div class="card">
-          <h3>⚙️ General</h3>
-          <div class="form-group"><label>Currency Symbol</label><input type="text" id="setCurrency" style="max-width:120px;"></div>
+          <h3>⚙️ General Currency</h3>
+          <div class="form-group"><label>Currency Symbol</label><input type="text" id="setCurrency" style="max-width:140px;"></div>
           <button class="btn btn-blue" onclick="saveCurrency()">Save Currency</button>
         </div>
+
         <div class="card" style="border-left:4px solid var(--primary);">
-          <h3>🤖 AI PiggyCoach (BYOK)</h3>
+          <h3>🤖 AI PiggyCoach Settings (BYOK)</h3>
           <div class="form-group" style="display:flex; align-items:center; gap:10px;">
             <input type="checkbox" id="setAiEnabled" style="width:20px; height:20px;">
-            <label for="setAiEnabled" style="margin:0;">Enable AI Financial Coaching</label>
+            <label for="setAiEnabled" style="margin:0; font-weight:700;">Enable AI Financial Coaching</label>
           </div>
           <div class="form-group"><label>Gemini API Key</label><input type="password" id="setGeminiKey" placeholder="AIzaSy..."></div>
           <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Settings</button>
+        </div>
+
+        <!-- RESTORED FEATURE 2: PERIOD LEDGER CLOSING -->
+        <div class="card" style="border-left:4px solid var(--danger);">
+          <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
+            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as a fresh opening balance.
+          </p>
+          <button class="btn btn-red" onclick="runPeriodClosing()">📦 Close Period & Carry Balances</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // REPLACE WITH YOUR FIREBASE CONFIG
-    // -------------------------------------------------------------
     const firebaseConfig = {
-
-  apiKey: "AIzaSyDyTTAZ9sQNHiioYInGDuiOjkWin0TjfIo",
-
-  authDomain: "family-allowance-hub.firebaseapp.com",
-
-  projectId: "family-allowance-hub",
-
-  storageBucket: "family-allowance-hub.firebasestorage.app",
-
-  messagingSenderId: "90520973036",
-
-  appId: "1:90520973036:web:3b9b3cca2fe0c7c882ffc9"
-
-};
-
+      apiKey: "AIzaSyDyTTAZ9sQNHiioYInGDuiOjkWin0TjfIo",
+      authDomain: "family-allowance-hub.firebaseapp.com",
+      projectId: "family-allowance-hub",
+      storageBucket: "family-allowance-hub.firebasestorage.app",
+      messagingSenderId: "90520973036",
+      appId: "1:90520973036:web:3b9b3cca2fe0c7c882ffc9"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
     const urlParams = new URLSearchParams(window.location.search);
     let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
@@ -264,14 +279,45 @@
     let activeCurrency = "Rs. ";
     let cachedChildren = [];
     let cachedRules = [];
+    let currentUser = null;
+
+    // AUTHENTICATION LISTENER
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      const authBtn = document.getElementById('authBtn');
+      const badge = document.getElementById('userAuthBadge');
+
+      if (user) {
+        authBtn.innerText = "Sign Out";
+        authBtn.className = "btn btn-gray";
+        badge.innerText = user.displayName || user.email;
+      } else {
+        authBtn.innerText = "Sign in with Google";
+        authBtn.className = "btn btn-google";
+        badge.innerText = "";
+      }
+    });
+
+    function handleAuthAction() {
+      if (currentUser) {
+        auth.signOut();
+      } else {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
+      }
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       if (!familyId) {
         document.getElementById('onboardSection').style.display = 'block';
+        document.getElementById('adminMain').style.display = 'none';
       } else {
         localStorage.setItem('family_id', familyId);
+        document.getElementById('onboardSection').style.display = 'none';
         document.getElementById('adminMain').style.display = 'block';
-        document.getElementById('childAppLinkBtn').href = `index.html?familyId=${familyId}`;
+        const childBtn = document.getElementById('childAppLinkBtn');
+        childBtn.style.display = 'inline-flex';
+        childBtn.href = `index.html?familyId=${familyId}`;
         initRealtimeListeners();
       }
     });
@@ -286,23 +332,27 @@
       const name = document.getElementById('initFamilyName').value.trim();
       if (!name) return alert("Enter your family name.");
       const newFamId = 'fam_' + Math.random().toString(36).substring(2, 10);
-      
-      const famRef = db.collection('families').doc(newFamId);
-      await famRef.set({
-        familyName: name,
-        currency: "Rs. ",
-        geminiApiKey: "",
-        aiEnabled: false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
 
-      // Default Starter Data
-      await famRef.collection('chores').add({ title: "Clean Bedroom", reward: 50 });
-      await famRef.collection('chores').add({ title: "Fold Laundry", reward: 30 });
-      await famRef.collection('rules').add({ type: "Reward", title: "Exam Excellence", amount: 500 });
-      await famRef.collection('rules').add({ type: "Penalty", title: "Unapproved Screen Time", amount: 200 });
+      try {
+        const famRef = db.collection('families').doc(newFamId);
+        await famRef.set({
+          familyName: name,
+          currency: "Rs. ",
+          geminiApiKey: "",
+          aiEnabled: false,
+          ownerEmail: currentUser ? currentUser.email : "",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-      window.location.href = `parent.html?familyId=${newFamId}`;
+        await famRef.collection('chores').add({ title: "Clean Bedroom", reward: 50 });
+        await famRef.collection('chores').add({ title: "Fold Laundry", reward: 30 });
+        await famRef.collection('rules').add({ type: "Reward", title: "Exam Excellence", amount: 500 });
+        await famRef.collection('rules').add({ type: "Penalty", title: "Unapproved Screen Time", amount: 200 });
+
+        window.location.search = `?familyId=${newFamId}`;
+      } catch (err) {
+        alert("Provision Error: " + err.message);
+      }
     }
 
     function switchTab(tabId, btn) {
@@ -315,7 +365,6 @@
     function initRealtimeListeners() {
       const famRef = db.collection('families').doc(familyId);
 
-      // Meta Settings
       famRef.onSnapshot(doc => {
         if (!doc.exists) return;
         const d = doc.data();
@@ -338,7 +387,13 @@
 
         snap.forEach(doc => {
           const u = doc.data();
-          mBody.innerHTML += `<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td>${u.role}</td></tr>`;
+          mBody.innerHTML += `
+            <tr>
+              <td><strong>${u.name}</strong></td>
+              <td>${u.email}</td>
+              <td>${u.role}</td>
+              <td><button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteDoc('users', '${doc.id}')">✕</button></td>
+            </tr>`;
           if (u.role === 'Child') {
             cachedChildren.push({ id: doc.id, ...u });
             actSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
@@ -355,11 +410,15 @@
         snap.forEach(doc => {
           const tx = doc.data();
           const isPos = tx.amount >= 0;
+          let badgeClass = 'badge-reward';
+          if (tx.type === 'Penalty') badgeClass = 'badge-penalty';
+          if (tx.type === 'Transfer') badgeClass = 'badge-transfer';
+
           tBody.innerHTML += `
             <tr>
               <td>${tx.date || ''}</td>
               <td>${tx.email}</td>
-              <td><span class="badge" style="background:rgba(255,255,255,0.08);">${tx.type}</span></td>
+              <td><span class="badge ${badgeClass}">${tx.type}</span></td>
               <td style="color:${isPos?'var(--success)':'var(--danger)'}; font-weight:800;">${isPos?'+':''}${activeCurrency}${tx.amount}</td>
               <td>${tx.desc}</td>
             </tr>
@@ -438,19 +497,18 @@
       cachedChildren.forEach(c => {
         const b = balMap[c.email] || 0;
         total += b;
-        bTable.innerHTML += `<tr><td><strong>${c.name}</strong></td><td>${c.email}</td><td style="color:#34d399; font-weight:800;">${activeCurrency}${b}</td></tr>`;
+        bTable.innerHTML += `<tr><td><strong>${c.name}</strong></td><td>${c.email}</td><td style="color:#34d399; font-weight:800;">${activeCurrency}${b.toLocaleString()}</td></tr>`;
       });
       document.getElementById('statTotalOwed').innerText = activeCurrency + total.toLocaleString();
     }
 
-    // ACTIONS
     async function addMember() {
       const name = document.getElementById('memName').value.trim();
       const email = document.getElementById('memEmail').value.trim().toLowerCase();
       const role = document.getElementById('memRole').value;
       const pin = document.getElementById('memPin').value.trim();
       if (!name || !email) return alert("Fill name & email");
-      
+
       const pinHash = (role === 'Child') ? await hashPin(pin) : '';
       await db.collection('families').doc(familyId).collection('users').add({ name, email, role, pinHash });
       document.getElementById('memName').value = '';
@@ -480,7 +538,7 @@
     function filterPresetRules() {
       const type = document.getElementById('actionTypeSelect').value;
       const sel = document.getElementById('actionPresetSelect');
-      sel.innerHTML = '<option value="">-- Custom --</option>';
+      sel.innerHTML = '<option value="">-- Custom Action --</option>';
       cachedRules.filter(r => r.type === type).forEach(r => {
         sel.innerHTML += `<option value="${r.id}" data-title="${r.title}" data-amt="${r.amount}">${r.title} (${activeCurrency}${r.amount})</option>`;
       });
@@ -538,11 +596,86 @@
       if (!title || !scheduleDay || !amount) return alert("Fill schedule details");
 
       await db.collection('families').doc(familyId).collection('schedules').add({
-        title, targetEmail, frequency, scheduleDay, amount, status: 'Active'
+        title, targetEmail, frequency, scheduleDay, amount, status: 'Active', lastRunDate: ''
       });
       document.getElementById('schedTitle').value = '';
       document.getElementById('schedDay').value = '';
       document.getElementById('schedAmount').value = '';
+    }
+
+    async function processDueSchedules() {
+      const schedSnap = await db.collection('families').doc(familyId).collection('schedules').where('status', '==', 'Active').get();
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const dayOfMonth = now.getDate();
+      const ddmm = String(dayOfMonth).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0');
+      const todayStr = now.toISOString().split('T')[0];
+
+      let processed = 0;
+      for (const doc of schedSnap.docs) {
+        const s = doc.data();
+        if (s.lastRunDate === todayStr) continue;
+
+        let shouldRun = false;
+        if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dayOfWeek) shouldRun = true;
+        if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dayOfMonth) shouldRun = true;
+        if (s.frequency === 'ANNUAL_DATE' && s.scheduleDay === ddmm) shouldRun = true;
+
+        if (shouldRun) {
+          const targets = (s.targetEmail === 'all') ? cachedChildren.map(c => c.email) : [s.targetEmail];
+          for (const email of targets) {
+            await db.collection('families').doc(familyId).collection('transactions').add({
+              email, type: 'Allowance', amount: Number(s.amount), desc: `Scheduled: ${s.title}`,
+              date: todayStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+          await doc.ref.update({ lastRunDate: todayStr });
+          processed++;
+        }
+      }
+      alert(`Disbursed ${processed} scheduled payouts!`);
+    }
+
+    // PERIOD CLOSING IMPLEMENTATION
+    async function runPeriodClosing() {
+      if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?")) return;
+
+      const famRef = db.collection('families').doc(familyId);
+      const txSnap = await famRef.collection('transactions').get();
+      if (txSnap.empty) return alert("No transactions to archive.");
+
+      const balMap = {};
+      const archiveBatch = db.batch();
+      const archiveTag = 'period_' + new Date().toISOString().replace(/[:.]/g, '-');
+      const archiveColl = famRef.collection('archives').doc(archiveTag).collection('transactions');
+
+      txSnap.forEach(doc => {
+        const tx = doc.data();
+        balMap[tx.email] = (balMap[tx.email] || 0) + (Number(tx.amount) || 0);
+        archiveBatch.set(archiveColl.doc(doc.id), tx);
+        archiveBatch.delete(doc.ref);
+      });
+
+      await archiveBatch.commit();
+
+      // Write forward balances
+      const now = new Date();
+      const forwardBatch = db.batch();
+      cachedChildren.forEach(child => {
+        const closingBalance = balMap[child.email] || 0;
+        const newTxRef = famRef.collection('transactions').doc();
+        forwardBatch.set(newTxRef, {
+          email: child.email,
+          type: 'Allowance',
+          amount: closingBalance,
+          desc: `Opening Balance (Carried Forward from Archive ${archiveTag})`,
+          date: now.toISOString().split('T')[0],
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+
+      await forwardBatch.commit();
+      alert(`Period successfully closed! Archived ${txSnap.size} transactions to ${archiveTag}.`);
     }
 
     async function saveCurrency() {
