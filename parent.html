@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Allowance Hub - Parent Admin</title>
+  <style>
+    :root {
+      --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
+      --danger: #ef4444; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.75);
+      --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 80%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 20px; border-bottom: 1px solid var(--card-border); margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 1.6rem; font-weight: 900; }
+    h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .nav-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    .tab-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--card-border); border-radius: 18px; padding: 20px; margin-bottom: 16px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat-box { background: rgba(15,23,42,0.6); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; text-align: center; }
+    .stat-title { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+    .stat-value { font-size: 1.8rem; font-weight: 900; margin: 6px 0 0; }
+    .form-group { margin-bottom: 14px; text-align: left; }
+    label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+    input, select { width: 100%; padding: 12px 14px; background: rgba(15,23,42,0.6); border: 1.5px solid var(--card-border); border-radius: 12px; font-size: 0.95rem; color: #fff; outline: none; }
+    button.btn { padding: 11px 18px; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 800; cursor: pointer; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-blue { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
+    .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .btn-gray { background: rgba(255,255,255,0.1); color: #cbd5e1; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); }
+    td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; }
+    .badge { font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+    .badge-reward { background: rgba(16,185,129,0.2); color: #34d399; }
+    .badge-penalty { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  </style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-bar">
+      <div>
+        <h1 id="familyHeaderTitle">Family Allowance Hub</h1>
+        <span style="font-size:0.82rem; color:var(--text-muted);">Firestore Realtime Admin Console</span>
+      </div>
+      <div>
+        <a id="childAppLinkBtn" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none;">Open Child App ↗</a>
+      </div>
+    </div>
+
+    <!-- ONBOARDING MODAL IF NO FAMILY ID -->
+    <div id="onboardSection" class="card" style="display:none; text-align:center; padding:30px;">
+      <h2>🚀 Welcome to Family Allowance SaaS</h2>
+      <p style="color:var(--text-muted); font-size:0.9rem;">Start your family hub in 2 seconds with zero setup.</p>
+      <div style="max-width:350px; margin:0 auto;">
+        <input type="text" id="initFamilyName" placeholder="e.g. Khan Family" style="margin-bottom:12px;">
+        <button class="btn btn-green" style="width:100%;" onclick="createNewFamilyTenant()">✨ Provision Family Hub</button>
+      </div>
+    </div>
+
+    <!-- MAIN ADMIN INTERFACE -->
+    <div id="adminMain" style="display:none;">
+      <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-overview', this)">📊 Overview</button>
+        <button class="tab-btn" onclick="switchTab('tab-chores', this)">🧹 Chores & Approvals</button>
+        <button class="tab-btn" onclick="switchTab('tab-behavior', this)">⭐ Rules & Actions</button>
+        <button class="tab-btn" onclick="switchTab('tab-schedules', this)">📅 Schedules</button>
+        <button class="tab-btn" onclick="switchTab('tab-members', this)">👨‍👩‍👧‍👦 Members</button>
+        <button class="tab-btn" onclick="switchTab('tab-settings', this)">⚙️ Settings</button>
+      </div>
+
+      <!-- OVERVIEW -->
+      <div id="tab-overview" class="tab-pane active">
+        <div class="stats-grid">
+          <div class="stat-box" style="border-top: 3px solid var(--primary);">
+            <div class="stat-title">Total Owed to Children</div>
+            <div class="stat-value" id="statTotalOwed" style="color:#818cf8;">Rs. 0</div>
+          </div>
+          <div class="stat-box" style="border-top: 3px solid var(--warning);">
+            <div class="stat-title">Pending Chores</div>
+            <div class="stat-value" id="statPendingCount" style="color:#fbbf24;">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🧒 Children Balances</h3>
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Balance</th></tr></thead>
+            <tbody id="childrenBalancesTable"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>📜 Live Activity Feed</h3>
+          <table>
+            <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th></tr></thead>
+            <tbody id="transactionsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CHORES -->
+      <div id="tab-chores" class="tab-pane">
+        <div class="card" style="border-left: 4px solid var(--warning);">
+          <h3>⏳ Pending Chore Approvals</h3>
+          <table>
+            <thead><tr><th>Date</th><th>Child</th><th>Chore</th><th>Reward</th><th>Actions</th></tr></thead>
+            <tbody id="pendingChoresTable"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>🧹 Chores Catalog</h3>
+          <table>
+            <thead><tr><th>Title</th><th>Reward</th><th>Action</th></tr></thead>
+            <tbody id="choresCatalogTable"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>+ Add Chore</h3>
+          <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; align-items:flex-end;">
+            <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newChoreTitle" placeholder="e.g. Wash Dishes"></div>
+            <div class="form-group" style="margin:0;"><label>Reward</label><input type="number" id="newChoreReward" placeholder="50"></div>
+            <button class="btn btn-green" onclick="addChore()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULES & ACTIONS -->
+      <div id="tab-behavior" class="tab-pane">
+        <div class="card">
+          <h3>⚡ Quick Action</h3>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group"><label>Child</label><select id="actionChildSelect"></select></div>
+            <div class="form-group"><label>Type</label><select id="actionTypeSelect" onchange="filterPresetRules()"><option value="Reward">🎁 Reward</option><option value="Penalty">🛑 Penalty</option></select></div>
+          </div>
+          <div class="form-group"><label>Preset Rule</label><select id="actionPresetSelect" onchange="applyPresetRule()"><option value="">-- Custom --</option></select></div>
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+            <div class="form-group"><label>Title</label><input type="text" id="actionTitle"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="actionAmount"></div>
+          </div>
+          <button class="btn btn-blue" onclick="applyBehaviorAction()">Apply Action</button>
+        </div>
+
+        <div class="card">
+          <h3>📜 Behavior Rules Preset Catalog</h3>
+          <table>
+            <thead><tr><th>Type</th><th>Title</th><th>Amount</th><th>Action</th></tr></thead>
+            <tbody id="rulesCatalogTable"></tbody>
+          </table>
+        </div>
+
+        <div class="card" style="border-left:4px solid var(--accent);">
+          <h3>+ Add Behavior Rule</h3>
+          <div style="display:grid; grid-template-columns: 1fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
+            <div class="form-group" style="margin:0;"><label>Type</label><select id="newRuleType"><option value="Reward">Reward</option><option value="Penalty">Penalty</option></select></div>
+            <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newRuleTitle" placeholder="e.g. Bedtime Delay"></div>
+            <div class="form-group" style="margin:0;"><label>Amount</label><input type="number" id="newRuleAmount" placeholder="100"></div>
+            <button class="btn btn-green" onclick="addBehaviorRule()">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULES -->
+      <div id="tab-schedules" class="tab-pane">
+        <div class="card">
+          <h3>📅 Active Payout Schedules</h3>
+          <table>
+            <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Day/Date</th><th>Amount</th><th>Action</th></tr></thead>
+            <tbody id="schedulesTable"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>+ Add Schedule</h3>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="Weekly Pocket Money"></div>
+            <div class="form-group"><label>Target</label><select id="schedTargetSelect"><option value="all">All Children</option></select></div>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+            <div class="form-group"><label>Frequency</label><select id="schedFrequency"><option value="WEEKLY">WEEKLY</option><option value="MONTHLY">MONTHLY</option><option value="ANNUAL_DATE">ANNUAL_DATE</option></select></div>
+            <div class="form-group"><label>Day / Date (0=Sun, 01/10=1st Oct)</label><input type="text" id="schedDay" placeholder="0 or 01/10"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="schedAmount" placeholder="1000"></div>
+          </div>
+          <button class="btn btn-green" onclick="addSchedule()">Save Schedule</button>
+        </div>
+      </div>
+
+      <!-- MEMBERS -->
+      <div id="tab-members" class="tab-pane">
+        <div class="card">
+          <h3>👨‍👩‍👧‍👦 Family Members</h3>
+          <table><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody id="membersTable"></tbody></table>
+        </div>
+        <div class="card">
+          <h3>+ Add Family Member</h3>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group"><label>Name</label><input type="text" id="memName" placeholder="Child Name"></div>
+            <div class="form-group"><label>Email</label><input type="email" id="memEmail" placeholder="child@gmail.com"></div>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group"><label>Role</label><select id="memRole" onchange="document.getElementById('pinWrap').style.display = this.value==='Child'?'block':'none'"><option value="Child">Child</option><option value="Parent">Parent</option></select></div>
+            <div class="form-group" id="pinWrap"><label>4-Digit PIN</label><input type="password" id="memPin" placeholder="••••" maxlength="6"></div>
+          </div>
+          <button class="btn btn-blue" onclick="addMember()">Add Member</button>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="tab-settings" class="tab-pane">
+        <div class="card">
+          <h3>⚙️ General</h3>
+          <div class="form-group"><label>Currency Symbol</label><input type="text" id="setCurrency" style="max-width:120px;"></div>
+          <button class="btn btn-blue" onclick="saveCurrency()">Save Currency</button>
+        </div>
+        <div class="card" style="border-left:4px solid var(--primary);">
+          <h3>🤖 AI PiggyCoach (BYOK)</h3>
+          <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" id="setAiEnabled" style="width:20px; height:20px;">
+            <label for="setAiEnabled" style="margin:0;">Enable AI Financial Coaching</label>
+          </div>
+          <div class="form-group"><label>Gemini API Key</label><input type="password" id="setGeminiKey" placeholder="AIzaSy..."></div>
+          <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // REPLACE WITH YOUR FIREBASE CONFIG
+    // -------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.firebasestorage.app",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
+
+    let activeCurrency = "Rs. ";
+    let cachedChildren = [];
+    let cachedRules = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!familyId) {
+        document.getElementById('onboardSection').style.display = 'block';
+      } else {
+        localStorage.setItem('family_id', familyId);
+        document.getElementById('adminMain').style.display = 'block';
+        document.getElementById('childAppLinkBtn').href = `index.html?familyId=${familyId}`;
+        initRealtimeListeners();
+      }
+    });
+
+    async function hashPin(pin) {
+      const msgBuffer = new TextEncoder().encode(String(pin).trim());
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function createNewFamilyTenant() {
+      const name = document.getElementById('initFamilyName').value.trim();
+      if (!name) return alert("Enter your family name.");
+      const newFamId = 'fam_' + Math.random().toString(36).substring(2, 10);
+      
+      const famRef = db.collection('families').doc(newFamId);
+      await famRef.set({
+        familyName: name,
+        currency: "Rs. ",
+        geminiApiKey: "",
+        aiEnabled: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Default Starter Data
+      await famRef.collection('chores').add({ title: "Clean Bedroom", reward: 50 });
+      await famRef.collection('chores').add({ title: "Fold Laundry", reward: 30 });
+      await famRef.collection('rules').add({ type: "Reward", title: "Exam Excellence", amount: 500 });
+      await famRef.collection('rules').add({ type: "Penalty", title: "Unapproved Screen Time", amount: 200 });
+
+      window.location.href = `parent.html?familyId=${newFamId}`;
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function initRealtimeListeners() {
+      const famRef = db.collection('families').doc(familyId);
+
+      // Meta Settings
+      famRef.onSnapshot(doc => {
+        if (!doc.exists) return;
+        const d = doc.data();
+        activeCurrency = d.currency || "Rs. ";
+        document.getElementById('familyHeaderTitle').innerText = `${d.familyName || 'Family'} Allowance Hub`;
+        document.getElementById('setCurrency').value = activeCurrency;
+        document.getElementById('setGeminiKey').value = d.geminiApiKey || '';
+        document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
+      });
+
+      // Users
+      famRef.collection('users').onSnapshot(snap => {
+        cachedChildren = [];
+        const mBody = document.getElementById('membersTable');
+        const actSelect = document.getElementById('actionChildSelect');
+        const schedSelect = document.getElementById('schedTargetSelect');
+        mBody.innerHTML = '';
+        actSelect.innerHTML = '';
+        schedSelect.innerHTML = '<option value="all">All Children</option>';
+
+        snap.forEach(doc => {
+          const u = doc.data();
+          mBody.innerHTML += `<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td>${u.role}</td></tr>`;
+          if (u.role === 'Child') {
+            cachedChildren.push({ id: doc.id, ...u });
+            actSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+            schedSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+          }
+        });
+        calculateBalances();
+      });
+
+      // Transactions
+      famRef.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snap => {
+        const tBody = document.getElementById('transactionsTable');
+        tBody.innerHTML = '';
+        snap.forEach(doc => {
+          const tx = doc.data();
+          const isPos = tx.amount >= 0;
+          tBody.innerHTML += `
+            <tr>
+              <td>${tx.date || ''}</td>
+              <td>${tx.email}</td>
+              <td><span class="badge" style="background:rgba(255,255,255,0.08);">${tx.type}</span></td>
+              <td style="color:${isPos?'var(--success)':'var(--danger)'}; font-weight:800;">${isPos?'+':''}${activeCurrency}${tx.amount}</td>
+              <td>${tx.desc}</td>
+            </tr>
+          `;
+        });
+        calculateBalances();
+      });
+
+      // Pending Chore Logs
+      famRef.collection('choreLog').where('status', '==', 'pending').onSnapshot(snap => {
+        const pBody = document.getElementById('pendingChoresTable');
+        document.getElementById('statPendingCount').innerText = snap.size;
+        pBody.innerHTML = '';
+        snap.forEach(doc => {
+          const c = doc.data();
+          pBody.innerHTML += `
+            <tr>
+              <td>${c.date || ''}</td>
+              <td><strong>${c.childName}</strong></td>
+              <td>${c.choreTitle}</td>
+              <td style="color:var(--success); font-weight:800;">+${activeCurrency}${c.reward}</td>
+              <td>
+                <button class="btn btn-green" style="padding:4px 8px; font-size:0.75rem;" onclick="approveChore('${doc.id}', '${c.childEmail}', '${c.choreTitle}', ${c.reward})">✓ Approve</button>
+                <button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="rejectChore('${doc.id}')">✕ Reject</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+
+      // Chores Catalog
+      famRef.collection('chores').onSnapshot(snap => {
+        const cBody = document.getElementById('choresCatalogTable');
+        cBody.innerHTML = '';
+        snap.forEach(doc => {
+          const c = doc.data();
+          cBody.innerHTML += `<tr><td><strong>${c.title}</strong></td><td>${activeCurrency}${c.reward}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('chores', '${doc.id}')">✕</button></td></tr>`;
+        });
+      });
+
+      // Rules Catalog
+      famRef.collection('rules').onSnapshot(snap => {
+        cachedRules = [];
+        const rBody = document.getElementById('rulesCatalogTable');
+        rBody.innerHTML = '';
+        snap.forEach(doc => {
+          const r = doc.data();
+          cachedRules.push({ id: doc.id, ...r });
+          rBody.innerHTML += `<tr><td><span class="badge ${r.type==='Reward'?'badge-reward':'badge-penalty'}">${r.type}</span></td><td>${r.title}</td><td>${activeCurrency}${r.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('rules', '${doc.id}')">✕</button></td></tr>`;
+        });
+        filterPresetRules();
+      });
+
+      // Schedules
+      famRef.collection('schedules').onSnapshot(snap => {
+        const sBody = document.getElementById('schedulesTable');
+        sBody.innerHTML = '';
+        snap.forEach(doc => {
+          const s = doc.data();
+          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${s.scheduleDay}</td><td>${activeCurrency}${s.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button></td></tr>`;
+        });
+      });
+    }
+
+    async function calculateBalances() {
+      const snap = await db.collection('families').doc(familyId).collection('transactions').get();
+      const balMap = {};
+      snap.forEach(d => {
+        const tx = d.data();
+        balMap[tx.email] = (balMap[tx.email] || 0) + (Number(tx.amount) || 0);
+      });
+
+      let total = 0;
+      const bTable = document.getElementById('childrenBalancesTable');
+      bTable.innerHTML = '';
+      cachedChildren.forEach(c => {
+        const b = balMap[c.email] || 0;
+        total += b;
+        bTable.innerHTML += `<tr><td><strong>${c.name}</strong></td><td>${c.email}</td><td style="color:#34d399; font-weight:800;">${activeCurrency}${b}</td></tr>`;
+      });
+      document.getElementById('statTotalOwed').innerText = activeCurrency + total.toLocaleString();
+    }
+
+    // ACTIONS
+    async function addMember() {
+      const name = document.getElementById('memName').value.trim();
+      const email = document.getElementById('memEmail').value.trim().toLowerCase();
+      const role = document.getElementById('memRole').value;
+      const pin = document.getElementById('memPin').value.trim();
+      if (!name || !email) return alert("Fill name & email");
+      
+      const pinHash = (role === 'Child') ? await hashPin(pin) : '';
+      await db.collection('families').doc(familyId).collection('users').add({ name, email, role, pinHash });
+      document.getElementById('memName').value = '';
+      document.getElementById('memEmail').value = '';
+      document.getElementById('memPin').value = '';
+    }
+
+    async function addChore() {
+      const title = document.getElementById('newChoreTitle').value.trim();
+      const reward = Number(document.getElementById('newChoreReward').value) || 0;
+      if (!title || !reward) return alert("Fill chore details");
+      await db.collection('families').doc(familyId).collection('chores').add({ title, reward });
+      document.getElementById('newChoreTitle').value = '';
+      document.getElementById('newChoreReward').value = '';
+    }
+
+    async function addBehaviorRule() {
+      const type = document.getElementById('newRuleType').value;
+      const title = document.getElementById('newRuleTitle').value.trim();
+      const amount = Number(document.getElementById('newRuleAmount').value) || 0;
+      if (!title || !amount) return alert("Fill rule details");
+      await db.collection('families').doc(familyId).collection('rules').add({ type, title, amount });
+      document.getElementById('newRuleTitle').value = '';
+      document.getElementById('newRuleAmount').value = '';
+    }
+
+    function filterPresetRules() {
+      const type = document.getElementById('actionTypeSelect').value;
+      const sel = document.getElementById('actionPresetSelect');
+      sel.innerHTML = '<option value="">-- Custom --</option>';
+      cachedRules.filter(r => r.type === type).forEach(r => {
+        sel.innerHTML += `<option value="${r.id}" data-title="${r.title}" data-amt="${r.amount}">${r.title} (${activeCurrency}${r.amount})</option>`;
+      });
+    }
+
+    function applyPresetRule() {
+      const sel = document.getElementById('actionPresetSelect');
+      const opt = sel.options[sel.selectedIndex];
+      if (opt.value) {
+        document.getElementById('actionTitle').value = opt.getAttribute('data-title');
+        document.getElementById('actionAmount').value = opt.getAttribute('data-amt');
+      }
+    }
+
+    async function applyBehaviorAction() {
+      const email = document.getElementById('actionChildSelect').value;
+      const type = document.getElementById('actionTypeSelect').value;
+      const title = document.getElementById('actionTitle').value.trim();
+      const amt = Number(document.getElementById('actionAmount').value) || 0;
+      if (!email || !title || !amt) return alert("Enter action details");
+
+      const finalAmt = (type === 'Reward') ? amt : -amt;
+      const now = new Date();
+      await db.collection('families').doc(familyId).collection('transactions').add({
+        email, type, amount: finalAmt, desc: title,
+        date: now.toISOString().split('T')[0],
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('actionTitle').value = '';
+      document.getElementById('actionAmount').value = '';
+    }
+
+    async function approveChore(logId, email, title, reward) {
+      const now = new Date();
+      await db.collection('families').doc(familyId).collection('transactions').add({
+        email, type: "Chore", amount: reward, desc: `Chore: ${title}`,
+        date: now.toISOString().split('T')[0],
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'approved' });
+    }
+
+    async function rejectChore(logId) {
+      const reason = prompt("Enter reason:", "Incomplete");
+      if (reason === null) return;
+      await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'denied', reason });
+    }
+
+    async function addSchedule() {
+      const title = document.getElementById('schedTitle').value.trim();
+      const targetEmail = document.getElementById('schedTargetSelect').value;
+      const frequency = document.getElementById('schedFrequency').value;
+      const scheduleDay = document.getElementById('schedDay').value.trim();
+      const amount = Number(document.getElementById('schedAmount').value) || 0;
+      if (!title || !scheduleDay || !amount) return alert("Fill schedule details");
+
+      await db.collection('families').doc(familyId).collection('schedules').add({
+        title, targetEmail, frequency, scheduleDay, amount, status: 'Active'
+      });
+      document.getElementById('schedTitle').value = '';
+      document.getElementById('schedDay').value = '';
+      document.getElementById('schedAmount').value = '';
+    }
+
+    async function saveCurrency() {
+      const currency = document.getElementById('setCurrency').value.trim();
+      await db.collection('families').doc(familyId).update({ currency });
+      alert("Currency saved!");
+    }
+
+    async function saveAiSettings() {
+      const geminiApiKey = document.getElementById('setGeminiKey').value.trim();
+      const aiEnabled = document.getElementById('setAiEnabled').checked;
+      await db.collection('families').doc(familyId).update({ geminiApiKey, aiEnabled });
+      alert("AI Settings updated!");
+    }
+
+    async function deleteDoc(coll, id) {
+      if (confirm("Delete this entry?")) {
+        await db.collection('families').doc(familyId).collection(coll).doc(id).delete();
+      }
+    }
+  </script>
+</body>
+</html>

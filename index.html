@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>My PiggyBank Hub</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --primary: #6366f1; --accent: #ec4899; --success: #10b981; --danger: #ef4444;
+      --cyan: #06b6d4; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 75%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    .container { max-width: 500px; margin: 0 auto; width: 100%; padding: 16px 16px 85px; flex: 1; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); position: sticky; top: 0; z-index: 50; }
+    .user-profile { display: flex; align-items: center; gap: 8px; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .user-name { font-weight: 800; font-size: 0.95rem; }
+    .card { background: var(--card-bg); backdrop-filter: blur(14px); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px; margin-bottom: 14px; }
+    .balance-card { text-align: center; background: linear-gradient(135deg, rgba(79, 70, 229, 0.35) 0%, rgba(236, 72, 153, 0.2) 100%); padding: 24px 16px; }
+    .balance-val { font-size: 3.2rem; font-weight: 900; margin: 6px 0 2px; }
+    h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; }
+    .form-group { margin-bottom: 12px; }
+    input, select { width: 100%; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1.5px solid var(--card-border); border-radius: 12px; font-size: 0.95rem; color: #fff; outline: none; }
+    button.btn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+    .btn-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .btn-blue { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+    .btn-purple { background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 500px; margin: 0 auto; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+    .nav-item.active { color: #38bdf8; }
+    .goal-card { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+    .goal-progress-bg { background: rgba(255, 255, 255, 0.08); border-radius: 9999px; height: 10px; overflow: hidden; margin: 8px 0; }
+    .goal-progress-fill { background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%); height: 100%; }
+    .goal-roadmap { margin-top: 10px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 12px; font-size: 0.8rem; line-height: 1.45; }
+    .ai-coach-card { margin-top: 10px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 12px; }
+    .chip { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-border); color: #cbd5e1; padding: 4px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+  </style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- AUTH TOP BAR -->
+  <div class="top-bar" id="topHeader" style="display: none;">
+    <div class="user-profile">
+      <div class="user-avatar" id="avatarInitial">H</div>
+      <span class="user-name" id="childHeaderName">Hero</span>
+    </div>
+    <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.75rem;" onclick="logout()">🔒 Lock</button>
+  </div>
+
+  <div class="container">
+    <!-- LOGIN SCREEN -->
+    <div class="card" id="loginCard" style="text-align: center; padding: 36px 20px; margin-top: 30px;">
+      <div style="font-size: 3.2rem; margin-bottom: 8px;">🚀</div>
+      <h2 style="margin:0 0 6px;">Family PiggyBank</h2>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Pick your name & enter PIN</p>
+      <div class="form-group"><select id="childNameSelect"><option value="">Loading heroes...</option></select></div>
+      <div class="form-group"><input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;"></div>
+      <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock Dashboard</button>
+    </div>
+
+    <!-- HOME TAB -->
+    <div id="tab-home" class="tab-content">
+      <div class="card balance-card">
+        <div style="font-size:0.85rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Current Savings</div>
+        <div class="balance-val" id="balanceDisplay">Rs. 0</div>
+      </div>
+      <div class="card" id="deniedSection" style="display:none; border-left:4px solid var(--danger); background:rgba(239,68,68,0.1);">
+        <strong style="color:#fca5a5; font-size:0.85rem;">⚠️ Note on Recent Chores:</strong>
+        <div id="deniedList" style="margin-top:4px; font-size:0.82rem; color:#cbd5e1;"></div>
+      </div>
+    </div>
+
+    <!-- GOALS TAB -->
+    <div id="tab-goals" class="tab-content">
+      <div class="card" style="border-left: 4px solid var(--accent);">
+        <h3>🎯 Targets & Roadmap</h3>
+        <div id="goalsContainer">Loading...</div>
+      </div>
+      <div class="card">
+        <h3>+ Set Wishlist Goal</h3>
+        <div class="form-group"><input type="text" id="goalTitleInput" placeholder="e.g. Lego Star Wars"></div>
+        <div class="form-group"><input type="number" id="goalAmountInput" placeholder="e.g. 2500"></div>
+        <button class="btn btn-purple" onclick="addGoal()">🚀 Create Goal</button>
+      </div>
+    </div>
+
+    <!-- ACTIONS TAB -->
+    <div id="tab-missions" class="tab-content">
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <h3>✅ Claim Finished Chore</h3>
+        <div class="form-group"><select id="choreSelect"></select></div>
+        <button class="btn btn-green" onclick="claimChore()">⭐ Submit for Approval</button>
+      </div>
+      <div class="card" style="border-left: 4px solid #38bdf8;">
+        <h3>💳 Log Expense</h3>
+        <div class="form-group"><input type="number" id="spendAmt" placeholder="Amount"></div>
+        <div class="form-group"><input type="text" id="spendDesc" placeholder="Item description"></div>
+        <button class="btn btn-blue" onclick="logExpense()">Log Spent Money</button>
+      </div>
+    </div>
+
+    <!-- LEDGER TAB -->
+    <div id="tab-activity" class="tab-content">
+      <div class="card">
+        <h3>📜 Ledger Activity</h3>
+        <div id="txList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav" id="bottomNav" style="display:none;">
+    <button class="nav-item active" onclick="switchNav('tab-home', this)"><span>🏠</span><span>Home</span></button>
+    <button class="nav-item" onclick="switchNav('tab-goals', this)"><span>🎯</span><span>Goals</span></button>
+    <button class="nav-item" onclick="switchNav('tab-missions', this)"><span>⚡</span><span>Actions</span></button>
+    <button class="nav-item" onclick="switchNav('tab-activity', this)"><span>📜</span><span>Ledger</span></button>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // REPLACE WITH YOUR FIREBASE CONFIG
+    // -------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.firebasestorage.app",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
+
+    let activeCurrency = "Rs. ";
+    let activeFamilyDoc = null;
+    let currentChild = null;
+    let currentBalance = 0;
+    let activeChores = [];
+    let activeSchedules = [];
+    let activeHistory = [];
+    let childGoals = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (!familyId) return alert("Family ID missing. Please open the link provided by your parent.");
+      localStorage.setItem('family_id', familyId);
+
+      const famDoc = await db.collection('families').doc(familyId).get();
+      if (!famDoc.exists) return alert("Family not found.");
+      activeFamilyDoc = famDoc.data();
+      activeCurrency = activeFamilyDoc.currency || "Rs. ";
+
+      const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
+      const sel = document.getElementById('childNameSelect');
+      sel.innerHTML = '<option value="">-- Choose Name --</option>';
+      usersSnap.forEach(d => {
+        sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
+      });
+
+      const cachedChild = sessionStorage.getItem('child_session');
+      if (cachedChild) {
+        currentChild = JSON.parse(cachedChild);
+        unlockApp();
+      }
+    });
+
+    async function hashPin(pin) {
+      const msgBuffer = new TextEncoder().encode(String(pin).trim());
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function attemptLogin() {
+      const sel = document.getElementById('childNameSelect');
+      const opt = sel.options[sel.selectedIndex];
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!opt.value || !pin) return alert("Select name & PIN");
+
+      const enteredHash = await hashPin(pin);
+      if (enteredHash === opt.getAttribute('data-hash')) {
+        currentChild = { id: opt.value, name: opt.getAttribute('data-name'), email: opt.getAttribute('data-email') };
+        sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+        confetti({ particleCount: 80, spread: 70 });
+        unlockApp();
+      } else {
+        alert("Incorrect PIN");
+        document.getElementById('pinInput').value = '';
+      }
+    }
+
+    function unlockApp() {
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('topHeader').style.display = 'flex';
+      document.getElementById('bottomNav').style.display = 'flex';
+      document.getElementById('avatarInitial').innerText = currentChild.name.charAt(0);
+      document.getElementById('childHeaderName').innerText = currentChild.name;
+      switchNav('tab-home', document.querySelectorAll('.nav-item')[0]);
+      bindChildRealtimeData();
+    }
+
+    function bindChildRealtimeData() {
+      const famRef = db.collection('families').doc(familyId);
+
+      // Ledger & Balance
+      famRef.collection('transactions').where('email', '==', currentChild.email).orderBy('timestamp', 'desc').onSnapshot(snap => {
+        currentBalance = 0;
+        activeHistory = [];
+        const tList = document.getElementById('txList');
+        tList.innerHTML = '';
+        snap.forEach(d => {
+          const tx = d.data();
+          const amt = Number(tx.amount) || 0;
+          currentBalance += amt;
+          activeHistory.push(tx);
+          const isPos = amt >= 0;
+          tList.innerHTML += `
+            <div class="tx-item">
+              <div><strong>${tx.desc}</strong><div style="font-size:0.75rem; color:#64748b;">${tx.date || ''}</div></div>
+              <div style="font-weight:800; color:${isPos?'var(--success)':'var(--danger)'};">${isPos?'+':''}${activeCurrency}${amt}</div>
+            </div>
+          `;
+        });
+        document.getElementById('balanceDisplay').innerText = `${activeCurrency}${currentBalance.toLocaleString()}`;
+        renderGoals();
+      });
+
+      // Goals
+      famRef.collection('goals').where('email', '==', currentChild.email).onSnapshot(snap => {
+        childGoals = [];
+        snap.forEach(d => childGoals.push({ id: d.id, ...d.data() }));
+        renderGoals();
+      });
+
+      // Chores Catalog
+      famRef.collection('chores').onSnapshot(snap => {
+        activeChores = [];
+        const cSel = document.getElementById('choreSelect');
+        cSel.innerHTML = '';
+        snap.forEach(d => {
+          const c = d.data();
+          activeChores.push({ id: d.id, ...c });
+          cSel.innerHTML += `<option value="${d.id}" data-title="${c.title}" data-reward="${c.reward}">${c.title} (+${activeCurrency}${c.reward})</option>`;
+        });
+      });
+
+      // Schedules
+      famRef.collection('schedules').onSnapshot(snap => {
+        activeSchedules = [];
+        snap.forEach(d => activeSchedules.push(d.data()));
+        renderGoals();
+      });
+    }
+
+    function renderGoals() {
+      const container = document.getElementById('goalsContainer');
+      container.innerHTML = '';
+      if (childGoals.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted);">No goals set yet.</p>`;
+        return;
+      }
+
+      childGoals.forEach(g => {
+        const pct = Math.min(Math.round((currentBalance / g.targetAmount) * 100), 100);
+        const diff = Math.max(0, g.targetAmount - currentBalance);
+        
+        container.innerHTML += `
+          <div class="goal-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>🎯 ${g.title}</strong>
+              <span style="font-weight:800; color:${pct>=100?'var(--success)':'var(--accent)'};">${pct>=100?'Ready!':pct+'%'}</span>
+            </div>
+            <div class="goal-progress-bg"><div class="goal-progress-fill" style="width:${pct}%;"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
+              <span>Goal: ${activeCurrency}${g.targetAmount}</span>
+              <span>${diff === 0 ? 'Unlocked!' : 'Need ' + activeCurrency + diff}</span>
+            </div>
+            <div class="goal-roadmap">
+              ${generateDeterministicRoadmap(g, diff)}
+              ${renderAiCoachBlock(g)}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function generateDeterministicRoadmap(goal, deficit) {
+      if (deficit === 0) return `🎉 You have enough saved! Ask your parents to make the purchase.`;
+      
+      let weekly = 0;
+      activeSchedules.forEach(s => {
+        if (s.frequency === 'WEEKLY') weekly += Number(s.amount) || 0;
+      });
+
+      const topChore = activeChores[0];
+      if (weekly > 0) {
+        const weeks = Math.ceil(deficit / weekly);
+        if (topChore && weeks > 2) {
+          const cutWeeks = Math.max(1, Math.round(weeks * 0.6));
+          const choreCount = Math.ceil((deficit - (cutWeeks * weekly)) / topChore.reward);
+          return `💡 Save your pocket money for <strong>${cutWeeks} weeks</strong> and complete <strong>${topChore.title} ${choreCount} times</strong> to unlock this!`;
+        }
+        return `💡 Save your pocket money for the next <strong>${weeks} week(s)</strong> and it's yours!`;
+      }
+      return `💡 Complete available chores to build your savings!`;
+    }
+
+    function renderAiCoachBlock(goal) {
+      if (!activeFamilyDoc.aiEnabled || !activeFamilyDoc.geminiApiKey) return '';
+      return `
+        <div class="ai-coach-card">
+          <div style="display:flex; justify-content:space-between;">
+            <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
+            <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 5px; border-radius:4px; font-weight:800;">LIVE</span>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto;">
+            <button class="chip" onclick="askGeminiCoach('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How can I reach this faster?')">⚡ Reach faster?</button>
+            <button class="chip" onclick="askGeminiCoach('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
+          </div>
+          <div id="aiBox_${goal.id}" style="display:none; margin-top:8px; font-size:0.8rem; color:#e2e8f0; background:rgba(15,23,42,0.6); padding:8px; border-radius:8px;"></div>
+        </div>
+      `;
+    }
+
+    async function askGeminiCoach(goalId, title, target, question) {
+      const box = document.getElementById(`aiBox_${goalId}`);
+      box.style.display = 'block';
+      box.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is thinking...</span>`;
+
+      const prompt = `
+You are "PiggyCoach", an upbeat, encouraging financial mentor for kids.
+Student: ${currentChild.name}
+Goal: ${title} (${activeCurrency}${target})
+Current Savings: ${activeCurrency}${currentBalance}
+Remaining: ${activeCurrency}${Math.max(0, target - currentBalance)}
+Available Chores: ${JSON.stringify(activeChores.map(c => c.title + ' (+' + activeCurrency + c.reward + ')'))}
+Weekly Allowance: ${JSON.stringify(activeSchedules.filter(s => s.frequency === 'WEEKLY').map(s => s.title + ': ' + activeCurrency + s.amount))}
+
+Child Question: "${question}"
+Instructions: Speak directly to ${currentChild.name} in 3 punchy sentences with fun emojis. Give a real plan combining pocket money and a couple chores. Finish completely.`;
+
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${activeFamilyDoc.geminiApiKey}`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+          })
+        });
+        const data = await res.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:4px;">${reply || 'Keep up the good saving work!'}</div>`;
+      } catch (err) {
+        box.innerHTML = `<span style="color:#f87171;">Coach is resting: ${err.message}</span>`;
+      }
+    }
+
+    async function addGoal() {
+      const title = document.getElementById('goalTitleInput').value.trim();
+      const targetAmount = Number(document.getElementById('goalAmountInput').value) || 0;
+      if (!title || !targetAmount) return alert("Fill goal details");
+      await db.collection('families').doc(familyId).collection('goals').add({
+        email: currentChild.email, title, targetAmount, status: 'Active'
+      });
+      document.getElementById('goalTitleInput').value = '';
+      document.getElementById('goalAmountInput').value = '';
+      confetti({ particleCount: 80, spread: 70 });
+    }
+
+    async function claimChore() {
+      const sel = document.getElementById('choreSelect');
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt.value) return alert("Select chore");
+      await db.collection('families').doc(familyId).collection('choreLog').add({
+        choreTitle: opt.getAttribute('data-title'),
+        reward: Number(opt.getAttribute('data-reward')),
+        childEmail: currentChild.email,
+        childName: currentChild.name,
+        status: 'pending',
+        date: new Date().toISOString().split('T')[0],
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      alert("Mission submitted for parent approval!");
+      confetti({ particleCount: 50, spread: 50 });
+    }
+
+    async function logExpense() {
+      const amount = Number(document.getElementById('spendAmt').value) || 0;
+      const desc = document.getElementById('spendDesc').value.trim();
+      if (!amount || !desc) return alert("Fill expense details");
+      await db.collection('families').doc(familyId).collection('transactions').add({
+        email: currentChild.email, type: "Expense", amount: -amount, desc,
+        date: new Date().toISOString().split('T')[0],
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('spendAmt').value = '';
+      document.getElementById('spendDesc').value = '';
+    }
+
+    function switchNav(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function logout() {
+      sessionStorage.removeItem('child_session');
+      window.location.reload();
+    }
+  </script>
+</body>
+</html>
