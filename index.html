@@ -7,128 +7,250 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     :root {
-      --primary: #6366f1; --accent: #ec4899; --success: #10b981; --danger: #ef4444;
-      --cyan: #06b6d4; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7);
-      --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
+      --primary: #6366f1; --primary-dark: #4f46e5; --accent: #ec4899; --success: #10b981;
+      --warning: #f59e0b; --danger: #ef4444; --cyan: #06b6d4; --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7); --card-border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc; --text-muted: #94a3b8;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 75%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
     .container { max-width: 500px; margin: 0 auto; width: 100%; padding: 16px 16px 85px; flex: 1; }
     .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); position: sticky; top: 0; z-index: 50; }
     .user-profile { display: flex; align-items: center; gap: 8px; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: #fff; }
+    .user-details { display: flex; flex-direction: column; }
     .user-name { font-weight: 800; font-size: 0.95rem; }
-    .card { background: var(--card-bg); backdrop-filter: blur(14px); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px; margin-bottom: 14px; }
-    .balance-card { text-align: center; background: linear-gradient(135deg, rgba(79, 70, 229, 0.35) 0%, rgba(236, 72, 153, 0.2) 100%); padding: 24px 16px; }
-    .balance-val { font-size: 3.2rem; font-weight: 900; margin: 6px 0 2px; }
-    h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; }
-    .form-group { margin-bottom: 12px; }
+    .user-rank { font-size: 0.72rem; color: #a5b4fc; font-weight: 700; text-transform: uppercase; }
+    .btn-lock { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--card-border); color: var(--text-muted); border-radius: 10px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .card { background: var(--card-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+    .balance-card { text-align: center; background: linear-gradient(135deg, rgba(79, 70, 229, 0.35) 0%, rgba(236, 72, 153, 0.2) 100%); border: 1px solid rgba(255, 255, 255, 0.15); padding: 24px 16px; }
+    .balance-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .balance-val { font-size: 3.2rem; font-weight: 900; color: #ffffff; margin: 6px 0 2px; letter-spacing: -1px; text-shadow: 0 0 25px rgba(99, 102, 241, 0.5); }
+    h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #ffffff; }
+    .form-group { margin-bottom: 12px; text-align: left; }
+    label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
     input, select { width: 100%; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1.5px solid var(--card-border); border-radius: 12px; font-size: 0.95rem; color: #fff; outline: none; }
-    button.btn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3); }
+    button.btn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    button.btn:active { transform: scale(0.98); }
     .btn-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     .btn-blue { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
     .btn-purple { background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%); }
+    .btn-cyan { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+    .btn-google { background: #ffffff; color: #0f172a; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 500px; margin: 0 auto; }
-    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; gap: 4px; padding: 8px 14px; }
+    .nav-item .icon { font-size: 1.3rem; }
     .nav-item.active { color: #38bdf8; }
     .goal-card { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+    .goal-header { display: flex; justify-content: space-between; align-items: center; }
+    .goal-title { font-weight: 800; font-size: 1rem; color: #fff; }
+    .btn-delete-goal { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; cursor: pointer; font-size: 0.85rem; border-radius: 8px; padding: 4px 8px; }
     .goal-progress-bg { background: rgba(255, 255, 255, 0.08); border-radius: 9999px; height: 10px; overflow: hidden; margin: 8px 0; }
-    .goal-progress-fill { background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%); height: 100%; }
+    .goal-progress-fill { background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%); height: 100%; border-radius: 9999px; transition: width 0.4s ease; }
+    .goal-stats { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); }
     .goal-roadmap { margin-top: 10px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 12px; font-size: 0.8rem; line-height: 1.45; }
     .ai-coach-card { margin-top: 10px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 12px; }
     .chip { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-border); color: #cbd5e1; padding: 4px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .kid-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+    .kid-stat-box { background: rgba(15, 23, 42, 0.5); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; text-align: center; }
+    .kid-stat-title { font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+    .kid-stat-val { font-size: 1.25rem; font-weight: 900; margin: 3px 0 0; }
+    .sibling-stat-card { background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 14px; padding: 12px; margin-top: 10px; font-size: 0.8rem; }
+    .slicer-chips, .filter-chips { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 2px; }
+    .slicer { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: var(--text-muted); padding: 5px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .slicer.active { background: var(--primary); color: white; border-color: var(--primary); }
     .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+    .pos { color: var(--success); font-weight: 800; font-size: 0.95rem; }
+    .neg { color: var(--danger); font-weight: 800; font-size: 0.95rem; }
+    .type-badge { font-size: 0.68rem; padding: 2px 6px; border-radius: 6px; font-weight: 800; text-transform: uppercase; margin-right: 4px; display: inline-block; }
+    .type-chore { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+    .type-reward { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+    .type-penalty { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .type-allowance { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+    .type-expense { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+    .type-transfer { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.35); }
   </style>
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-  <!-- AUTH TOP BAR -->
+  <!-- HEADER -->
   <div class="top-bar" id="topHeader" style="display: none;">
     <div class="user-profile">
       <div class="user-avatar" id="avatarInitial">H</div>
-      <span class="user-name" id="childHeaderName">Hero</span>
+      <div class="user-details">
+        <span class="user-name" id="childHeaderName">Hero</span>
+        <span class="user-rank" id="childHeaderRank">Novice</span>
+      </div>
     </div>
-    <button class="btn btn-blue" style="width:auto; padding:6px 12px; font-size:0.75rem;" onclick="logout()">🔒 Lock</button>
+    <button class="btn-lock" onclick="logout()">🔒 Lock</button>
   </div>
 
   <div class="container">
+
     <!-- LOGIN SCREEN -->
     <div class="card" id="loginCard" style="text-align: center; padding: 36px 20px; margin-top: 30px;">
       <div style="font-size: 3.2rem; margin-bottom: 8px;">🚀</div>
-      <h2 style="margin:0 0 6px;">Family PiggyBank</h2>
-      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:20px;">Pick your name & enter PIN</p>
-      <div class="form-group"><select id="childNameSelect"><option value="">Loading heroes...</option></select></div>
-      <div class="form-group"><input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;"></div>
+      <h2 style="margin: 0 0 6px; font-weight: 900; font-size: 1.5rem;">Family PiggyBank</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Pick your name & enter your PIN</p>
+      <div class="form-group">
+        <label for="childNameSelect">Hero Name</label>
+        <select id="childNameSelect"><option value="">Loading heroes...</option></select>
+      </div>
+      <div class="form-group">
+        <label for="pinInput">4-Digit Secret PIN</label>
+        <input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;">
+      </div>
       <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock Dashboard</button>
+      <div style="margin: 14px 0 6px; font-size: 0.8rem; color: var(--text-muted);">— or —</div>
+      <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
     </div>
 
-    <!-- HOME TAB -->
+    <!-- TAB 1: DASHBOARD -->
     <div id="tab-home" class="tab-content">
       <div class="card balance-card">
-        <div style="font-size:0.85rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Current Savings</div>
+        <div class="balance-title">Current Savings</div>
         <div class="balance-val" id="balanceDisplay">Rs. 0</div>
       </div>
-      <div class="card" id="deniedSection" style="display:none; border-left:4px solid var(--danger); background:rgba(239,68,68,0.1);">
-        <strong style="color:#fca5a5; font-size:0.85rem;">⚠️ Note on Recent Chores:</strong>
-        <div id="deniedList" style="margin-top:4px; font-size:0.82rem; color:#cbd5e1;"></div>
+
+      <div class="card" id="homeGoalSpotlight" style="border-left: 4px solid var(--accent); display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <h3 style="margin: 0; font-size: 0.95rem;">🎯 Top Wishlist Target</h3>
+          <button onclick="switchNavTab('tab-goals', document.querySelectorAll('.nav-item')[1])" style="background: none; border: none; color: #a5b4fc; font-size: 0.75rem; font-weight: 700; cursor: pointer;">View All →</button>
+        </div>
+        <div id="homeGoalContent"></div>
+      </div>
+
+      <div class="card" id="deniedSection" style="display: none; border-left: 4px solid var(--danger); background: rgba(239, 68, 68, 0.1);">
+        <strong style="color: #fca5a5; font-size: 0.85rem;">⚠️ Note on Recent Chores:</strong>
+        <div id="deniedList" style="margin-top: 4px; font-size: 0.82rem; color: #cbd5e1;"></div>
+      </div>
+
+      <!-- Slicers & Stats -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 style="margin:0;">📊 Savings Stats</h3>
+        </div>
+        <div class="slicer-chips">
+          <button class="slicer active" onclick="setChildTimeframe(this, 'ALL')">All Time</button>
+          <button class="slicer" onclick="setChildTimeframe(this, 'WEEK')">This Week</button>
+          <button class="slicer" onclick="setChildTimeframe(this, 'MONTH')">This Month</button>
+          <button class="slicer" onclick="setChildTimeframe(this, 'YEAR')">This Year</button>
+        </div>
+
+        <div class="kid-stats-grid">
+          <div class="kid-stat-box" style="border-top: 3px solid #6366f1;">
+            <div class="kid-stat-title">🧹 Chores</div>
+            <div class="kid-stat-val" id="kidChoreStat" style="color:#818cf8;">Rs. 0</div>
+          </div>
+          <div class="kid-stat-box" style="border-top: 3px solid #10b981;">
+            <div class="kid-stat-title">🎁 Rewards</div>
+            <div class="kid-stat-val" id="kidRewardStat" style="color:#34d399;">Rs. 0</div>
+          </div>
+          <div class="kid-stat-box" style="border-top: 3px solid #ef4444;">
+            <div class="kid-stat-title">🛑 Penalties</div>
+            <div class="kid-stat-val" id="kidPenaltyStat" style="color:#f87171;">Rs. 0</div>
+          </div>
+          <div class="kid-stat-box" style="border-top: 3px solid #64748b;">
+            <div class="kid-stat-title">🛍️ Spent</div>
+            <div class="kid-stat-val" id="kidSpentStat" style="color:#cbd5e1;">Rs. 0</div>
+          </div>
+        </div>
+
+        <!-- Sibling Transfers Summary -->
+        <div class="sibling-stat-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color: #67e8f9;">🤝 Sibling Transfers</strong>
+            <span id="kidTransferNet" style="font-weight:800;">Rs. 0</span>
+          </div>
+          <div id="siblingTransferDetails" style="color: var(--text-muted); font-size: 0.74rem; margin-top: 4px;">
+            No sibling transfers in this period.
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- GOALS TAB -->
+    <!-- TAB 2: GOALS -->
     <div id="tab-goals" class="tab-content">
       <div class="card" style="border-left: 4px solid var(--accent);">
-        <h3>🎯 Targets & Roadmap</h3>
-        <div id="goalsContainer">Loading...</div>
+        <h3>🎯 My Saving Targets & Roadmap</h3>
+        <div id="goalsContainer">Loading goals...</div>
       </div>
+
       <div class="card">
-        <h3>+ Set Wishlist Goal</h3>
-        <div class="form-group"><input type="text" id="goalTitleInput" placeholder="e.g. Lego Star Wars"></div>
-        <div class="form-group"><input type="number" id="goalAmountInput" placeholder="e.g. 2500"></div>
-        <button class="btn btn-purple" onclick="addGoal()">🚀 Create Goal</button>
+        <h3>+ Set New Wishlist Goal</h3>
+        <div class="form-group"><label>Item Name</label><input type="text" id="goalTitleInput" placeholder="e.g. Lego Star Wars"></div>
+        <div class="form-group"><label>Target Price</label><input type="number" id="goalAmountInput" placeholder="2500"></div>
+        <button class="btn btn-purple" onclick="addGoal()">🚀 Create Goal Target</button>
       </div>
     </div>
 
-    <!-- ACTIONS TAB -->
+    <!-- TAB 3: MISSIONS, SPENDING & SIBLING SHARING -->
     <div id="tab-missions" class="tab-content">
+      <!-- RESTORED FEATURE 1: SIBLING SHARING -->
+      <div class="card" style="border-left: 4px solid var(--cyan);">
+        <h3>🤝 Share with Sibling</h3>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:-6px;">Send some savings as a gift or loan.</p>
+        <div class="form-group">
+          <label for="siblingSelect">Choose Sibling</label>
+          <select id="siblingSelect"><option value="">Loading siblings...</option></select>
+        </div>
+        <div class="form-group">
+          <label for="transferAmt">Amount to Give (<span class="currencySymbol">Rs. </span>)</label>
+          <input type="number" id="transferAmt" placeholder="e.g. 200">
+        </div>
+        <div class="form-group">
+          <label for="transferNote">Note (Optional)</label>
+          <input type="text" id="transferNote" placeholder="e.g. For ice cream, birthday gift">
+        </div>
+        <button class="btn btn-cyan" onclick="sendSiblingTransfer()">🎁 Send to Sibling</button>
+      </div>
+
       <div class="card" style="border-left: 4px solid var(--success);">
-        <h3>✅ Claim Finished Chore</h3>
-        <div class="form-group"><select id="choreSelect"></select></div>
+        <h3>✅ Finished a Chore?</h3>
+        <div class="form-group"><select id="choreSelect"><option>Loading tasks...</option></select></div>
         <button class="btn btn-green" onclick="claimChore()">⭐ Submit for Approval</button>
       </div>
+
       <div class="card" style="border-left: 4px solid #38bdf8;">
         <h3>💳 Log Expense</h3>
         <div class="form-group"><input type="number" id="spendAmt" placeholder="Amount"></div>
         <div class="form-group"><input type="text" id="spendDesc" placeholder="Item description"></div>
-        <button class="btn btn-blue" onclick="logExpense()">Log Spent Money</button>
+        <button class="btn btn-blue" onclick="logSpending()">Log Spent Money</button>
       </div>
     </div>
 
-    <!-- LEDGER TAB -->
+    <!-- TAB 4: ACTIVITY FEED -->
     <div id="tab-activity" class="tab-content">
       <div class="card">
-        <h3>📜 Ledger Activity</h3>
+        <h3>📜 Past Activities</h3>
+        <div class="filter-chips">
+          <button class="chip active" onclick="setTxFilter(this, 'ALL')">All</button>
+          <button class="chip" onclick="setTxFilter(this, 'Chore')">Chores</button>
+          <button class="chip" onclick="setTxFilter(this, 'Reward')">Rewards</button>
+          <button class="chip" onclick="setTxFilter(this, 'Transfer')">Transfers</button>
+          <button class="chip" onclick="setTxFilter(this, 'Penalty')">Penalties</button>
+          <button class="chip" onclick="setTxFilter(this, 'Expense')">Spent</button>
+        </div>
         <div id="txList"></div>
       </div>
     </div>
+
   </div>
 
-  <!-- BOTTOM NAV -->
-  <div class="bottom-nav" id="bottomNav" style="display:none;">
-    <button class="nav-item active" onclick="switchNav('tab-home', this)"><span>🏠</span><span>Home</span></button>
-    <button class="nav-item" onclick="switchNav('tab-goals', this)"><span>🎯</span><span>Goals</span></button>
-    <button class="nav-item" onclick="switchNav('tab-missions', this)"><span>⚡</span><span>Actions</span></button>
-    <button class="nav-item" onclick="switchNav('tab-activity', this)"><span>📜</span><span>Ledger</span></button>
+  <div class="bottom-nav" id="bottomNav" style="display: none;">
+    <button class="nav-item active" onclick="switchNavTab('tab-home', this)"><span class="icon">🏠</span><span>Home</span></button>
+    <button class="nav-item" onclick="switchNavTab('tab-goals', this)"><span class="icon">🎯</span><span>Goals</span></button>
+    <button class="nav-item" onclick="switchNavTab('tab-missions', this)"><span class="icon">⚡</span><span>Actions</span></button>
+    <button class="nav-item" onclick="switchNavTab('tab-activity', this)"><span class="icon">📜</span><span>Ledger</span></button>
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // REPLACE WITH YOUR FIREBASE CONFIG
-    // -------------------------------------------------------------
     const firebaseConfig = {
       apiKey: "AIzaSyDyTTAZ9sQNHiioYInGDuiOjkWin0TjfIo",
       authDomain: "family-allowance-hub.firebaseapp.com",
@@ -138,9 +260,9 @@
       appId: "1:90520973036:web:3b9b3cca2fe0c7c882ffc9"
     };
 
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
     const urlParams = new URLSearchParams(window.location.search);
     let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
@@ -148,21 +270,41 @@
     let activeCurrency = "Rs. ";
     let activeFamilyDoc = null;
     let currentChild = null;
-    let currentBalance = 0;
+    let currentChildBalance = 0;
+    let rawHistory = [];
+    let childGoals = [];
     let activeChores = [];
     let activeSchedules = [];
-    let activeHistory = [];
-    let childGoals = [];
+    let availableSiblings = [];
+    let currentFilter = 'ALL';
+    let currentChildTimeframe = 'ALL';
+
+    function calculateRank(balance) {
+      if (balance >= 20000) return "👑 Wealth Tycoon";
+      if (balance >= 10000) return "💎 Diamond Saver";
+      if (balance >= 5000) return "🌟 Gold Stasher";
+      if (balance >= 2000) return "🚀 Master Builder";
+      if (balance >= 500) return "🌱 Junior Earner";
+      return "🪙 Novice Saver";
+    }
+
+    async function hashPin(pin) {
+      const msgBuffer = new TextEncoder().encode(String(pin).trim());
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     window.addEventListener('DOMContentLoaded', async () => {
-      if (!familyId) return alert("Family ID missing. Please open the link provided by your parent.");
+      if (!familyId) return alert("Family ID missing. Please open the link shared by your parent.");
       localStorage.setItem('family_id', familyId);
 
       const famDoc = await db.collection('families').doc(familyId).get();
       if (!famDoc.exists) return alert("Family not found.");
       activeFamilyDoc = famDoc.data();
       activeCurrency = activeFamilyDoc.currency || "Rs. ";
+      document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
 
+      // Load children into login dropdown
       const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
       const sel = document.getElementById('childNameSelect');
       sel.innerHTML = '<option value="">-- Choose Name --</option>';
@@ -170,18 +312,12 @@
         sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
       });
 
-      const cachedChild = sessionStorage.getItem('child_session');
-      if (cachedChild) {
-        currentChild = JSON.parse(cachedChild);
+      const cached = sessionStorage.getItem('child_session');
+      if (cached) {
+        currentChild = JSON.parse(cached);
         unlockApp();
       }
     });
-
-    async function hashPin(pin) {
-      const msgBuffer = new TextEncoder().encode(String(pin).trim());
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
 
     async function attemptLogin() {
       const sel = document.getElementById('childNameSelect');
@@ -201,40 +337,85 @@
       }
     }
 
+    // RESTORED FEATURE 4: GOOGLE AUTH LOGIN FOR CHILDREN
+    async function loginWithGoogle() {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const res = await auth.signInWithPopup(provider);
+        const email = res.user.email.toLowerCase();
+
+        const userSnap = await db.collection('families').doc(familyId).collection('users')
+          .where('email', '==', email)
+          .where('role', '==', 'Child')
+          .get();
+
+        if (userSnap.empty) {
+          return alert(`No child account found under email: ${email}. Ask your parent to register your email in the Admin Console.`);
+        }
+
+        const childDoc = userSnap.docs[0];
+        currentChild = { id: childDoc.id, name: childDoc.data().name, email: childDoc.data().email };
+        sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+        confetti({ particleCount: 80, spread: 70 });
+        unlockApp();
+      } catch (err) {
+        alert("Google Login Error: " + err.message);
+      }
+    }
+
     function unlockApp() {
       document.getElementById('loginCard').style.display = 'none';
       document.getElementById('topHeader').style.display = 'flex';
       document.getElementById('bottomNav').style.display = 'flex';
-      document.getElementById('avatarInitial').innerText = currentChild.name.charAt(0);
+      document.getElementById('avatarInitial').innerText = currentChild.name.charAt(0).toUpperCase();
       document.getElementById('childHeaderName').innerText = currentChild.name;
-      switchNav('tab-home', document.querySelectorAll('.nav-item')[0]);
-      bindChildRealtimeData();
+      switchNavTab('tab-home', document.querySelectorAll('.nav-item')[0]);
+      bindChildData();
     }
 
-    function bindChildRealtimeData() {
+    function bindChildData() {
       const famRef = db.collection('families').doc(familyId);
 
-      // Ledger & Balance
-      famRef.collection('transactions').where('email', '==', currentChild.email).orderBy('timestamp', 'desc').onSnapshot(snap => {
-        currentBalance = 0;
-        activeHistory = [];
-        const tList = document.getElementById('txList');
-        tList.innerHTML = '';
+      // Denied chore notifications
+      famRef.collection('choreLog')
+        .where('childEmail', '==', currentChild.email)
+        .where('status', '==', 'denied')
+        .onSnapshot(snap => {
+          const deniedBox = document.getElementById('deniedSection');
+          const deniedList = document.getElementById('deniedList');
+          deniedList.innerHTML = '';
+          if (!snap.empty) {
+            deniedBox.style.display = 'block';
+            snap.forEach(d => {
+              const data = d.data();
+              deniedList.innerHTML += `<div style="margin-top:4px;"><strong>${data.choreTitle}</strong>: "${data.reason || 'Not approved'}"</div>`;
+            });
+          } else {
+            deniedBox.style.display = 'none';
+          }
+        });
+
+      // Transactions
+      famRef.collection('transactions').where('email', '==', currentChild.email).onSnapshot(snap => {
+        currentChildBalance = 0;
+        rawHistory = [];
         snap.forEach(d => {
           const tx = d.data();
           const amt = Number(tx.amount) || 0;
-          currentBalance += amt;
-          activeHistory.push(tx);
-          const isPos = amt >= 0;
-          tList.innerHTML += `
-            <div class="tx-item">
-              <div><strong>${tx.desc}</strong><div style="font-size:0.75rem; color:#64748b;">${tx.date || ''}</div></div>
-              <div style="font-weight:800; color:${isPos?'var(--success)':'var(--danger)'};">${isPos?'+':''}${activeCurrency}${amt}</div>
-            </div>
-          `;
+          currentChildBalance += amt;
+          rawHistory.push({
+            id: d.id,
+            ...tx,
+            timestamp: tx.timestamp ? tx.timestamp.toMillis() : new Date(tx.date).getTime()
+          });
         });
-        document.getElementById('balanceDisplay').innerText = `${activeCurrency}${currentBalance.toLocaleString()}`;
+        rawHistory.sort((a, b) => b.timestamp - a.timestamp);
+
+        document.getElementById('balanceDisplay').innerText = activeCurrency + currentChildBalance.toLocaleString();
+        document.getElementById('childHeaderRank').innerText = calculateRank(currentChildBalance);
         renderGoals();
+        renderChildAnalytics();
+        renderTransactions();
       });
 
       // Goals
@@ -262,79 +443,300 @@
         snap.forEach(d => activeSchedules.push(d.data()));
         renderGoals();
       });
+
+      // Siblings for Sharing
+      famRef.collection('users').where('role', '==', 'Child').onSnapshot(snap => {
+        availableSiblings = [];
+        const sSel = document.getElementById('siblingSelect');
+        sSel.innerHTML = '<option value="">-- Choose Sibling --</option>';
+        snap.forEach(d => {
+          const u = d.data();
+          if (u.email !== currentChild.email) {
+            availableSiblings.push(u);
+            sSel.innerHTML += `<option value="${u.email}" data-name="${u.name}">${u.name}</option>`;
+          }
+        });
+      });
     }
 
-    function renderGoals() {
-      const container = document.getElementById('goalsContainer');
+    // RESTORED FEATURE 1: ATOMIC SIBLING TRANSFERS
+    async function sendSiblingTransfer() {
+      const sel = document.getElementById('siblingSelect');
+      const opt = sel.options[sel.selectedIndex];
+      const recipientEmail = sel.value;
+      const recipientName = opt.getAttribute('data-name');
+      const amount = Number(document.getElementById('transferAmt').value) || 0;
+      const note = document.getElementById('transferNote').value.trim();
+
+      if (!recipientEmail) return alert("Select a sibling.");
+      if (!amount || amount <= 0) return alert("Enter an amount greater than zero.");
+      if (currentChildBalance < amount) return alert("You do not have enough savings to share this amount.");
+
+      if (!confirm(`Are you sure you want to send ${activeCurrency}${amount} to ${recipientName}?`)) return;
+
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const noteStr = note ? ` ("${note}")` : '';
+
+      const batch = db.batch();
+      const famRef = db.collection('families').doc(familyId);
+
+      const senderTx = famRef.collection('transactions').doc();
+      batch.set(senderTx, {
+        email: currentChild.email,
+        type: 'Transfer',
+        amount: -amount,
+        desc: `Shared with ${recipientName}${noteStr}`,
+        date: dateStr,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      const recipientTx = famRef.collection('transactions').doc();
+      batch.set(recipientTx, {
+        email: recipientEmail,
+        type: 'Transfer',
+        amount: amount,
+        desc: `Gift from ${currentChild.name}${noteStr}`,
+        date: dateStr,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      await batch.commit();
+      confetti({ particleCount: 80, spread: 70 });
+      document.getElementById('transferAmt').value = '';
+      document.getElementById('transferNote').value = '';
+      alert(`🎁 Success! ${activeCurrency}${amount} was sent to ${recipientName}.`);
+    }
+
+    // ANALYTICS & SLICERS
+    function setChildTimeframe(btn, tf) {
+      document.querySelectorAll('.slicer').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      currentChildTimeframe = tf;
+      renderChildAnalytics();
+    }
+
+    function renderChildAnalytics() {
+      const now = new Date();
+      let startTime = 0;
+      if (currentChildTimeframe === 'WEEK') {
+        const d = new Date(now);
+        d.setDate(now.getDate() - now.getDay());
+        d.setHours(0,0,0,0);
+        startTime = d.getTime();
+      } else if (currentChildTimeframe === 'MONTH') {
+        startTime = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      } else if (currentChildTimeframe === 'YEAR') {
+        startTime = new Date(now.getFullYear(), 0, 1).getTime();
+      }
+
+      let choreSum = 0, rewardSum = 0, penaltySum = 0, spendSum = 0;
+      let sentSum = 0, receivedSum = 0;
+      let siblingBreakdown = {};
+
+      rawHistory.forEach(tx => {
+        if (tx.timestamp >= startTime) {
+          const type = String(tx.type).toLowerCase();
+          const amt = Number(tx.amount) || 0;
+
+          if (type === 'chore') choreSum += Math.abs(amt);
+          else if (type === 'reward') rewardSum += Math.abs(amt);
+          else if (type === 'penalty') penaltySum += Math.abs(amt);
+          else if (type === 'expense') spendSum += Math.abs(amt);
+          else if (type === 'transfer') {
+            if (amt < 0) {
+              sentSum += Math.abs(amt);
+              const m = tx.desc.match(/Shared with ([^"(]+)/i);
+              const name = m ? m[1].trim() : 'Sibling';
+              siblingBreakdown[name] = (siblingBreakdown[name] || 0) - Math.abs(amt);
+            } else {
+              receivedSum += amt;
+              const m = tx.desc.match(/Gift from ([^"(]+)/i);
+              const name = m ? m[1].trim() : 'Sibling';
+              siblingBreakdown[name] = (siblingBreakdown[name] || 0) + amt;
+            }
+          }
+        }
+      });
+
+      document.getElementById('kidChoreStat').innerText = activeCurrency + choreSum.toLocaleString();
+      document.getElementById('kidRewardStat').innerText = activeCurrency + rewardSum.toLocaleString();
+      document.getElementById('kidPenaltyStat').innerText = activeCurrency + penaltySum.toLocaleString();
+      document.getElementById('kidSpentStat').innerText = activeCurrency + spendSum.toLocaleString();
+
+      const net = receivedSum - sentSum;
+      const netElem = document.getElementById('kidTransferNet');
+      netElem.innerText = (net >= 0 ? '+' : '-') + activeCurrency + Math.abs(net).toLocaleString();
+      netElem.style.color = net >= 0 ? 'var(--cyan)' : '#fca5a5';
+
+      const detailsElem = document.getElementById('siblingTransferDetails');
+      const keys = Object.keys(siblingBreakdown);
+      if (keys.length === 0) {
+        detailsElem.innerText = 'No sibling transfers in this period.';
+      } else {
+        let h = '';
+        keys.forEach(k => {
+          const val = siblingBreakdown[k];
+          h += `<div>${val < 0 ? 'Sent to' : 'Received from'} <strong>${k}</strong>: ${activeCurrency}${Math.abs(val)}</div>`;
+        });
+        detailsElem.innerHTML = h;
+      }
+    }
+
+    function setTxFilter(btn, filterType) {
+      document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = filterType;
+      renderTransactions();
+    }
+
+    function renderTransactions() {
+      const container = document.getElementById('txList');
       container.innerHTML = '';
-      if (childGoals.length === 0) {
-        container.innerHTML = `<p style="color:var(--text-muted);">No goals set yet.</p>`;
+
+      const filtered = rawHistory.filter(tx => {
+        if (currentFilter === 'ALL') return true;
+        return String(tx.type).toLowerCase() === currentFilter.toLowerCase();
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:16px;">No activities found.</p>';
         return;
       }
 
-      childGoals.forEach(g => {
-        const pct = Math.min(Math.round((currentBalance / g.targetAmount) * 100), 100);
-        const diff = Math.max(0, g.targetAmount - currentBalance);
-        
+      filtered.forEach(tx => {
+        const isPos = tx.amount >= 0;
+        let badge = 'type-expense';
+        if (tx.type === 'Chore') badge = 'type-chore';
+        if (tx.type === 'Reward') badge = 'type-reward';
+        if (tx.type === 'Penalty') badge = 'type-penalty';
+        if (tx.type === 'Allowance') badge = 'type-allowance';
+        if (tx.type === 'Transfer') badge = 'type-transfer';
+
         container.innerHTML += `
-          <div class="goal-card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong>🎯 ${g.title}</strong>
-              <span style="font-weight:800; color:${pct>=100?'var(--success)':'var(--accent)'};">${pct>=100?'Ready!':pct+'%'}</span>
+          <div class="tx-item">
+            <div>
+              <span class="type-badge ${badge}">${tx.type}</span>
+              <strong style="font-size:0.9rem;">${tx.desc}</strong>
+              <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">${tx.date}</div>
             </div>
-            <div class="goal-progress-bg"><div class="goal-progress-fill" style="width:${pct}%;"></div></div>
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
-              <span>Goal: ${activeCurrency}${g.targetAmount}</span>
-              <span>${diff === 0 ? 'Unlocked!' : 'Need ' + activeCurrency + diff}</span>
-            </div>
-            <div class="goal-roadmap">
-              ${generateDeterministicRoadmap(g, diff)}
-              ${renderAiCoachBlock(g)}
+            <div class="${isPos ? 'pos' : 'neg'}">
+              ${isPos ? '+' : '-'}${activeCurrency}${Math.abs(tx.amount).toLocaleString()}
             </div>
           </div>
         `;
       });
     }
 
-    function generateDeterministicRoadmap(goal, deficit) {
-      if (deficit === 0) return `🎉 You have enough saved! Ask your parents to make the purchase.`;
-      
-      let weekly = 0;
+    function renderGoals() {
+      const container = document.getElementById('goalsContainer');
+      const homeSpotlight = document.getElementById('homeGoalSpotlight');
+      const homeContent = document.getElementById('homeGoalContent');
+      container.innerHTML = '';
+
+      if (childGoals.length === 0) {
+        container.innerHTML = '<p style="margin:0; color:var(--text-muted); font-size:0.85rem;">No goals set yet.</p>';
+        if (homeSpotlight) homeSpotlight.style.display = 'none';
+        return;
+      }
+
+      if (homeSpotlight && homeContent) {
+        const top = childGoals[0];
+        const pct = Math.min(Math.round((currentChildBalance / top.targetAmount) * 100), 100);
+        const done = currentChildBalance >= top.targetAmount;
+        homeSpotlight.style.display = 'block';
+        homeContent.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:800; font-size:0.95rem; color:#fff;">${top.title}</span>
+            <span style="font-size:0.8rem; font-weight:800; color:${done ? 'var(--success)' : 'var(--accent)'};">
+              ${done ? '🎉 Ready to Buy!' : pct + '%'}
+            </span>
+          </div>
+          <div class="goal-progress-bg"><div class="goal-progress-fill" style="width:${pct}%;"></div></div>
+          <div class="goal-stats">
+            <span>Target: ${activeCurrency}${top.targetAmount.toLocaleString()}</span>
+            <span>${done ? 'Unlocked!' : 'Need ' + activeCurrency + Math.max(0, top.targetAmount - currentChildBalance).toLocaleString()}</span>
+          </div>
+          ${generateRoadmap(top)}
+        `;
+      }
+
+      childGoals.forEach(g => {
+        const pct = Math.min(Math.round((currentChildBalance / g.targetAmount) * 100), 100);
+        const done = currentChildBalance >= g.targetAmount;
+        container.innerHTML += `
+          <div class="goal-card">
+            <div class="goal-header">
+              <span class="goal-title">🎯 ${g.title}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.8rem; font-weight:800; color:${done ? 'var(--success)' : 'var(--accent)'};">
+                  ${done ? '🎉 Ready to Buy!' : pct + '%'}
+                </span>
+                <button class="btn-delete-goal" onclick="deleteGoal('${g.id}')">✕</button>
+              </div>
+            </div>
+            <div class="goal-progress-bg"><div class="goal-progress-fill" style="width:${pct}%;"></div></div>
+            <div class="goal-stats">
+              <span>Goal: ${activeCurrency}${g.targetAmount.toLocaleString()}</span>
+              <span>${done ? 'Unlocked!' : 'Need ' + activeCurrency + Math.max(0, g.targetAmount - currentChildBalance).toLocaleString()}</span>
+            </div>
+            ${generateRoadmap(g)}
+          </div>
+        `;
+      });
+    }
+
+    function generateRoadmap(goal) {
+      const needed = Math.max(0, goal.targetAmount - currentChildBalance);
+      if (needed === 0) {
+        return `<div class="goal-roadmap" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3);">
+          <strong style="color:var(--success);">🎉 Goal Ready!</strong> Ask your parent to make the purchase!
+        </div>`;
+      }
+
+      let weeklyAllowance = 0;
       activeSchedules.forEach(s => {
-        if (s.frequency === 'WEEKLY') weekly += Number(s.amount) || 0;
+        if (s.frequency === 'WEEKLY') weeklyAllowance += Number(s.amount) || 0;
       });
 
-      const topChore = activeChores[0];
-      if (weekly > 0) {
-        const weeks = Math.ceil(deficit / weekly);
+      const topChore = activeChores.length > 0 ? activeChores[0] : null;
+      let strategy = "";
+
+      if (weeklyAllowance > 0) {
+        const weeks = Math.ceil(needed / weeklyAllowance);
         if (topChore && weeks > 2) {
           const cutWeeks = Math.max(1, Math.round(weeks * 0.6));
-          const choreCount = Math.ceil((deficit - (cutWeeks * weekly)) / topChore.reward);
-          return `💡 Save your pocket money for <strong>${cutWeeks} weeks</strong> and complete <strong>${topChore.title} ${choreCount} times</strong> to unlock this!`;
+          const choreCount = Math.ceil((needed - (cutWeeks * weeklyAllowance)) / topChore.reward);
+          strategy = `Save your weekly pocket money for <strong>${cutWeeks} weeks</strong> and do <strong>${topChore.title} ${choreCount} times</strong>!`;
+        } else {
+          strategy = `Save your pocket money for the next <strong>${weeks} week(s)</strong> and it's yours!`;
         }
-        return `💡 Save your pocket money for the next <strong>${weeks} week(s)</strong> and it's yours!`;
+      } else {
+        strategy = `Complete chores from your mission catalog to reach your target!`;
       }
-      return `💡 Complete available chores to build your savings!`;
+
+      let aiBlock = "";
+      if (activeFamilyDoc && activeFamilyDoc.aiEnabled && activeFamilyDoc.geminiApiKey) {
+        aiBlock = `
+          <div class="ai-coach-card">
+            <div style="display:flex; justify-content:space-between;">
+              <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
+              <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 5px; border-radius:4px; font-weight:800;">LIVE</span>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto;">
+              <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How can I reach this faster?')">⚡ Reach faster?</button>
+              <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
+              <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How does my birthday help?')">🎂 Birthday strategy?</button>
+            </div>
+            <div id="aiBox_${goal.id}" style="display:none; margin-top:8px; font-size:0.8rem; color:#e2e8f0; background:rgba(15,23,42,0.6); padding:8px; border-radius:8px;"></div>
+          </div>
+        `;
+      }
+
+      return `<div class="goal-roadmap">💡 ${strategy}${aiBlock}</div>`;
     }
 
-    function renderAiCoachBlock(goal) {
-      if (!activeFamilyDoc.aiEnabled || !activeFamilyDoc.geminiApiKey) return '';
-      return `
-        <div class="ai-coach-card">
-          <div style="display:flex; justify-content:space-between;">
-            <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
-            <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 5px; border-radius:4px; font-weight:800;">LIVE</span>
-          </div>
-          <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto;">
-            <button class="chip" onclick="askGeminiCoach('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How can I reach this faster?')">⚡ Reach faster?</button>
-            <button class="chip" onclick="askGeminiCoach('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
-          </div>
-          <div id="aiBox_${goal.id}" style="display:none; margin-top:8px; font-size:0.8rem; color:#e2e8f0; background:rgba(15,23,42,0.6); padding:8px; border-radius:8px;"></div>
-        </div>
-      `;
-    }
-
-    async function askGeminiCoach(goalId, title, target, question) {
+    async function askGemini(goalId, title, target, question) {
       const box = document.getElementById(`aiBox_${goalId}`);
       box.style.display = 'block';
       box.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is thinking...</span>`;
@@ -343,8 +745,8 @@
 You are "PiggyCoach", an upbeat, encouraging financial mentor for kids.
 Student: ${currentChild.name}
 Goal: ${title} (${activeCurrency}${target})
-Current Savings: ${activeCurrency}${currentBalance}
-Remaining: ${activeCurrency}${Math.max(0, target - currentBalance)}
+Current Savings: ${activeCurrency}${currentChildBalance}
+Remaining: ${activeCurrency}${Math.max(0, target - currentChildBalance)}
 Available Chores: ${JSON.stringify(activeChores.map(c => c.title + ' (+' + activeCurrency + c.reward + ')'))}
 Weekly Allowance: ${JSON.stringify(activeSchedules.filter(s => s.frequency === 'WEEKLY').map(s => s.title + ': ' + activeCurrency + s.amount))}
 
@@ -363,16 +765,17 @@ Instructions: Speak directly to ${currentChild.name} in 3 punchy sentences with 
         });
         const data = await res.json();
         const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:4px;">${reply || 'Keep up the good saving work!'}</div>`;
+        box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:4px;">${reply || 'Keep up the steady saving!'}</div>`;
       } catch (err) {
-        box.innerHTML = `<span style="color:#f87171;">Coach is resting: ${err.message}</span>`;
+        box.innerHTML = `<span style="color:#f87171;">Coach note: ${err.message}</span>`;
       }
     }
 
     async function addGoal() {
       const title = document.getElementById('goalTitleInput').value.trim();
       const targetAmount = Number(document.getElementById('goalAmountInput').value) || 0;
-      if (!title || !targetAmount) return alert("Fill goal details");
+      if (!title || !targetAmount) return alert("Fill in goal details");
+
       await db.collection('families').doc(familyId).collection('goals').add({
         email: currentChild.email, title, targetAmount, status: 'Active'
       });
@@ -381,10 +784,17 @@ Instructions: Speak directly to ${currentChild.name} in 3 punchy sentences with 
       confetti({ particleCount: 80, spread: 70 });
     }
 
+    async function deleteGoal(goalId) {
+      if (confirm("Delete this goal?")) {
+        await db.collection('families').doc(familyId).collection('goals').doc(goalId).delete();
+      }
+    }
+
     async function claimChore() {
       const sel = document.getElementById('choreSelect');
       const opt = sel.options[sel.selectedIndex];
-      if (!opt.value) return alert("Select chore");
+      if (!opt.value) return alert("Select a chore");
+
       await db.collection('families').doc(familyId).collection('choreLog').add({
         choreTitle: opt.getAttribute('data-title'),
         reward: Number(opt.getAttribute('data-reward')),
@@ -394,14 +804,15 @@ Instructions: Speak directly to ${currentChild.name} in 3 punchy sentences with 
         date: new Date().toISOString().split('T')[0],
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
-      alert("Mission submitted for parent approval!");
+      alert("🎉 Chore submitted for parent check!");
       confetti({ particleCount: 50, spread: 50 });
     }
 
-    async function logExpense() {
+    async function logSpending() {
       const amount = Number(document.getElementById('spendAmt').value) || 0;
       const desc = document.getElementById('spendDesc').value.trim();
-      if (!amount || !desc) return alert("Fill expense details");
+      if (!amount || !desc) return alert("Fill in expense details");
+
       await db.collection('families').doc(familyId).collection('transactions').add({
         email: currentChild.email, type: "Expense", amount: -amount, desc,
         date: new Date().toISOString().split('T')[0],
@@ -409,17 +820,20 @@ Instructions: Speak directly to ${currentChild.name} in 3 punchy sentences with 
       });
       document.getElementById('spendAmt').value = '';
       document.getElementById('spendDesc').value = '';
+      alert("Expense logged.");
     }
 
-    function switchNav(tabId, btn) {
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    function switchNavTab(tabId, el) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
-      btn.classList.add('active');
+      el.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function logout() {
       sessionStorage.removeItem('child_session');
+      auth.signOut();
       window.location.reload();
     }
   </script>
