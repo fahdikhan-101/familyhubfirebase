@@ -63,18 +63,8 @@
       </div>
     </div>
 
-    <!-- ONBOARDING SECTION -->
-    <div id="onboardSection" class="card" style="display:none; text-align:center; padding:36px 20px;">
-      <div style="font-size:3rem; margin-bottom:10px;">🏦</div>
-      <h2>Create Your Family Hub</h2>
-      <p style="color:var(--text-muted); font-size:0.9rem; max-width:400px; margin:0 auto 20px;">
-        Start a real-time Firestore family workspace with zero spreadsheet lag.
-      </p>
-      <div style="max-width:360px; margin:0 auto;">
-        <input type="text" id="initFamilyName" placeholder="e.g. Khan Family" style="margin-bottom:12px;">
-        <button class="btn btn-green" style="width:100%;" onclick="createNewFamilyTenant()">✨ Provision Family Workspace</button>
-      </div>
-    </div>
+    <!-- SUBSCRIPTION STATUS & GATEWAY -->
+    <div id="onboardSection" class="card" style="display:none; text-align:center; padding:36px 20px;"></div>
 
     <!-- MAIN ADMIN INTERFACE -->
     <div id="adminMain" style="display:none;">
@@ -138,14 +128,14 @@
         <div class="card">
           <h3>+ Add Chore</h3>
           <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; align-items:flex-end;">
-            <div class="form-group" style="margin:0;"><label>Chore Title</label><input type="text" id="newChoreTitle" placeholder="e.g. Wash Family Car"></div>
-            <div class="form-group" style="margin:0;"><label>Reward Amount</label><input type="number" id="newChoreReward" placeholder="100"></div>
+            <div class="form-group" style="margin:0;"><label>Chore Title</label><input type="text" id="newChoreTitle" placeholder="e.g. Wash Dishes"></div>
+            <div class="form-group" style="margin:0;"><label>Reward Amount</label><input type="number" id="newChoreReward" placeholder="50"></div>
             <button class="btn btn-green" onclick="addChore()">Add</button>
           </div>
         </div>
       </div>
 
-      <!-- TAB 3: RULES & QUICK ACTIONS -->
+      <!-- TAB 3: RULES & ACTIONS -->
       <div id="tab-behavior" class="tab-pane">
         <div class="card">
           <h3>⚡ Quick Action</h3>
@@ -173,7 +163,7 @@
           <h3>+ Add Preset Rule</h3>
           <div style="display:grid; grid-template-columns: 1.2fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
             <div class="form-group" style="margin:0;"><label>Type</label><select id="newRuleType"><option value="Reward">Reward</option><option value="Penalty">Penalty</option></select></div>
-            <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newRuleTitle" placeholder="e.g. Bedtime Delay"></div>
+            <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newRuleTitle" placeholder="e.g. Clean Room Fast"></div>
             <div class="form-group" style="margin:0;"><label>Default Amount</label><input type="number" id="newRuleAmount" placeholder="100"></div>
             <button class="btn btn-green" onclick="addBehaviorRule()">Save Rule</button>
           </div>
@@ -185,7 +175,7 @@
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0;">📅 Active Payout Schedules</h3>
-            <button class="btn btn-gray" onclick="processDueSchedules()">⚡ Process Today's Due Payouts</button>
+            <button class="btn btn-gray" onclick="processDueSchedules(true)">⚡ Force Run Schedules</button>
           </div>
           <table>
             <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Schedule Day/Date</th><th>Amount</th><th>Actions</th></tr></thead>
@@ -196,7 +186,7 @@
         <div class="card">
           <h3>+ Add Schedule</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="e.g. Weekly Pocket Money, Birthday Gift"></div>
+            <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="e.g. Weekly Allowance, Birthday Bonus"></div>
             <div class="form-group"><label>Target Recipient</label><select id="schedTargetSelect"><option value="all">All Children</option></select></div>
           </div>
           <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
@@ -208,22 +198,35 @@
         </div>
       </div>
 
-      <!-- TAB 5: MEMBERS -->
+      <!-- TAB 5: MEMBERS (WITH OPENING BALANCE SUPPORT) -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
           <h3>👨‍👩‍👧‍👦 Family Members</h3>
           <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
         </div>
 
-        <div class="card">
-          <h3>+ Add Family Member</h3>
+        <div class="card" style="border-left:4px solid var(--cyan);">
+          <h3>+ Add Family Member & Opening Balance</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Full Name</label><input type="text" id="memName" placeholder="e.g. Abdullah, Mom"></div>
             <div class="form-group"><label>Email Address</label><input type="email" id="memEmail" placeholder="member@gmail.com"></div>
           </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div class="form-group"><label>Role</label><select id="memRole" onchange="document.getElementById('pinWrap').style.display = (this.value==='Child'?'block':'none')"><option value="Child">Child (PiggyBank App)</option><option value="Parent">Parent (Admin Access)</option></select></div>
-            <div class="form-group" id="pinWrap"><label>Child 4-Digit Login PIN</label><input type="password" id="memPin" placeholder="••••" maxlength="6"></div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label>Role</label>
+              <select id="memRole" onchange="toggleMemberRoleFields(this.value)">
+                <option value="Child">Child (PiggyBank App)</option>
+                <option value="Parent">Parent (Admin Access)</option>
+              </select>
+            </div>
+            <div class="form-group" id="pinWrap">
+              <label>Child 4-Digit PIN</label>
+              <input type="password" id="memPin" placeholder="••••" maxlength="6">
+            </div>
+            <div class="form-group" id="openingBalWrap">
+              <label>Opening Balance (<span class="currencySymbol">Rs. </span>)</label>
+              <input type="number" id="memOpeningBalance" placeholder="0" value="0">
+            </div>
           </div>
           <button class="btn btn-blue" onclick="addMember()">Add Member</button>
         </div>
@@ -247,11 +250,11 @@
           <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Settings</button>
         </div>
 
-        <!-- RESTORED FEATURE 2: PERIOD LEDGER CLOSING -->
+        <!-- PERIOD LEDGER CLOSING -->
         <div class="card" style="border-left:4px solid var(--danger);">
           <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
           <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
-            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as a fresh opening balance.
+            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as a clean opening forward balance.
           </p>
           <button class="btn btn-red" onclick="runPeriodClosing()">📦 Close Period & Carry Balances</button>
         </div>
@@ -281,7 +284,6 @@
     let cachedRules = [];
     let currentUser = null;
 
-    // AUTHENTICATION LISTENER
     auth.onAuthStateChanged(user => {
       currentUser = user;
       const authBtn = document.getElementById('authBtn');
@@ -301,6 +303,7 @@
     function handleAuthAction() {
       if (currentUser) {
         auth.signOut();
+        location.reload();
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
@@ -308,19 +311,101 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      if (!familyId) {
-        document.getElementById('onboardSection').style.display = 'block';
-        document.getElementById('adminMain').style.display = 'none';
-      } else {
+      auth.onAuthStateChanged(async (user) => {
+        currentUser = user;
+        const onboardSec = document.getElementById('onboardSection');
+        const adminMain = document.getElementById('adminMain');
+
+        if (!user) {
+          onboardSec.style.display = 'block';
+          adminMain.style.display = 'none';
+          onboardSec.innerHTML = `
+            <div style="font-size:3rem; margin-bottom:10px;">🔒</div>
+            <h2>Authentication Required</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+              Please sign in with your Google account to access your family workspace.
+            </p>
+            <button class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
+          `;
+          return;
+        }
+
+        const email = user.email.toLowerCase();
+        const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+
+        if (!subDoc.exists) {
+          onboardSec.style.display = 'block';
+          adminMain.style.display = 'none';
+          onboardSec.innerHTML = `
+            <div style="font-size:3rem; margin-bottom:10px;">👋</div>
+            <h2>Request Platform Access</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+              Hello <strong>${email}</strong>! Access is currently controlled and invitation-only.
+              Please submit your family details below to request access from the administrator.
+            </p>
+            <div style="max-width:340px; margin:0 auto;">
+              <input type="text" id="reqFamName" placeholder="Your Family Name (e.g. Khan Family)" style="margin-bottom:12px;">
+              <button class="btn btn-blue" style="width:100%;" onclick="submitAccessRequest('${email}')">Submit Request to Admin</button>
+            </div>
+          `;
+          return;
+        }
+
+        const subData = subDoc.data();
+
+        if (subData.status === 'pending') {
+          onboardSec.style.display = 'block';
+          adminMain.style.display = 'none';
+          onboardSec.innerHTML = `
+            <div style="font-size:3rem; margin-bottom:10px;">⏳</div>
+            <h2>Access Request Pending</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">
+              Your access request for <strong>${subData.familyName}</strong> has been received and is pending administrator approval.
+            </p>
+          `;
+          return;
+        }
+
+        if (subData.status === 'suspended') {
+          onboardSec.style.display = 'block';
+          adminMain.style.display = 'none';
+          onboardSec.innerHTML = `
+            <div style="font-size:3rem; margin-bottom:10px;">🛑</div>
+            <h2>Account Suspended</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">
+              Your family workspace has been deactivated by the platform owner.
+            </p>
+          `;
+          return;
+        }
+
+        familyId = subData.familyId;
         localStorage.setItem('family_id', familyId);
-        document.getElementById('onboardSection').style.display = 'none';
-        document.getElementById('adminMain').style.display = 'block';
+        onboardSec.style.display = 'none';
+        adminMain.style.display = 'block';
+
         const childBtn = document.getElementById('childAppLinkBtn');
         childBtn.style.display = 'inline-flex';
         childBtn.href = `index.html?familyId=${familyId}`;
+
         initRealtimeListeners();
-      }
+        processDueSchedules(false);
+      });
     });
+
+    async function submitAccessRequest(email) {
+      const famName = document.getElementById('reqFamName').value.trim();
+      if (!famName) return alert("Please enter your family name.");
+
+      await db.collection('platform_subscriptions').doc(email).set({
+        email: email,
+        familyName: famName,
+        status: "pending",
+        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      location.reload();
+    }
 
     async function hashPin(pin) {
       const msgBuffer = new TextEncoder().encode(String(pin).trim());
@@ -328,38 +413,23 @@
       return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    async function createNewFamilyTenant() {
-      const name = document.getElementById('initFamilyName').value.trim();
-      if (!name) return alert("Enter your family name.");
-      const newFamId = 'fam_' + Math.random().toString(36).substring(2, 10);
-
-      try {
-        const famRef = db.collection('families').doc(newFamId);
-        await famRef.set({
-          familyName: name,
-          currency: "Rs. ",
-          geminiApiKey: "",
-          aiEnabled: false,
-          ownerEmail: currentUser ? currentUser.email : "",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        await famRef.collection('chores').add({ title: "Clean Bedroom", reward: 50 });
-        await famRef.collection('chores').add({ title: "Fold Laundry", reward: 30 });
-        await famRef.collection('rules').add({ type: "Reward", title: "Exam Excellence", amount: 500 });
-        await famRef.collection('rules').add({ type: "Penalty", title: "Unapproved Screen Time", amount: 200 });
-
-        window.location.search = `?familyId=${newFamId}`;
-      } catch (err) {
-        alert("Provision Error: " + err.message);
-      }
-    }
-
     function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       btn.classList.add('active');
+    }
+
+    function toggleMemberRoleFields(role) {
+      const pinWrap = document.getElementById('pinWrap');
+      const openingBalWrap = document.getElementById('openingBalWrap');
+      if (role === 'Child') {
+        pinWrap.style.display = 'block';
+        openingBalWrap.style.display = 'block';
+      } else {
+        pinWrap.style.display = 'none';
+        openingBalWrap.style.display = 'none';
+      }
     }
 
     function initRealtimeListeners() {
@@ -371,6 +441,7 @@
         activeCurrency = d.currency || "Rs. ";
         document.getElementById('familyHeaderTitle').innerText = `${d.familyName || 'Family'} Allowance Hub`;
         document.getElementById('setCurrency').value = activeCurrency;
+        document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
         document.getElementById('setGeminiKey').value = d.geminiApiKey || '';
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
       });
@@ -419,7 +490,7 @@
               <td>${tx.date || ''}</td>
               <td>${tx.email}</td>
               <td><span class="badge ${badgeClass}">${tx.type}</span></td>
-              <td style="color:${isPos?'var(--success)':'var(--danger)'}; font-weight:800;">${isPos?'+':''}${activeCurrency}${tx.amount}</td>
+              <td style="color:${isPos?'var(--success)':'var(--danger)'}; font-weight:800;">${isPos?'+':''}${activeCurrency}${Number(tx.amount).toLocaleString()}</td>
               <td>${tx.desc}</td>
             </tr>
           `;
@@ -502,18 +573,44 @@
       document.getElementById('statTotalOwed').innerText = activeCurrency + total.toLocaleString();
     }
 
+    // ADD MEMBER WITH INITIAL OPENING BALANCE
     async function addMember() {
       const name = document.getElementById('memName').value.trim();
       const email = document.getElementById('memEmail').value.trim().toLowerCase();
       const role = document.getElementById('memRole').value;
       const pin = document.getElementById('memPin').value.trim();
-      if (!name || !email) return alert("Fill name & email");
+      const openingBal = Number(document.getElementById('memOpeningBalance').value) || 0;
+
+      if (!name || !email) return alert("Please fill in name and email address.");
+      if (role === 'Child' && !pin) return alert("Please provide a 4-digit PIN for the child.");
+
+      const famRef = db.collection('families').doc(familyId);
+      const batch = db.batch();
 
       const pinHash = (role === 'Child') ? await hashPin(pin) : '';
-      await db.collection('families').doc(familyId).collection('users').add({ name, email, role, pinHash });
+      const userRef = famRef.collection('users').doc();
+      batch.set(userRef, { name, email, role, pinHash, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+      if (role === 'Child' && openingBal > 0) {
+        const txRef = famRef.collection('transactions').doc();
+        const now = new Date();
+        batch.set(txRef, {
+          email: email,
+          type: 'Allowance',
+          amount: openingBal,
+          desc: `Initial Opening Balance`,
+          date: now.toISOString().split('T')[0],
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
+      await batch.commit();
+
       document.getElementById('memName').value = '';
       document.getElementById('memEmail').value = '';
       document.getElementById('memPin').value = '';
+      document.getElementById('memOpeningBalance').value = '0';
+      alert(`Member ${name} added successfully!`);
     }
 
     async function addChore() {
@@ -603,42 +700,55 @@
       document.getElementById('schedAmount').value = '';
     }
 
-    async function processDueSchedules() {
-      const schedSnap = await db.collection('families').doc(familyId).collection('schedules').where('status', '==', 'Active').get();
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const dayOfMonth = now.getDate();
-      const ddmm = String(dayOfMonth).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0');
-      const todayStr = now.toISOString().split('T')[0];
+    // AUTOMATIC SCHEDULE PROCESSOR & CATCH-UP EVALUATOR
+    async function processDueSchedules(isManualPrompt = false) {
+      if (!familyId) return;
+      try {
+        const schedSnap = await db.collection('families').doc(familyId).collection('schedules').where('status', '==', 'Active').get();
+        const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
+        const childEmails = usersSnap.docs.map(d => d.data().email);
 
-      let processed = 0;
-      for (const doc of schedSnap.docs) {
-        const s = doc.data();
-        if (s.lastRunDate === todayStr) continue;
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const dayOfMonth = now.getDate();
+        const ddmm = String(dayOfMonth).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0');
+        const todayStr = now.toISOString().split('T')[0];
 
-        let shouldRun = false;
-        if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dayOfWeek) shouldRun = true;
-        if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dayOfMonth) shouldRun = true;
-        if (s.frequency === 'ANNUAL_DATE' && s.scheduleDay === ddmm) shouldRun = true;
+        let processed = 0;
+        for (const doc of schedSnap.docs) {
+          const s = doc.data();
+          if (s.lastRunDate === todayStr) continue;
 
-        if (shouldRun) {
-          const targets = (s.targetEmail === 'all') ? cachedChildren.map(c => c.email) : [s.targetEmail];
-          for (const email of targets) {
-            await db.collection('families').doc(familyId).collection('transactions').add({
-              email, type: 'Allowance', amount: Number(s.amount), desc: `Scheduled: ${s.title}`,
-              date: todayStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+          let shouldRun = false;
+          if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dayOfWeek) shouldRun = true;
+          if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dayOfMonth) shouldRun = true;
+          if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) shouldRun = true;
+
+          if (shouldRun) {
+            const targets = (s.targetEmail === 'all') ? childEmails : [s.targetEmail];
+            const batch = db.batch();
+
+            for (const email of targets) {
+              const txRef = db.collection('families').doc(familyId).collection('transactions').doc();
+              batch.set(txRef, {
+                email, type: 'Allowance', amount: Number(s.amount), desc: `Scheduled: ${s.title}`,
+                date: todayStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            }
+            batch.update(doc.ref, { lastRunDate: todayStr });
+            await batch.commit();
+            processed++;
           }
-          await doc.ref.update({ lastRunDate: todayStr });
-          processed++;
         }
+        if (isManualPrompt) alert(`Processed ${processed} scheduled payouts!`);
+      } catch (err) {
+        console.error("Scheduled payout runner error:", err);
       }
-      alert(`Disbursed ${processed} scheduled payouts!`);
     }
 
-    // PERIOD CLOSING IMPLEMENTATION
+    // PERIOD LEDGER CLOSING
     async function runPeriodClosing() {
-      if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?")) return;
+      if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as a fresh opening balance. Continue?")) return;
 
       const famRef = db.collection('families').doc(familyId);
       const txSnap = await famRef.collection('transactions').get();
@@ -658,7 +768,6 @@
 
       await archiveBatch.commit();
 
-      // Write forward balances
       const now = new Date();
       const forwardBatch = db.batch();
       cachedChildren.forEach(child => {
@@ -675,7 +784,7 @@
       });
 
       await forwardBatch.commit();
-      alert(`Period successfully closed! Archived ${txSnap.size} transactions to ${archiveTag}.`);
+      alert(`Period successfully closed! Archived ${txSnap.size} transactions.`);
     }
 
     async function saveCurrency() {
