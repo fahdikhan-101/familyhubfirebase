@@ -35,12 +35,12 @@
     .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
     .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .btn-gray { background: rgba(255,255,255,0.1); color: #cbd5e1; }
-   /* ✅ Fixed */
-button.btn-google, .btn-google {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid #cbd5e1;
-}
+    button.btn-google, .btn-google {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1;
+      font-weight: 800;
+    }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); }
     td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; }
@@ -61,10 +61,12 @@ button.btn-google, .btn-google {
         <h1 id="familyHeaderTitle">Family Allowance Hub</h1>
         <span style="font-size:0.82rem; color:var(--text-muted);">Firestore Parent Admin Console</span>
       </div>
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
         <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
-        <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
+        <!-- SHARE CHILD LINK BUTTON -->
+        <button id="copyChildLinkBtn" class="btn btn-gray" style="display:none;" onclick="copyChildLink()">📋 Copy Child Link</button>
         <a id="childAppLinkBtn" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none; display:none;">Open Child App ↗</a>
+        <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
       </div>
     </div>
 
@@ -175,7 +177,7 @@ button.btn-google, .btn-google {
         </div>
       </div>
 
-      <!-- TAB 4: SCHEDULES -->
+      <!-- TAB 4: SCHEDULES (UPDATED WITH NAMED DAYS) -->
       <div id="tab-schedules" class="tab-pane">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -195,15 +197,34 @@ button.btn-google, .btn-google {
             <div class="form-group"><label>Target Recipient</label><select id="schedTargetSelect"><option value="all">All Children</option></select></div>
           </div>
           <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
-            <div class="form-group"><label>Frequency</label><select id="schedFrequency"><option value="WEEKLY">WEEKLY</option><option value="MONTHLY">MONTHLY</option><option value="ANNUAL_DATE">ANNUAL_DATE</option></select></div>
-            <div class="form-group"><label>Day / Date (0=Sun, 01/10=1st Oct)</label><input type="text" id="schedDay" placeholder="0 or 01/10"></div>
-            <div class="form-group"><label>Amount</label><input type="number" id="schedAmount" placeholder="1000"></div>
+            <div class="form-group">
+              <label>Frequency</label>
+              <select id="schedFrequency" onchange="updateScheduleDayInput(this.value)">
+                <option value="WEEKLY">WEEKLY</option>
+                <option value="MONTHLY">MONTHLY</option>
+                <option value="ANNUAL_DATE">ANNUAL_DATE</option>
+              </select>
+            </div>
+            <div class="form-group" id="schedDayContainer">
+              <label>Payout Day</label>
+              <select id="schedDaySelect">
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+              </select>
+              <input type="text" id="schedDayText" placeholder="Day (1-31) or DD/MM" style="display:none;">
+            </div>
+            <div class="form-group"><label>Amount (<span class="currencySymbol">Rs. </span>)</label><input type="number" id="schedAmount" placeholder="1000"></div>
           </div>
           <button class="btn btn-green" onclick="addSchedule()">Save Schedule</button>
         </div>
       </div>
 
-      <!-- TAB 5: MEMBERS (WITH INITIAL OPENING BALANCE) -->
+      <!-- TAB 5: MEMBERS (WITH NEGATIVE & POSITIVE OPENING BALANCES) -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
           <h3>👨‍👩‍👧‍👦 Family Members</h3>
@@ -259,7 +280,7 @@ button.btn-google, .btn-google {
         <div class="card" style="border-left:4px solid var(--danger);">
           <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
           <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
-            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as an opening balance.
+            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as a clean opening forward balance.
           </p>
           <button class="btn btn-red" onclick="runPeriodClosing()">📦 Close Period & Carry Balances</button>
         </div>
@@ -313,6 +334,22 @@ button.btn-google, .btn-google {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
       }
+    }
+
+    // SHARE CHILD LINK TO CLIPBOARD
+    function copyChildLink() {
+      if (!familyId) return;
+      const baseUrl = window.location.href.split('parent.html')[0];
+      const childUrl = `${baseUrl}index.html?familyId=${familyId}`;
+      
+      navigator.clipboard.writeText(childUrl).then(() => {
+        const btn = document.getElementById('copyChildLinkBtn');
+        const oldText = btn.innerText;
+        btn.innerText = "✅ Link Copied!";
+        setTimeout(() => btn.innerText = oldText, 2500);
+      }).catch(err => {
+        prompt("Copy this link for your children:", childUrl);
+      });
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -390,12 +427,12 @@ button.btn-google, .btn-google {
         adminMain.style.display = 'block';
 
         const childBtn = document.getElementById('childAppLinkBtn');
+        const copyBtn = document.getElementById('copyChildLinkBtn');
         childBtn.style.display = 'inline-flex';
+        copyBtn.style.display = 'inline-flex';
         childBtn.href = `index.html?familyId=${familyId}`;
 
         initRealtimeListeners();
-
-        // Non-blocking background catch-up execution
         runCatchUpScheduledPayouts(db, familyId, false);
       });
     });
@@ -439,6 +476,28 @@ button.btn-google, .btn-google {
       }
     }
 
+    function updateScheduleDayInput(freq) {
+      const daySelect = document.getElementById('schedDaySelect');
+      const dayText = document.getElementById('schedDayText');
+      const label = document.querySelector('#schedDayContainer label');
+
+      if (freq === 'WEEKLY') {
+        daySelect.style.display = 'block';
+        dayText.style.display = 'none';
+        label.innerText = 'Payout Day of Week';
+      } else if (freq === 'MONTHLY') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'Day of Month (1 - 31)';
+        label.innerText = 'Day of Month';
+      } else if (freq === 'ANNUAL_DATE') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'DD/MM (e.g. 14/08)';
+        label.innerText = 'Date (DD/MM)';
+      }
+    }
+
     function initRealtimeListeners() {
       const famRef = db.collection('families').doc(familyId);
 
@@ -453,7 +512,6 @@ button.btn-google, .btn-google {
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
       });
 
-      // Users
       famRef.collection('users').onSnapshot(snap => {
         cachedChildren = [];
         const mBody = document.getElementById('membersTable');
@@ -481,7 +539,6 @@ button.btn-google, .btn-google {
         calculateBalances();
       });
 
-      // Transactions
       famRef.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snap => {
         const tBody = document.getElementById('transactionsTable');
         tBody.innerHTML = '';
@@ -505,7 +562,6 @@ button.btn-google, .btn-google {
         calculateBalances();
       });
 
-      // Pending Chore Logs
       famRef.collection('choreLog').where('status', '==', 'pending').onSnapshot(snap => {
         const pBody = document.getElementById('pendingChoresTable');
         document.getElementById('statPendingCount').innerText = snap.size;
@@ -527,7 +583,6 @@ button.btn-google, .btn-google {
         });
       });
 
-      // Chores Catalog
       famRef.collection('chores').onSnapshot(snap => {
         const cBody = document.getElementById('choresCatalogTable');
         cBody.innerHTML = '';
@@ -537,7 +592,6 @@ button.btn-google, .btn-google {
         });
       });
 
-      // Rules Catalog
       famRef.collection('rules').onSnapshot(snap => {
         cachedRules = [];
         const rBody = document.getElementById('rulesCatalogTable');
@@ -550,13 +604,17 @@ button.btn-google, .btn-google {
         filterPresetRules();
       });
 
-      // Schedules
       famRef.collection('schedules').onSnapshot(snap => {
         const sBody = document.getElementById('schedulesTable');
         sBody.innerHTML = '';
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         snap.forEach(doc => {
           const s = doc.data();
-          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${s.scheduleDay}</td><td>${activeCurrency}${s.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button></td></tr>`;
+          let displayDay = s.scheduleDay;
+          if (s.frequency === 'WEEKLY' && dayNames[Number(s.scheduleDay)]) {
+            displayDay = dayNames[Number(s.scheduleDay)];
+          }
+          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button></td></tr>`;
         });
       });
     }
@@ -580,7 +638,7 @@ button.btn-google, .btn-google {
       document.getElementById('statTotalOwed').innerText = activeCurrency + total.toLocaleString();
     }
 
-    // ADD MEMBER WITH INITIAL OPENING BALANCE
+    // FIXED: SUPPORTS NEGATIVE & POSITIVE OPENING BALANCES
     async function addMember() {
       const name = document.getElementById('memName').value.trim();
       const email = document.getElementById('memEmail').value.trim().toLowerCase();
@@ -691,25 +749,42 @@ button.btn-google, .btn-google {
       await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'denied', reason });
     }
 
+    // FIXED: INITIATES lastRunDate TO TODAY TO PREVENT PHANTOM DUMPS
     async function addSchedule() {
       const title = document.getElementById('schedTitle').value.trim();
       const targetEmail = document.getElementById('schedTargetSelect').value;
       const frequency = document.getElementById('schedFrequency').value;
-      const scheduleDay = document.getElementById('schedDay').value.trim();
       const amount = Number(document.getElementById('schedAmount').value) || 0;
-      if (!title || !scheduleDay || !amount) return alert("Fill schedule details");
+      
+      let scheduleDay = '';
+      if (frequency === 'WEEKLY') {
+        scheduleDay = document.getElementById('schedDaySelect').value;
+      } else {
+        scheduleDay = document.getElementById('schedDayText').value.trim();
+      }
+
+      if (!title || !scheduleDay || !amount) return alert("Please complete all schedule fields.");
+
+      const todayStr = new Date().toISOString().split('T')[0];
 
       await db.collection('families').doc(familyId).collection('schedules').add({
-        title, targetEmail, frequency, scheduleDay, amount, status: 'Active', lastRunDate: ''
+        title,
+        targetEmail,
+        frequency,
+        scheduleDay,
+        amount,
+        status: 'Active',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastRunDate: todayStr 
       });
+
       document.getElementById('schedTitle').value = '';
-      document.getElementById('schedDay').value = '';
       document.getElementById('schedAmount').value = '';
+      if (document.getElementById('schedDayText')) document.getElementById('schedDayText').value = '';
+      alert(`Schedule "${title}" saved! Payouts will start cleanly from the next due cycle.`);
     }
 
-    // ========================================================================
-    // HISTORICAL CATCH-UP ENGINE: REPLAYS MISSED PAYOUTS SINCE LAST APP OPEN
-    // ========================================================================
+    // FIXED: PREVENTS HISTORICAL DUMPS IF lastRunDate IS BLANK
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -734,16 +809,19 @@ button.btn-google, .btn-google {
           if (amount <= 0) continue;
 
           let pointerDate = new Date();
-          if (s.lastRunDate) {
+          if (s.lastRunDate && s.lastRunDate.includes('-')) {
             const parts = s.lastRunDate.split('-');
             pointerDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
             pointerDate.setDate(pointerDate.getDate() + 1);
           } else {
-            pointerDate.setDate(pointerDate.getDate() - 30);
+            pointerDate = new Date(today);
           }
           pointerDate.setHours(0, 0, 0, 0);
 
-          if (pointerDate > today) continue;
+          if (pointerDate > today) {
+            if (!s.lastRunDate) await doc.ref.update({ lastRunDate: todayStr });
+            continue;
+          }
 
           const maxLookback = new Date(today);
           maxLookback.setDate(maxLookback.getDate() - 180);
