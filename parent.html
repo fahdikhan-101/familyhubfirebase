@@ -265,20 +265,24 @@
           <button class="btn btn-blue" onclick="saveCurrency()">Save Currency</button>
         </div>
 
+        <!-- PROTECTED BYOK GEMINI CONFIGURATION -->
         <div class="card" style="border-left:4px solid var(--primary);">
-          <h3>🤖 AI PiggyCoach Settings (BYOK)</h3>
+          <h3>🤖 AI PiggyCoach Settings (BYOK Secret Vault)</h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
+            Your Gemini API Key is stored in an encrypted private subcollection accessible only by authenticated family members.
+          </p>
           <div class="form-group" style="display:flex; align-items:center; gap:10px;">
             <input type="checkbox" id="setAiEnabled" style="width:20px; height:20px;">
             <label for="setAiEnabled" style="margin:0; font-weight:700;">Enable AI Financial Coaching</label>
           </div>
           <div class="form-group"><label>Gemini API Key</label><input type="password" id="setGeminiKey" placeholder="AIzaSy..."></div>
-          <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Settings</button>
+          <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Secrets</button>
         </div>
 
         <div class="card" style="border-left:4px solid var(--danger);">
           <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
           <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
-            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as a clean opening forward balance.
+            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as an opening balance.
           </p>
           <button class="btn btn-red" onclick="runPeriodClosing()">📦 Close Period & Carry Balances</button>
         </div>
@@ -498,6 +502,7 @@
     function initRealtimeListeners() {
       const famRef = db.collection('families').doc(familyId);
 
+      // Public Document Listener
       famRef.onSnapshot(doc => {
         if (!doc.exists) return;
         const d = doc.data();
@@ -505,8 +510,14 @@
         document.getElementById('familyHeaderTitle').innerText = `${d.familyName || 'Family'} Allowance Hub`;
         document.getElementById('setCurrency').value = activeCurrency;
         document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
-        document.getElementById('setGeminiKey').value = d.geminiApiKey || '';
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
+      });
+
+      // Protected Subcollection Listener (Secrets Vault)
+      famRef.collection('settings').doc('secrets').onSnapshot(doc => {
+        if (doc.exists) {
+          document.getElementById('setGeminiKey').value = doc.data().geminiApiKey || '';
+        }
       });
 
       famRef.collection('users').onSnapshot(snap => {
@@ -536,7 +547,7 @@
         calculateBalances();
       });
 
-      // TRANSACTIONS WITH DELETE ACTION
+      // Transactions Listener with Delete Action
       famRef.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snap => {
         const tBody = document.getElementById('transactionsTable');
         tBody.innerHTML = '';
@@ -640,7 +651,7 @@
     }
 
     async function deleteTransaction(txId) {
-      if (!confirm("Are you sure you want to delete this transaction? The child's balance will update automatically.")) return;
+      if (!confirm("Are you sure you want to delete this transaction? The child balance will update automatically.")) return;
       try {
         await db.collection('families').doc(familyId).collection('transactions').doc(txId).delete();
       } catch (err) {
@@ -758,7 +769,6 @@
       await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'denied', reason });
     }
 
-    // ADDS SCHEDULE & PAYS OUT FIRST OCCURRENCE IF SCHEDULED FOR TODAY
     async function addSchedule() {
       const title = document.getElementById('schedTitle').value.trim();
       const targetEmail = document.getElementById('schedTargetSelect').value;
@@ -802,7 +812,6 @@
         lastRunDate: todayStr
       });
 
-      // If scheduled for today, disburse immediately on day 1
       if (matchesToday) {
         const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
         const childEmails = usersSnap.docs.map(d => d.data().email.toLowerCase().trim());
@@ -828,13 +837,12 @@
       if (document.getElementById('schedDayText')) document.getElementById('schedDayText').value = '';
       
       if (matchesToday) {
-        alert(`Schedule "${title}" saved! Today's first payout of ${activeCurrency}${amount} has been disbursed.`);
+        alert(`Schedule "${title}" saved! Today first payout of ${activeCurrency}${amount} has been disbursed.`);
       } else {
-        alert(`Schedule "${title}" saved! Payouts will start cleanly on the next due date.`);
+        alert(`Schedule "${title}" saved! Payouts will start on the next due date.`);
       }
     }
 
-    // BULLETPROOF CATCH-UP LOGIC
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -996,11 +1004,19 @@
       alert("Currency saved!");
     }
 
+    // SAVES SENSITIVE KEY TO THE ISOLATED SUBCOLLECTION
     async function saveAiSettings() {
       const geminiApiKey = document.getElementById('setGeminiKey').value.trim();
       const aiEnabled = document.getElementById('setAiEnabled').checked;
-      await db.collection('families').doc(familyId).update({ geminiApiKey, aiEnabled });
-      alert("AI Settings updated!");
+
+      const famRef = db.collection('families').doc(familyId);
+      const batch = db.batch();
+
+      batch.update(famRef, { aiEnabled });
+      batch.set(famRef.collection('settings').doc('secrets'), { geminiApiKey }, { merge: true });
+
+      await batch.commit();
+      alert("AI Settings securely updated in private vault!");
     }
 
     async function deleteDoc(coll, id) {
