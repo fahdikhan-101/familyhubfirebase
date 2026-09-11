@@ -2,26 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SaaS Super Admin Console</title>
+  <title>SaaS Super Admin & Telemetry Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root { --primary: #6366f1; --success: #10b981; --danger: #ef4444; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
+    :root {
+      --primary: #6366f1;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --cyan: #06b6d4;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 24px; margin: 0; }
-    .container { max-width: 900px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 24px; }
-    .card { background: var(--card); border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-    th { text-align: left; padding: 10px; border-bottom: 1px solid #334155; color: #94a3b8; }
-    td { padding: 12px 10px; border-bottom: 1px solid #334155; }
-    .btn { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; color: #fff; font-size: 0.8rem; }
-    .btn-green { background: var(--success); }
-    .btn-red { background: var(--danger); }
-    .btn-blue { background: var(--primary); }
-    .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+    body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 80%); color: var(--text); padding: 24px 16px; margin: 0; min-height: 100vh; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; text-align: center; }
+    .stat-title { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+    .stat-value { font-size: 1.6rem; font-weight: 900; margin: 6px 0 0; }
+    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+    .card h3 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+    th { text-align: left; padding: 10px; border-bottom: 1px solid var(--card-border); color: var(--text-muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; }
+    td { padding: 12px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    input { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--card-border); background: #0f172a; color: #fff; font-size: 0.9rem; outline: none; }
+    input:focus { border-color: var(--primary); }
+    button.btn, .btn { padding: 8px 14px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; color: #fff; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
+    button.btn:hover { opacity: 0.9; }
+    .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
+    .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .btn-blue { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .btn-gray { background: rgba(255, 255, 255, 0.1); color: #cbd5e1; }
+    button.btn-google, .btn-google { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1; font-weight: 800; }
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
     .status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .status-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
     .status-suspended { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .metric-num { font-weight: 800; font-family: monospace; font-size: 0.9rem; }
+    .locked-screen { text-align: center; padding: 60px 20px; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
@@ -30,35 +54,89 @@
 <body>
   <div class="container">
     <div class="header">
-      <h2>🛡️ SaaS Super-Admin Portal</h2>
-      <button id="authBtn" class="btn btn-blue" onclick="handleAuth()">Sign in with Google</button>
+      <h2>🛡️ SaaS Super-Admin & Resource Telemetry</h2>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="adminEmailBadge" style="font-size: 0.8rem; color: var(--text-muted);"></span>
+        <button id="authBtn" class="btn btn-google" onclick="handleAuth()">Sign in with Google</button>
+      </div>
     </div>
 
+    <!-- LOCKED ACCESS SCREEN -->
+    <div id="lockedScreen" class="card locked-screen">
+      <div style="font-size: 3rem; margin-bottom: 12px;">🔒</div>
+      <h3 style="margin-bottom: 8px;">Super-Admin Authentication Required</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 420px; margin: 0 auto 20px;">
+        Please sign in with the platform owner Google account to view subscriber metrics and manage tenants.
+      </p>
+      <button class="btn btn-google" style="margin: 0 auto;" onclick="handleAuth()">Sign in with Google</button>
+    </div>
+
+    <!-- MAIN ADMIN & TELEMETRY INTERFACE -->
     <div id="adminContent" style="display:none;">
-      <!-- Quick Direct Provision Form -->
+      
+      <!-- GLOBAL RESOURCE METRICS SUMMARY -->
+      <div class="stats-grid">
+        <div class="stat-box" style="border-top: 3px solid var(--cyan);">
+          <div class="stat-title">Total Estimated Storage</div>
+          <div class="stat-value" id="globalStorage" style="color:#67e8f9;">0 KB</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--primary);">
+          <div class="stat-title">Total Operations (R / W / D)</div>
+          <div class="stat-value" id="globalOps" style="color:#818cf8;">0 / 0 / 0</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--success);">
+          <div class="stat-title">Estimated Egress</div>
+          <div class="stat-value" id="globalEgress" style="color:#34d399;">0 KB</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--warning);">
+          <div class="stat-title">Active Families</div>
+          <div class="stat-value" id="globalFamilies" style="color:#fbbf24;">0</div>
+        </div>
+      </div>
+
+      <!-- DIRECT PROVISIONING FORM -->
       <div class="card">
-        <h3>➕ Manually Authorize & Provision Family</h3>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-          <input type="text" id="manualName" placeholder="Family Name (e.g. Khan Family)" style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
-          <input type="email" id="manualEmail" placeholder="Parent Google Email" style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
+        <h3>➕ Authorize & Provision New Family</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+          <input type="text" id="manualName" placeholder="Family Name (e.g. Khan Family)" style="flex: 1.2; min-width: 220px;">
+          <input type="email" id="manualEmail" placeholder="Parent Google Email" style="flex: 1.5; min-width: 250px;">
           <button class="btn btn-green" onclick="provisionDirect()">Authorize & Provision</button>
         </div>
       </div>
 
-      <!-- Access Requests / Current Subscribers Table -->
+      <!-- PER-FAMILY USAGE & TELEMETRY TABLE -->
       <div class="card">
-        <h3>📋 Platform Subscribers & Inquiries</h3>
+        <h3>
+          <span>📊 Per-Family Resource Utilization & Operations</span>
+          <button class="btn btn-gray" onclick="refreshAllTelemetry()">🔄 Recalculate Storage & Metrics</button>
+        </h3>
         <table>
           <thead>
-            <tr><th>Email</th><th>Family Name</th><th>Family ID</th><th>Status</th><th>Actions</th></tr>
+            <tr>
+              <th>Family / ID</th>
+              <th>Status</th>
+              <th>Storage / Memory</th>
+              <th>Est. Reads</th>
+              <th>Est. Writes</th>
+              <th>Est. Deletes</th>
+              <th>Network Egress</th>
+              <th>Actions</th>
+            </tr>
           </thead>
-          <tbody id="subscriberList"></tbody>
+          <tbody id="subscriberList">
+            <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:16px;">Loading telemetry...</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 
   <script>
+    // ========================================================================
+    // SUPER ADMIN CONFIGURATION
+    // ========================================================================
+    const SUPER_ADMIN_EMAIL = "YOUR_PERSONAL_EMAIL@gmail.com"; // <-- Put your Google email here
+
     const firebaseConfig = {
       apiKey: "AIzaSyDyTTAZ9sQNHiioYInGDuiOjkWin0TjfIo",
       authDomain: "family-allowance-hub.firebaseapp.com",
@@ -72,95 +150,266 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
+    let currentUser = null;
+    let cachedSubscribers = [];
+
     auth.onAuthStateChanged(user => {
-      const btn = document.getElementById('authBtn');
-      const content = document.getElementById('adminContent');
+      currentUser = user;
+      const authBtn = document.getElementById('authBtn');
+      const badge = document.getElementById('adminEmailBadge');
+      const lockedScreen = document.getElementById('lockedScreen');
+      const adminContent = document.getElementById('adminContent');
+
       if (user) {
-        btn.innerText = `Sign Out (${user.email})`;
-        content.style.display = 'block';
+        if (user.email.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+          alert(`Access Denied: ${user.email} is not authorized.`);
+          auth.signOut();
+          return;
+        }
+        authBtn.innerText = "Sign Out";
+        authBtn.className = "btn btn-gray";
+        badge.innerText = user.email;
+        lockedScreen.style.display = "none";
+        adminContent.style.display = "block";
         loadSubscribers();
       } else {
-        btn.innerText = "Sign in with Google";
-        content.style.display = 'none';
+        authBtn.innerText = "Sign in with Google";
+        authBtn.className = "btn btn-google";
+        badge.innerText = "";
+        lockedScreen.style.display = "block";
+        adminContent.style.display = "none";
       }
     });
 
     function handleAuth() {
-      if (auth.currentUser) auth.signOut();
-      else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      if (currentUser) {
+        auth.signOut();
+      } else {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
+      }
+    }
+
+    // ========================================================================
+    // TELEMETRY ESTIMATOR FUNCTIONS
+    // ========================================================================
+    function estimateDocSize(data) {
+      // Approximate byte size: JSON string representation + 32 bytes Firestore internal metadata
+      const jsonStr = JSON.stringify(data || {});
+      return new Blob([jsonStr]).size + 32;
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Calculates real byte footprint of a family by inspecting subcollections
+    async function calculateFamilyStorage(familyId) {
+      if (!familyId) return { bytes: 0, docCount: 0 };
+      const famRef = db.collection('families').doc(familyId);
+      
+      let totalBytes = 0;
+      let docCount = 0;
+
+      const rootDoc = await famRef.get();
+      if (rootDoc.exists) {
+        totalBytes += estimateDocSize(rootDoc.data());
+        docCount++;
+      }
+
+      const collections = ['users', 'transactions', 'chores', 'choreLog', 'rules', 'schedules', 'goals'];
+      for (const col of collections) {
+        const snap = await famRef.collection(col).get();
+        docCount += snap.size;
+        snap.forEach(d => {
+          totalBytes += estimateDocSize(d.data());
+        });
+      }
+
+      return { bytes: totalBytes, docCount };
     }
 
     function loadSubscribers() {
       db.collection('platform_subscriptions').onSnapshot(snap => {
-        const tbody = document.getElementById('subscriberList');
-        tbody.innerHTML = '';
+        cachedSubscribers = [];
         snap.forEach(doc => {
-          const d = doc.data();
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>${d.email}</strong></td>
-              <td>${d.familyName || '—'}</td>
-              <td><code>${d.familyId || 'None'}</code></td>
-              <td><span class="badge status-${d.status}">${d.status}</span></td>
-              <td>
-                ${d.status === 'pending' ? `<button class="btn btn-green" onclick="approveRequest('${doc.id}', '${d.email}', '${d.familyName}')">Approve</button>` : ''}
-                ${d.status === 'active' ? `<button class="btn btn-red" onclick="toggleStatus('${doc.id}', '${d.familyId}', 'suspended')">Suspend</button>` : ''}
-                ${d.status === 'suspended' ? `<button class="btn btn-green" onclick="toggleStatus('${doc.id}', '${d.familyId}', 'active')">Reactivate</button>` : ''}
-              </td>
-            </tr>
-          `;
+          cachedSubscribers.push({ id: doc.id, ...doc.data() });
         });
+        renderSubscriberTable();
       });
+    }
+
+    async function renderSubscriberTable() {
+      const tbody = document.getElementById('subscriberList');
+      tbody.innerHTML = '';
+
+      if (cachedSubscribers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:16px;">No subscribers found.</td></tr>';
+        return;
+      }
+
+      let gStorage = 0, gReads = 0, gWrites = 0, gDeletes = 0, gEgress = 0, gActiveFam = 0;
+
+      for (const sub of cachedSubscribers) {
+        const email = sub.email || sub.id;
+        const status = sub.status || 'pending';
+        const famId = sub.familyId || '';
+        const famName = sub.familyName || '—';
+
+        if (status === 'active') gActiveFam++;
+
+        // Read usage tracking counters stored on family document
+        const usage = sub.usage || {};
+        const reads = usage.reads || 0;
+        const writes = usage.writes || 0;
+        const deletes = usage.deletes || 0;
+        const storageBytes = sub.storageBytes || 0;
+        const egressBytes = usage.egressBytes || (reads * 350); // Fallback: estimated 350 bytes per read query
+
+        gStorage += storageBytes;
+        gReads += reads;
+        gWrites += writes;
+        gDeletes += deletes;
+        gEgress += egressBytes;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>
+              <strong>${famName}</strong>
+              <div style="font-size:0.72rem; color:var(--text-muted);">${email}</div>
+              <code style="font-size:0.7rem; color:#a5b4fc;">${famId || 'No ID'}</code>
+            </td>
+            <td><span class="badge status-${status}">${status}</span></td>
+            <td>
+              <span class="metric-num" style="color:#67e8f9;">${formatBytes(storageBytes)}</span>
+              <div style="font-size:0.7rem; color:var(--text-muted);">${sub.docCount || 0} docs</div>
+            </td>
+            <td><span class="metric-num" style="color:#818cf8;">${reads.toLocaleString()}</span></td>
+            <td><span class="metric-num" style="color:#34d399;">${writes.toLocaleString()}</span></td>
+            <td><span class="metric-num" style="color:#fca5a5;">${deletes.toLocaleString()}</span></td>
+            <td><span class="metric-num" style="color:#fbbf24;">${formatBytes(egressBytes)}</span></td>
+            <td>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${famId ? `<button class="btn btn-gray" style="padding:4px 8px; font-size:0.7rem;" onclick="auditSingleFamily('${sub.id}', '${famId}')">Scan</button>` : ''}
+                ${status === 'pending' ? `<button class="btn btn-green" style="padding:4px 8px;" onclick="approveRequest('${sub.id}', '${email}', '${famName}')">✓</button>` : ''}
+                ${status === 'active' ? `<button class="btn btn-red" style="padding:4px 8px;" onclick="toggleStatus('${sub.id}', '${famId}', 'suspended')">🛑</button>` : ''}
+                ${status === 'suspended' ? `<button class="btn btn-green" style="padding:4px 8px;" onclick="toggleStatus('${sub.id}', '${famId}', 'active')">✨</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      document.getElementById('globalStorage').innerText = formatBytes(gStorage);
+      document.getElementById('globalOps').innerText = `${gReads.toLocaleString()} / ${gWrites.toLocaleString()} / ${gDeletes.toLocaleString()}`;
+      document.getElementById('globalEgress').innerText = formatBytes(gEgress);
+      document.getElementById('globalFamilies').innerText = gActiveFam;
+    }
+
+    // Scans a specific family, calculates real storage, and stores it in Firestore
+    async function auditSingleFamily(subDocId, familyId) {
+      const stats = await calculateFamilyStorage(familyId);
+      await db.collection('platform_subscriptions').doc(subDocId).update({
+        storageBytes: stats.bytes,
+        docCount: stats.docCount,
+        lastAudit: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    async function refreshAllTelemetry() {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerText = "⏳ Scanning...";
+      for (const sub of cachedSubscribers) {
+        if (sub.familyId) {
+          await auditSingleFamily(sub.id, sub.familyId);
+        }
+      }
+      btn.disabled = false;
+      btn.innerText = "🔄 Recalculate Storage & Metrics";
     }
 
     async function provisionDirect() {
       const name = document.getElementById('manualName').value.trim();
       const email = document.getElementById('manualEmail').value.trim().toLowerCase();
-      if (!name || !email) return alert("Fill all fields");
+      if (!name || !email) return alert("Please fill both the family name and parent email.");
 
       const familyId = 'fam_' + Math.random().toString(36).substring(2, 10);
       const famRef = db.collection('families').doc(familyId);
 
-      // Create Family Tenant
-      await famRef.set({
-        familyName: name,
-        currency: "Rs. ",
-        geminiApiKey: "",
-        aiEnabled: false,
-        ownerEmail: email,
-        status: "active",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      try {
+        const batch = db.batch();
 
-      // Default Starter Chores & Rules
-      await famRef.collection('chores').add({ title: "Clean Bedroom", reward: 50 });
-      await famRef.collection('rules').add({ type: "Reward", title: "Exam Excellence", amount: 500 });
-      await famRef.collection('users').add({ name: name.split(' ')[0] || "Parent", email: email, role: "Parent", pinHash: "" });
+        batch.set(famRef, {
+          familyName: name,
+          currency: "Rs. ",
+          geminiApiKey: "",
+          aiEnabled: false,
+          ownerEmail: email,
+          status: "active",
+          usage: { reads: 0, writes: 5, deletes: 0, egressBytes: 0 },
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-      // Record Subscription
-      await db.collection('platform_subscriptions').doc(email).set({
-        email: email,
-        familyName: name,
-        familyId: familyId,
-        status: "active",
-        approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+        const chore1 = famRef.collection('chores').doc();
+        batch.set(chore1, { title: "Clean Bedroom", reward: 50 });
+        const chore2 = famRef.collection('chores').doc();
+        batch.set(chore2, { title: "Fold Laundry", reward: 30 });
+        const rule1 = famRef.collection('rules').doc();
+        batch.set(rule1, { type: "Reward", title: "Exam Excellence", amount: 500 });
+        const rule2 = famRef.collection('rules').doc();
+        batch.set(rule2, { type: "Penalty", title: "Unapproved Screen Time", amount: 200 });
 
-      document.getElementById('manualName').value = '';
-      document.getElementById('manualEmail').value = '';
-      alert(`Provisioned! Family ID: ${familyId}\nShare link: parent.html?familyId=${familyId}`);
+        const userRef = famRef.collection('users').doc();
+        batch.set(userRef, {
+          name: name.split(' ')[0] || "Parent",
+          email: email,
+          role: "Parent",
+          pinHash: "",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const subRef = db.collection('platform_subscriptions').doc(email);
+        batch.set(subRef, {
+          email: email,
+          familyName: name,
+          familyId: familyId,
+          status: "active",
+          storageBytes: 1850,
+          docCount: 6,
+          usage: { reads: 0, writes: 5, deletes: 0, egressBytes: 1500 },
+          approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await batch.commit();
+
+        document.getElementById('manualName').value = '';
+        document.getElementById('manualEmail').value = '';
+        alert(`Successfully provisioned!\nFamily ID: ${familyId}\nParent: ${email}`);
+      } catch (err) {
+        alert("Provisioning failed: " + err.message);
+      }
     }
 
     async function approveRequest(docId, email, familyName) {
-      document.getElementById('manualName').value = familyName;
+      document.getElementById('manualName').value = familyName === '—' ? '' : familyName;
       document.getElementById('manualEmail').value = email;
       await provisionDirect();
     }
 
     async function toggleStatus(subDocId, familyId, newStatus) {
-      await db.collection('platform_subscriptions').doc(subDocId).update({ status: newStatus });
-      if (familyId) {
-        await db.collection('families').doc(familyId).update({ status: newStatus });
+      try {
+        await db.collection('platform_subscriptions').doc(subDocId).update({ status: newStatus });
+        if (familyId) {
+          await db.collection('families').doc(familyId).update({ status: newStatus });
+        }
+      } catch (err) {
+        alert("Status update error: " + err.message);
       }
     }
   </script>
