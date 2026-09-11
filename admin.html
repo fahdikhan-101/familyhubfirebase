@@ -19,7 +19,7 @@
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 80%); color: var(--text); padding: 24px 16px; margin: 0; min-height: 100vh; }
-    .container { max-width: 1100px; margin: 0 auto; }
+    .container { max-width: 1150px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
     .header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -27,7 +27,7 @@
     .stat-title { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
     .stat-value { font-size: 1.6rem; font-weight: 900; margin: 6px 0 0; }
     .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-    .card h3 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+    .card h3 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
     th { text-align: left; padding: 10px; border-bottom: 1px solid var(--card-border); color: var(--text-muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; }
     td { padding: 12px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
@@ -191,11 +191,7 @@
       }
     }
 
-    // ========================================================================
-    // TELEMETRY ESTIMATOR FUNCTIONS
-    // ========================================================================
     function estimateDocSize(data) {
-      // Approximate byte size: JSON string representation + 32 bytes Firestore internal metadata
       const jsonStr = JSON.stringify(data || {});
       return new Blob([jsonStr]).size + 32;
     }
@@ -208,7 +204,6 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    // Calculates real byte footprint of a family by inspecting subcollections
     async function calculateFamilyStorage(familyId) {
       if (!familyId) return { bytes: 0, docCount: 0 };
       const famRef = db.collection('families').doc(familyId);
@@ -263,13 +258,12 @@
 
         if (status === 'active') gActiveFam++;
 
-        // Read usage tracking counters stored on family document
         const usage = sub.usage || {};
         const reads = usage.reads || 0;
         const writes = usage.writes || 0;
         const deletes = usage.deletes || 0;
         const storageBytes = sub.storageBytes || 0;
-        const egressBytes = usage.egressBytes || (reads * 350); // Fallback: estimated 350 bytes per read query
+        const egressBytes = usage.egressBytes || (reads * 350);
 
         gStorage += storageBytes;
         gReads += reads;
@@ -294,11 +288,12 @@
             <td><span class="metric-num" style="color:#fca5a5;">${deletes.toLocaleString()}</span></td>
             <td><span class="metric-num" style="color:#fbbf24;">${formatBytes(egressBytes)}</span></td>
             <td>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                ${famId ? `<button class="btn btn-gray" style="padding:4px 8px; font-size:0.7rem;" onclick="auditSingleFamily('${sub.id}', '${famId}')">Scan</button>` : ''}
-                ${status === 'pending' ? `<button class="btn btn-green" style="padding:4px 8px;" onclick="approveRequest('${sub.id}', '${email}', '${famName}')">✓</button>` : ''}
-                ${status === 'active' ? `<button class="btn btn-red" style="padding:4px 8px;" onclick="toggleStatus('${sub.id}', '${famId}', 'suspended')">🛑</button>` : ''}
-                ${status === 'suspended' ? `<button class="btn btn-green" style="padding:4px 8px;" onclick="toggleStatus('${sub.id}', '${famId}', 'active')">✨</button>` : ''}
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                ${famId ? `<button class="btn btn-gray" style="padding:4px 8px; font-size:0.7rem;" title="Scan Storage" onclick="auditSingleFamily('${sub.id}', '${famId}')">Scan</button>` : ''}
+                ${status === 'pending' ? `<button class="btn btn-green" style="padding:4px 8px; font-size:0.7rem;" title="Approve Request" onclick="approveRequest('${sub.id}', '${email}', '${famName}')">✓ Approve</button>` : ''}
+                ${status === 'active' ? `<button class="btn btn-red" style="padding:4px 8px; font-size:0.7rem;" title="Suspend Tenant" onclick="toggleStatus('${sub.id}', '${famId}', 'suspended')">🛑 Suspend</button>` : ''}
+                ${status === 'suspended' ? `<button class="btn btn-green" style="padding:4px 8px; font-size:0.7rem;" title="Reactivate Tenant" onclick="toggleStatus('${sub.id}', '${famId}', 'active')">✨ Reactivate</button>` : ''}
+                <button class="btn btn-red" style="padding:4px 8px; font-size:0.7rem; background:#7f1d1d;" title="Permanently Delete" onclick="deleteFamilyPermanently('${sub.id}', '${famId}', '${famName}')">🗑️ Delete</button>
               </div>
             </td>
           </tr>
@@ -311,7 +306,6 @@
       document.getElementById('globalFamilies').innerText = gActiveFam;
     }
 
-    // Scans a specific family, calculates real storage, and stores it in Firestore
     async function auditSingleFamily(subDocId, familyId) {
       const stats = await calculateFamilyStorage(familyId);
       await db.collection('platform_subscriptions').doc(subDocId).update({
@@ -410,6 +404,47 @@
         }
       } catch (err) {
         alert("Status update error: " + err.message);
+      }
+    }
+
+    // ========================================================================
+    // COMPLETE RECURSIVE DELETION FOR A FAMILY TENANT
+    // ========================================================================
+    async function deleteFamilyPermanently(subDocId, familyId, familyName) {
+      const confirm1 = confirm(`⚠️ DANGER: Are you sure you want to PERMANENTLY delete "${familyName}" (${familyId || subDocId})? This will delete all member accounts, ledgers, and chores.`);
+      if (!confirm1) return;
+
+      const confirm2 = prompt(`To confirm deletion, type the family name "${familyName}":`);
+      if (confirm2 !== familyName) {
+        return alert("Confirmation mismatch. Deletion cancelled.");
+      }
+
+      try {
+        if (familyId) {
+          const famRef = db.collection('families').doc(familyId);
+          const subcollections = ['users', 'transactions', 'chores', 'choreLog', 'rules', 'schedules', 'goals'];
+
+          // Delete all subcollection documents in chunks
+          for (const col of subcollections) {
+            const snap = await famRef.collection(col).get();
+            if (!snap.empty) {
+              const batch = db.batch();
+              snap.forEach(doc => batch.delete(doc.ref));
+              await batch.commit();
+            }
+          }
+
+          // Delete root family document
+          await famRef.delete();
+        }
+
+        // Delete subscription document
+        await db.collection('platform_subscriptions').doc(subDocId).delete();
+
+        alert(`Family "${familyName}" and all related data have been completely deleted.`);
+      } catch (err) {
+        console.error("Deletion error:", err);
+        alert("Failed to delete family: " + err.message);
       }
     }
   </script>
