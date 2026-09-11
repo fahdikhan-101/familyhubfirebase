@@ -302,7 +302,6 @@
       if (!famDoc.exists) return alert("Family not found.");
       activeFamilyDoc = famDoc.data();
 
-      // Guard check against suspension
       if (activeFamilyDoc.status && activeFamilyDoc.status !== 'active') {
         document.body.innerHTML = `
           <div style="text-align:center; padding:60px 20px; color:#fff;">
@@ -317,7 +316,6 @@
       activeCurrency = activeFamilyDoc.currency || "Rs. ";
       document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
 
-      // Load children into login selection
       const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
       const sel = document.getElementById('childNameSelect');
       sel.innerHTML = '<option value="">-- Choose Name --</option>';
@@ -331,8 +329,8 @@
         unlockApp();
       }
 
-      // Automatically evaluate scheduled payouts in background
-      evaluateSchedulesCatchUp();
+      // Non-blocking background catch-up evaluation
+      runCatchUpScheduledPayouts(db, familyId, false);
     });
 
     async function attemptLogin() {
@@ -388,52 +386,114 @@
       bindChildData();
     }
 
-    // AUTOMATIC SCHEDULE PROCESSOR TRIGGERED BY CHILD OPENING APP
-    async function evaluateSchedulesCatchUp() {
-      try {
-        const schedSnap = await db.collection('families').doc(familyId).collection('schedules').where('status', '==', 'Active').get();
-        const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
-        const childEmails = usersSnap.docs.map(d => d.data().email);
+    // ========================================================================
+    // HISTORICAL CATCH-UP ENGINE: REPLAYS MISSED PAYOUTS SINCE LAST APP OPEN
+    // ========================================================================
+    async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
+      if (!familyId) return;
 
-        const now = new Date();
-        const dayOfWeek = now.getDay();
-        const dayOfMonth = now.getDate();
-        const ddmm = String(dayOfMonth).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0');
-        const todayStr = now.toISOString().split('T')[0];
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const schedSnap = await famRef.collection('schedules').where('status', '==', 'Active').get();
+        if (schedSnap.empty) return;
+
+        const usersSnap = await famRef.collection('users').where('role', '==', 'Child').get();
+        const childEmails = usersSnap.docs.map(d => d.data().email.toLowerCase().trim());
+        if (childEmails.length === 0) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+
+        let totalCatchUpGenerated = 0;
 
         for (const doc of schedSnap.docs) {
           const s = doc.data();
-          if (s.lastRunDate === todayStr) continue;
+          const amount = Number(s.amount) || 0;
+          if (amount <= 0) continue;
 
-          let shouldRun = false;
-          if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dayOfWeek) shouldRun = true;
-          if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dayOfMonth) shouldRun = true;
-          if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) shouldRun = true;
+          let pointerDate = new Date();
+          if (s.lastRunDate) {
+            const parts = s.lastRunDate.split('-');
+            pointerDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            pointerDate.setDate(pointerDate.getDate() + 1);
+          } else {
+            pointerDate.setDate(pointerDate.getDate() - 30);
+          }
+          pointerDate.setHours(0, 0, 0, 0);
 
-          if (shouldRun) {
-            const targets = (s.targetEmail === 'all') ? childEmails : [s.targetEmail];
+          if (pointerDate > today) continue;
+
+          const maxLookback = new Date(today);
+          maxLookback.setDate(maxLookback.getDate() - 180);
+          if (pointerDate < maxLookback) {
+            pointerDate = new Date(maxLookback);
+          }
+
+          const missedDates = [];
+
+          while (pointerDate <= today) {
+            const dOfWeek = pointerDate.getDay();
+            const dOfMonth = pointerDate.getDate();
+            const ddmm = String(dOfMonth).padStart(2, '0') + '/' + String(pointerDate.getMonth() + 1).padStart(2, '0');
+            const dateStr = pointerDate.toISOString().split('T')[0];
+
+            let matched = false;
+            if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dOfWeek) {
+              matched = true;
+            } else if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dOfMonth) {
+              matched = true;
+            } else if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) {
+              matched = true;
+            }
+
+            if (matched) {
+              missedDates.push(dateStr);
+            }
+
+            pointerDate.setDate(pointerDate.getDate() + 1);
+          }
+
+          if (missedDates.length > 0) {
+            const targetEmail = String(s.targetEmail || '').trim().toLowerCase();
+            const recipients = (targetEmail === 'all') ? childEmails : [targetEmail];
+
             const batch = db.batch();
 
-            for (const email of targets) {
-              const txRef = db.collection('families').doc(familyId).collection('transactions').doc();
-              batch.set(txRef, {
-                email, type: 'Allowance', amount: Number(s.amount), desc: `Scheduled: ${s.title}`,
-                date: todayStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            missedDates.forEach(dStr => {
+              recipients.forEach(email => {
+                const txRef = famRef.collection('transactions').doc();
+                batch.set(txRef, {
+                  email: email,
+                  type: 'Allowance',
+                  amount: amount,
+                  desc: `Scheduled Payout: ${s.title}${dStr !== todayStr ? ' (Catch-up)' : ''}`,
+                  date: dStr,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                totalCatchUpGenerated++;
               });
-            }
+            });
+
             batch.update(doc.ref, { lastRunDate: todayStr });
             await batch.commit();
+          } else {
+            await doc.ref.update({ lastRunDate: todayStr });
           }
         }
-      } catch (e) {
-        console.error("Auto catchup error:", e);
+
+        if (isManualAlert) {
+          alert(`Catch-up complete! Added ${totalCatchUpGenerated} missed payout transactions.`);
+        }
+      } catch (err) {
+        console.error("Catch-up execution error:", err);
       }
     }
 
     function bindChildData() {
       const famRef = db.collection('families').doc(familyId);
 
-      // Denied chore notifications
+      // Denied chore logs
       famRef.collection('choreLog')
         .where('childEmail', '==', currentChild.email)
         .where('status', '==', 'denied')
