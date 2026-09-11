@@ -102,7 +102,7 @@
     <div class="card" id="loginCard" style="text-align: center; padding: 36px 20px; margin-top: 30px;">
       <div style="font-size: 3.2rem; margin-bottom: 8px;">🚀</div>
       <h2 style="margin: 0 0 6px; font-weight: 900; font-size: 1.5rem;">Family PiggyBank</h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Sign in with Google or select your name</p>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Sign in with Google to enable AI Coaching, or use your PIN</p>
       
       <!-- Primary Child Sign-in (Google OAuth) -->
       <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
@@ -140,6 +140,7 @@
         <div id="deniedList" style="margin-top: 4px; font-size: 0.82rem; color: #cbd5e1;"></div>
       </div>
 
+      <!-- Slicers & Stats -->
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <h3 style="margin:0;">📊 Savings Stats</h3>
@@ -276,6 +277,7 @@
     let activeCurrency = "Rs. ";
     let activeFamilyDoc = null;
     let currentChild = null;
+    let authMethod = "PIN"; // "GOOGLE" or "PIN"
     let currentChildBalance = 0;
     let rawHistory = [];
     let childGoals = [];
@@ -329,10 +331,12 @@
         sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
       });
 
-      // Check for cached child session
+      // Restore session if available
       const cached = sessionStorage.getItem('child_session');
+      const cachedAuth = sessionStorage.getItem('child_auth_method');
       if (cached) {
         currentChild = JSON.parse(cached);
+        authMethod = cachedAuth || "PIN";
         unlockApp();
       }
 
@@ -348,7 +352,9 @@
       const enteredHash = await hashPin(pin);
       if (enteredHash === opt.getAttribute('data-hash')) {
         currentChild = { id: opt.value, name: opt.getAttribute('data-name'), email: opt.getAttribute('data-email') };
+        authMethod = "PIN";
         sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+        sessionStorage.setItem('child_auth_method', "PIN");
         confetti({ particleCount: 80, spread: 70 });
         unlockApp();
       } else {
@@ -370,12 +376,14 @@
 
         if (userSnap.empty) {
           auth.signOut();
-          return alert(`No child account found for email: ${email}. Please ask your parent to add this email under Members.`);
+          return alert(`No child account found for email: ${email}. Please ask your parent to add this email under Members in the Parent Console.`);
         }
 
         const childDoc = userSnap.docs[0];
         currentChild = { id: childDoc.id, name: childDoc.data().name, email: childDoc.data().email };
+        authMethod = "GOOGLE";
         sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+        sessionStorage.setItem('child_auth_method', "GOOGLE");
         confetti({ particleCount: 80, spread: 70 });
         unlockApp();
       } catch (err) {
@@ -393,6 +401,7 @@
       bindChildData();
     }
 
+    // BULLETPROOF CATCH-UP LOGIC
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -844,67 +853,137 @@
 
       let aiBlock = "";
       if (activeFamilyDoc && activeFamilyDoc.aiEnabled) {
-        aiBlock = `
-          <div class="ai-coach-card">
-            <div style="display:flex; justify-content:space-between;">
-              <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
-              <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 5px; border-radius:4px; font-weight:800;">LIVE</span>
+        if (authMethod === "GOOGLE") {
+          // Google Authenticated: Key vault is accessible
+          aiBlock = `
+            <div class="ai-coach-card">
+              <div style="display:flex; justify-content:space-between;">
+                <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
+                <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 5px; border-radius:4px; font-weight:800;">LIVE</span>
+              </div>
+              <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto;">
+                <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How can I reach this faster?')">⚡ Reach faster?</button>
+                <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
+                <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How does my birthday windfall help?')">🎂 Birthday strategy?</button>
+              </div>
+              <div id="aiBox_${goal.id}" style="display:none; margin-top:8px; font-size:0.8rem; color:#e2e8f0; background:rgba(15,23,42,0.6); padding:8px; border-radius:8px;"></div>
             </div>
-            <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto;">
-              <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How can I reach this faster?')">⚡ Reach faster?</button>
-              <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
-              <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How does my birthday help?')">🎂 Birthday strategy?</button>
+          `;
+        } else {
+          // PIN Login: Protected banner disabling AI to prevent exposing parent key
+          aiBlock = `
+            <div class="ai-coach-card" style="background: rgba(15, 23, 42, 0.4); border-color: rgba(255, 255, 255, 0.1);">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">🔒</span>
+                <div>
+                  <strong style="font-size:0.78rem; color:#cbd5e1;">PiggyCoach is locked in PIN mode</strong>
+                  <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
+                    To protect your parent's secret AI Key, sign in with your Google account on the lock screen to unlock live AI coaching.
+                  </div>
+                </div>
+              </div>
             </div>
-            <div id="aiBox_${goal.id}" style="display:none; margin-top:8px; font-size:0.8rem; color:#e2e8f0; background:rgba(15,23,42,0.6); padding:8px; border-radius:8px;"></div>
-          </div>
-        `;
+          `;
+        }
       }
 
       return `<div class="goal-roadmap">💡 ${strategy}${aiBlock}</div>`;
     }
 
-    // SECURE DYNAMIC GEMINI INVOCATION: Reads key from protected vault inside authenticated click
+    // ========================================================================
+    // CONTEXT-AWARE PIGGYCOACH AI ENGINE
+    // ========================================================================
     async function askGemini(goalId, title, target, question) {
+      if (authMethod !== "GOOGLE") {
+        return alert("AI Coach is available when logged in with Google to protect your family's key.");
+      }
+
       const box = document.getElementById(`aiBox_${goalId}`);
       box.style.display = 'block';
-      box.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is thinking...</span>`;
+      box.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is analyzing your savings & upcoming windfalls...</span>`;
 
       try {
         // Fetch key from protected /settings/secrets subcollection
         const secretDoc = await db.collection('families').doc(familyId).collection('settings').doc('secrets').get();
         if (!secretDoc.exists || !secretDoc.data().geminiApiKey) {
-          box.innerHTML = `<span style="color:#f87171;">PiggyCoach is currently resting. Ask your parent to connect the AI Key in settings!</span>`;
+          box.innerHTML = `<span style="color:#f87171;">PiggyCoach requires an active API key in Parent Settings.</span>`;
           return;
         }
 
-        const apiKey = secretDoc.data().geminiApiKey;
+        const apiKey = secretDoc.data().geminiApiKey.trim();
+
+        // Build comprehensive financial context including all schedules (weekly, monthly, birthdays)
+        const schedulesContext = activeSchedules.map(s => {
+          let timing = s.frequency;
+          if (s.frequency === 'WEEKLY') {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            timing = `Weekly on ${days[Number(s.scheduleDay)] || s.scheduleDay}`;
+          } else if (s.frequency === 'MONTHLY') {
+            timing = `Monthly on day ${s.scheduleDay}`;
+          } else if (s.frequency === 'ANNUAL_DATE') {
+            timing = `Annual / Birthday Windfall on ${s.scheduleDay} (DD/MM)`;
+          }
+          return `${s.title}: +${activeCurrency}${s.amount} (${timing})`;
+        });
+
+        const choresContext = activeChores.map(c => `${c.title} (+${activeCurrency}${c.reward})`);
+        const remaining = Math.max(0, target - currentChildBalance);
+        const todayDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         const prompt = `
-You are "PiggyCoach", an upbeat, encouraging financial mentor for kids and teens.
-Student: ${currentChild.name}
-Goal: ${title} (${activeCurrency}${target})
-Current Savings: ${activeCurrency}${currentChildBalance}
-Remaining: ${activeCurrency}${Math.max(0, target - currentChildBalance)}
-Available Chores: ${JSON.stringify(activeChores.map(c => c.title + ' (+' + activeCurrency + c.reward + ')'))}
-Weekly Allowance: ${JSON.stringify(activeSchedules.filter(s => s.frequency === 'WEEKLY').map(s => s.title + ': ' + activeCurrency + s.amount))}
+You are "PiggyCoach", an enthusiastic, smart, and encouraging financial mentor for kids and teens.
+Today's Date: ${todayDate}
 
-Child Question: "${question}"
-Instructions: Speak directly to ${currentChild.name} in 3 punchy, age-appropriate sentences with fun emojis. Give a real plan combining pocket money and chores. Finish completely.`;
+Student Profile:
+- Name: ${currentChild.name}
+- Target Goal: "${title}" costing ${activeCurrency}${target}
+- Current Savings: ${activeCurrency}${currentChildBalance}
+- Money Remaining Needed: ${activeCurrency}${remaining}
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+Income Streams & Upcoming Payouts:
+${schedulesContext.length > 0 ? schedulesContext.map(s => `• ${s}`).join('\n') : '• No automated schedules'}
+
+Available Chore Missions:
+${choresContext.length > 0 ? choresContext.map(c => `• ${c}`).join('\n') : '• No chores catalog'}
+
+Child's Question: "${question}"
+
+Instructions:
+1. Speak directly to ${currentChild.name} with high energy and fun emojis!
+2. Do the exact math: Factor in their current savings, their upcoming weekly allowance, AND any upcoming annual/birthday bonuses! For example, if a birthday payout covers the goal, tell them excitedly how close it is.
+3. If they need to speed it up before then, recommend 1 or 2 specific chores from their catalog.
+4. Keep the reply to 3–4 concise, impactful sentences. Finish completely with no trailing thoughts.`;
+
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 600
+            }
           })
         });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+
         const data = await res.json();
         const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:4px;">${reply || 'Keep up the steady saving!'}</div>`;
+
+        if (reply) {
+          box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:6px; line-height:1.45;">${reply}</div>`;
+        } else {
+          box.innerHTML = `<span style="color:#f87171;">PiggyCoach couldn't calculate advice right now. Please try again!</span>`;
+        }
+
       } catch (err) {
-        box.innerHTML = `<span style="color:#f87171;">PiggyCoach note: ${err.message}</span>`;
+        console.error("PiggyCoach Error:", err);
+        box.innerHTML = `<span style="color:#f87171;">PiggyCoach Error: ${err.message}</span>`;
       }
     }
 
@@ -970,6 +1049,7 @@ Instructions: Speak directly to ${currentChild.name} in 3 punchy, age-appropriat
 
     function logout() {
       sessionStorage.removeItem('child_session');
+      sessionStorage.removeItem('child_auth_method');
       auth.signOut();
       window.location.reload();
     }
