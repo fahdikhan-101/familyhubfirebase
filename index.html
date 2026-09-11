@@ -79,7 +79,7 @@
 </head>
 <body>
 
-  <!-- HEADER -->
+  <!-- TOP HEADER -->
   <div class="top-bar" id="topHeader" style="display: none;">
     <div class="user-profile">
       <div class="user-avatar" id="avatarInitial">H</div>
@@ -162,7 +162,7 @@
           </div>
         </div>
 
-        <!-- Sibling Transfers Summary -->
+        <!-- Sibling Sharing Breakdown -->
         <div class="sibling-stat-card">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <strong style="color: #67e8f9;">🤝 Sibling Transfers</strong>
@@ -185,14 +185,14 @@
       <div class="card">
         <h3>+ Set New Wishlist Goal</h3>
         <div class="form-group"><label>Item Name</label><input type="text" id="goalTitleInput" placeholder="e.g. Lego Star Wars"></div>
-        <div class="form-group"><label>Target Price</label><input type="number" id="goalAmountInput" placeholder="2500"></div>
+        <div class="form-group"><label>Target Price (<span class="currencySymbol">Rs. </span>)</label><input type="number" id="goalAmountInput" placeholder="2500"></div>
         <button class="btn btn-purple" onclick="addGoal()">🚀 Create Goal Target</button>
       </div>
     </div>
 
     <!-- TAB 3: MISSIONS, SPENDING & SIBLING SHARING -->
     <div id="tab-missions" class="tab-content">
-      <!-- RESTORED FEATURE 1: SIBLING SHARING -->
+      <!-- SIBLING SHARING -->
       <div class="card" style="border-left: 4px solid var(--cyan);">
         <h3>🤝 Share with Sibling</h3>
         <p style="font-size:0.82rem; color:var(--text-muted); margin-top:-6px;">Send some savings as a gift or loan.</p>
@@ -301,10 +301,23 @@
       const famDoc = await db.collection('families').doc(familyId).get();
       if (!famDoc.exists) return alert("Family not found.");
       activeFamilyDoc = famDoc.data();
+
+      // Guard check against suspension
+      if (activeFamilyDoc.status && activeFamilyDoc.status !== 'active') {
+        document.body.innerHTML = `
+          <div style="text-align:center; padding:60px 20px; color:#fff;">
+            <div style="font-size:3.5rem;">🛑</div>
+            <h2>Family Hub Suspended</h2>
+            <p style="color:#94a3b8;">This workspace has been paused. Please ask your parents.</p>
+          </div>
+        `;
+        return;
+      }
+
       activeCurrency = activeFamilyDoc.currency || "Rs. ";
       document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
 
-      // Load children into login dropdown
+      // Load children into login selection
       const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
       const sel = document.getElementById('childNameSelect');
       sel.innerHTML = '<option value="">-- Choose Name --</option>';
@@ -317,6 +330,9 @@
         currentChild = JSON.parse(cached);
         unlockApp();
       }
+
+      // Automatically evaluate scheduled payouts in background
+      evaluateSchedulesCatchUp();
     });
 
     async function attemptLogin() {
@@ -337,7 +353,6 @@
       }
     }
 
-    // RESTORED FEATURE 4: GOOGLE AUTH LOGIN FOR CHILDREN
     async function loginWithGoogle() {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -350,7 +365,7 @@
           .get();
 
         if (userSnap.empty) {
-          return alert(`No child account found under email: ${email}. Ask your parent to register your email in the Admin Console.`);
+          return alert(`No child account found for email: ${email}. Please ask your parent to add your email in the Admin Console.`);
         }
 
         const childDoc = userSnap.docs[0];
@@ -371,6 +386,48 @@
       document.getElementById('childHeaderName').innerText = currentChild.name;
       switchNavTab('tab-home', document.querySelectorAll('.nav-item')[0]);
       bindChildData();
+    }
+
+    // AUTOMATIC SCHEDULE PROCESSOR TRIGGERED BY CHILD OPENING APP
+    async function evaluateSchedulesCatchUp() {
+      try {
+        const schedSnap = await db.collection('families').doc(familyId).collection('schedules').where('status', '==', 'Active').get();
+        const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
+        const childEmails = usersSnap.docs.map(d => d.data().email);
+
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const dayOfMonth = now.getDate();
+        const ddmm = String(dayOfMonth).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0');
+        const todayStr = now.toISOString().split('T')[0];
+
+        for (const doc of schedSnap.docs) {
+          const s = doc.data();
+          if (s.lastRunDate === todayStr) continue;
+
+          let shouldRun = false;
+          if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dayOfWeek) shouldRun = true;
+          if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dayOfMonth) shouldRun = true;
+          if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) shouldRun = true;
+
+          if (shouldRun) {
+            const targets = (s.targetEmail === 'all') ? childEmails : [s.targetEmail];
+            const batch = db.batch();
+
+            for (const email of targets) {
+              const txRef = db.collection('families').doc(familyId).collection('transactions').doc();
+              batch.set(txRef, {
+                email, type: 'Allowance', amount: Number(s.amount), desc: `Scheduled: ${s.title}`,
+                date: todayStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            }
+            batch.update(doc.ref, { lastRunDate: todayStr });
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        console.error("Auto catchup error:", e);
+      }
     }
 
     function bindChildData() {
@@ -425,7 +482,7 @@
         renderGoals();
       });
 
-      // Chores Catalog
+      // Chores
       famRef.collection('chores').onSnapshot(snap => {
         activeChores = [];
         const cSel = document.getElementById('choreSelect');
@@ -459,7 +516,7 @@
       });
     }
 
-    // RESTORED FEATURE 1: ATOMIC SIBLING TRANSFERS
+    // ATOMIC SIBLING TRANSFERS
     async function sendSiblingTransfer() {
       const sel = document.getElementById('siblingSelect');
       const opt = sel.options[sel.selectedIndex];
@@ -508,7 +565,6 @@
       alert(`🎁 Success! ${activeCurrency}${amount} was sent to ${recipientName}.`);
     }
 
-    // ANALYTICS & SLICERS
     function setChildTimeframe(btn, tf) {
       document.querySelectorAll('.slicer').forEach(el => el.classList.remove('active'));
       btn.classList.add('active');
