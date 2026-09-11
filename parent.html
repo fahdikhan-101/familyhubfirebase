@@ -175,7 +175,7 @@
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0;">📅 Active Payout Schedules</h3>
-            <button class="btn btn-gray" onclick="processDueSchedules(true)">⚡ Force Run Schedules</button>
+            <button class="btn btn-gray" onclick="runCatchUpScheduledPayouts(db, familyId, true)">⚡ Force Catch-Up Schedules</button>
           </div>
           <table>
             <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Schedule Day/Date</th><th>Amount</th><th>Actions</th></tr></thead>
@@ -198,7 +198,7 @@
         </div>
       </div>
 
-      <!-- TAB 5: MEMBERS (WITH OPENING BALANCE SUPPORT) -->
+      <!-- TAB 5: MEMBERS (WITH INITIAL OPENING BALANCE) -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
           <h3>👨‍👩‍👧‍👦 Family Members</h3>
@@ -254,7 +254,7 @@
         <div class="card" style="border-left:4px solid var(--danger);">
           <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
           <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
-            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as a clean opening forward balance.
+            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as an opening balance.
           </p>
           <button class="btn btn-red" onclick="runPeriodClosing()">📦 Close Period & Carry Balances</button>
         </div>
@@ -340,8 +340,8 @@
             <div style="font-size:3rem; margin-bottom:10px;">👋</div>
             <h2>Request Platform Access</h2>
             <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
-              Hello <strong>${email}</strong>! Access is currently controlled and invitation-only.
-              Please submit your family details below to request access from the administrator.
+              Hello <strong>${email}</strong>! Access is currently invitation-only.
+              Submit your family details below to request access from the platform owner.
             </p>
             <div style="max-width:340px; margin:0 auto;">
               <input type="text" id="reqFamName" placeholder="Your Family Name (e.g. Khan Family)" style="margin-bottom:12px;">
@@ -360,7 +360,7 @@
             <div style="font-size:3rem; margin-bottom:10px;">⏳</div>
             <h2>Access Request Pending</h2>
             <p style="color:var(--text-muted); font-size:0.9rem;">
-              Your access request for <strong>${subData.familyName}</strong> has been received and is pending administrator approval.
+              Your access request for <strong>${subData.familyName}</strong> is under review by the administrator.
             </p>
           `;
           return;
@@ -373,7 +373,7 @@
             <div style="font-size:3rem; margin-bottom:10px;">🛑</div>
             <h2>Account Suspended</h2>
             <p style="color:var(--text-muted); font-size:0.9rem;">
-              Your family workspace has been deactivated by the platform owner.
+              Your family workspace has been paused by the platform administrator.
             </p>
           `;
           return;
@@ -389,7 +389,9 @@
         childBtn.href = `index.html?familyId=${familyId}`;
 
         initRealtimeListeners();
-        processDueSchedules(false);
+
+        // Non-blocking background catch-up execution
+        runCatchUpScheduledPayouts(db, familyId, false);
       });
     });
 
@@ -700,55 +702,113 @@
       document.getElementById('schedAmount').value = '';
     }
 
-    // AUTOMATIC SCHEDULE PROCESSOR & CATCH-UP EVALUATOR
-    async function processDueSchedules(isManualPrompt = false) {
+    // ========================================================================
+    // HISTORICAL CATCH-UP ENGINE: REPLAYS MISSED PAYOUTS SINCE LAST APP OPEN
+    // ========================================================================
+    async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
+
       try {
-        const schedSnap = await db.collection('families').doc(familyId).collection('schedules').where('status', '==', 'Active').get();
-        const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
-        const childEmails = usersSnap.docs.map(d => d.data().email);
+        const famRef = db.collection('families').doc(familyId);
+        const schedSnap = await famRef.collection('schedules').where('status', '==', 'Active').get();
+        if (schedSnap.empty) return;
 
-        const now = new Date();
-        const dayOfWeek = now.getDay();
-        const dayOfMonth = now.getDate();
-        const ddmm = String(dayOfMonth).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0');
-        const todayStr = now.toISOString().split('T')[0];
+        const usersSnap = await famRef.collection('users').where('role', '==', 'Child').get();
+        const childEmails = usersSnap.docs.map(d => d.data().email.toLowerCase().trim());
+        if (childEmails.length === 0) return;
 
-        let processed = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+
+        let totalCatchUpGenerated = 0;
+
         for (const doc of schedSnap.docs) {
           const s = doc.data();
-          if (s.lastRunDate === todayStr) continue;
+          const amount = Number(s.amount) || 0;
+          if (amount <= 0) continue;
 
-          let shouldRun = false;
-          if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dayOfWeek) shouldRun = true;
-          if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dayOfMonth) shouldRun = true;
-          if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) shouldRun = true;
+          let pointerDate = new Date();
+          if (s.lastRunDate) {
+            const parts = s.lastRunDate.split('-');
+            pointerDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            pointerDate.setDate(pointerDate.getDate() + 1);
+          } else {
+            pointerDate.setDate(pointerDate.getDate() - 30);
+          }
+          pointerDate.setHours(0, 0, 0, 0);
 
-          if (shouldRun) {
-            const targets = (s.targetEmail === 'all') ? childEmails : [s.targetEmail];
+          if (pointerDate > today) continue;
+
+          const maxLookback = new Date(today);
+          maxLookback.setDate(maxLookback.getDate() - 180);
+          if (pointerDate < maxLookback) {
+            pointerDate = new Date(maxLookback);
+          }
+
+          const missedDates = [];
+
+          while (pointerDate <= today) {
+            const dOfWeek = pointerDate.getDay();
+            const dOfMonth = pointerDate.getDate();
+            const ddmm = String(dOfMonth).padStart(2, '0') + '/' + String(pointerDate.getMonth() + 1).padStart(2, '0');
+            const dateStr = pointerDate.toISOString().split('T')[0];
+
+            let matched = false;
+            if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dOfWeek) {
+              matched = true;
+            } else if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dOfMonth) {
+              matched = true;
+            } else if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) {
+              matched = true;
+            }
+
+            if (matched) {
+              missedDates.push(dateStr);
+            }
+
+            pointerDate.setDate(pointerDate.getDate() + 1);
+          }
+
+          if (missedDates.length > 0) {
+            const targetEmail = String(s.targetEmail || '').trim().toLowerCase();
+            const recipients = (targetEmail === 'all') ? childEmails : [targetEmail];
+
             const batch = db.batch();
 
-            for (const email of targets) {
-              const txRef = db.collection('families').doc(familyId).collection('transactions').doc();
-              batch.set(txRef, {
-                email, type: 'Allowance', amount: Number(s.amount), desc: `Scheduled: ${s.title}`,
-                date: todayStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            missedDates.forEach(dStr => {
+              recipients.forEach(email => {
+                const txRef = famRef.collection('transactions').doc();
+                batch.set(txRef, {
+                  email: email,
+                  type: 'Allowance',
+                  amount: amount,
+                  desc: `Scheduled Payout: ${s.title}${dStr !== todayStr ? ' (Catch-up)' : ''}`,
+                  date: dStr,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                totalCatchUpGenerated++;
               });
-            }
+            });
+
             batch.update(doc.ref, { lastRunDate: todayStr });
             await batch.commit();
-            processed++;
+          } else {
+            await doc.ref.update({ lastRunDate: todayStr });
           }
         }
-        if (isManualPrompt) alert(`Processed ${processed} scheduled payouts!`);
+
+        if (isManualAlert) {
+          alert(`Catch-up complete! Added ${totalCatchUpGenerated} missed payout transactions.`);
+        }
       } catch (err) {
-        console.error("Scheduled payout runner error:", err);
+        console.error("Catch-up execution error:", err);
       }
     }
 
     // PERIOD LEDGER CLOSING
     async function runPeriodClosing() {
-      if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as a fresh opening balance. Continue?")) return;
+      if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?")) return;
 
       const famRef = db.collection('families').doc(familyId);
       const txSnap = await famRef.collection('transactions').get();
