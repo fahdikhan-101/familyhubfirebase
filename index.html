@@ -197,7 +197,6 @@
 
     <!-- TAB 3: MISSIONS, SPENDING & SIBLING SHARING -->
     <div id="tab-missions" class="tab-content">
-      <!-- SIBLING SHARING -->
       <div class="card" style="border-left: 4px solid var(--cyan);">
         <h3>🤝 Share with Sibling</h3>
         <p style="font-size:0.82rem; color:var(--text-muted); margin-top:-6px;">Send some savings as a gift or loan.</p>
@@ -390,7 +389,7 @@
       bindChildData();
     }
 
-    // FIXED: HARD-GUARDED CATCH-UP LOGIC
+    // BULLETPROOF CATCH-UP LOGIC
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -403,9 +402,11 @@
         const childEmails = usersSnap.docs.map(d => d.data().email.toLowerCase().trim());
         if (childEmails.length === 0) return;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString().split('T')[0];
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
 
         let totalCatchUpGenerated = 0;
 
@@ -414,34 +415,43 @@
           const amount = Number(s.amount) || 0;
           if (amount <= 0) continue;
 
-          let pointerDate = new Date();
-          if (s.lastRunDate && s.lastRunDate.includes('-')) {
-            const parts = s.lastRunDate.split('-');
-            pointerDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-            pointerDate.setDate(pointerDate.getDate() + 1);
-          } else {
-            pointerDate = new Date(today);
-          }
-          pointerDate.setHours(0, 0, 0, 0);
-
-          if (pointerDate > today) {
-            if (!s.lastRunDate) await doc.ref.update({ lastRunDate: todayStr });
+          if (s.lastRunDate === todayStr) {
             continue;
           }
 
-          const maxLookback = new Date(today);
-          maxLookback.setDate(maxLookback.getDate() - 180);
-          if (pointerDate < maxLookback) {
-            pointerDate = new Date(maxLookback);
+          if (!s.lastRunDate) {
+            await doc.ref.update({ lastRunDate: todayStr });
+            continue;
+          }
+
+          const parts = s.lastRunDate.split('-').map(Number);
+          let pointer = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+          pointer.setHours(0, 0, 0, 0);
+
+          const targetToday = new Date(year, now.getMonth(), now.getDate());
+          targetToday.setHours(0, 0, 0, 0);
+
+          if (pointer > targetToday) {
+            continue;
+          }
+
+          const safetyFloor = new Date(targetToday);
+          safetyFloor.setDate(safetyFloor.getDate() - 60);
+          if (pointer < safetyFloor) {
+            pointer = new Date(safetyFloor);
           }
 
           const missedDates = [];
 
-          while (pointerDate <= today) {
-            const dOfWeek = pointerDate.getDay();
-            const dOfMonth = pointerDate.getDate();
-            const ddmm = String(dOfMonth).padStart(2, '0') + '/' + String(pointerDate.getMonth() + 1).padStart(2, '0');
-            const dateStr = pointerDate.toISOString().split('T')[0];
+          while (pointer <= targetToday) {
+            const pYear = pointer.getFullYear();
+            const pMonth = String(pointer.getMonth() + 1).padStart(2, '0');
+            const pDay = String(pointer.getDate()).padStart(2, '0');
+            const curDateStr = `${pYear}-${pMonth}-${pDay}`;
+
+            const dOfWeek = pointer.getDay();
+            const dOfMonth = pointer.getDate();
+            const ddmm = `${pDay}/${pMonth}`;
 
             let matched = false;
             if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dOfWeek) {
@@ -453,10 +463,10 @@
             }
 
             if (matched) {
-              missedDates.push(dateStr);
+              missedDates.push(curDateStr);
             }
 
-            pointerDate.setDate(pointerDate.getDate() + 1);
+            pointer.setDate(pointer.getDate() + 1);
           }
 
           if (missedDates.length > 0) {
