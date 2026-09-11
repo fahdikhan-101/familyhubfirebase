@@ -37,12 +37,12 @@
     .btn-blue { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
     .btn-purple { background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%); }
     .btn-cyan { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
-    /* ✅ Fixed */
-button.btn-google, .btn-google {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid #cbd5e1;
-}
+    button.btn-google, .btn-google {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1;
+      font-weight: 800;
+    }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 500px; margin: 0 auto; }
@@ -334,7 +334,6 @@ button.btn-google, .btn-google {
         unlockApp();
       }
 
-      // Non-blocking background catch-up evaluation
       runCatchUpScheduledPayouts(db, familyId, false);
     });
 
@@ -391,9 +390,7 @@ button.btn-google, .btn-google {
       bindChildData();
     }
 
-    // ========================================================================
-    // HISTORICAL CATCH-UP ENGINE: REPLAYS MISSED PAYOUTS SINCE LAST APP OPEN
-    // ========================================================================
+    // FIXED: HARD-GUARDED CATCH-UP LOGIC
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -418,16 +415,19 @@ button.btn-google, .btn-google {
           if (amount <= 0) continue;
 
           let pointerDate = new Date();
-          if (s.lastRunDate) {
+          if (s.lastRunDate && s.lastRunDate.includes('-')) {
             const parts = s.lastRunDate.split('-');
             pointerDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
             pointerDate.setDate(pointerDate.getDate() + 1);
           } else {
-            pointerDate.setDate(pointerDate.getDate() - 30);
+            pointerDate = new Date(today);
           }
           pointerDate.setHours(0, 0, 0, 0);
 
-          if (pointerDate > today) continue;
+          if (pointerDate > today) {
+            if (!s.lastRunDate) await doc.ref.update({ lastRunDate: todayStr });
+            continue;
+          }
 
           const maxLookback = new Date(today);
           maxLookback.setDate(maxLookback.getDate() - 180);
@@ -498,7 +498,6 @@ button.btn-google, .btn-google {
     function bindChildData() {
       const famRef = db.collection('families').doc(familyId);
 
-      // Denied chore logs
       famRef.collection('choreLog')
         .where('childEmail', '==', currentChild.email)
         .where('status', '==', 'denied')
@@ -517,7 +516,6 @@ button.btn-google, .btn-google {
           }
         });
 
-      // Transactions
       famRef.collection('transactions').where('email', '==', currentChild.email).onSnapshot(snap => {
         currentChildBalance = 0;
         rawHistory = [];
@@ -540,14 +538,12 @@ button.btn-google, .btn-google {
         renderTransactions();
       });
 
-      // Goals
       famRef.collection('goals').where('email', '==', currentChild.email).onSnapshot(snap => {
         childGoals = [];
         snap.forEach(d => childGoals.push({ id: d.id, ...d.data() }));
         renderGoals();
       });
 
-      // Chores
       famRef.collection('chores').onSnapshot(snap => {
         activeChores = [];
         const cSel = document.getElementById('choreSelect');
@@ -559,14 +555,12 @@ button.btn-google, .btn-google {
         });
       });
 
-      // Schedules
       famRef.collection('schedules').onSnapshot(snap => {
         activeSchedules = [];
         snap.forEach(d => activeSchedules.push(d.data()));
         renderGoals();
       });
 
-      // Siblings for Sharing
       famRef.collection('users').where('role', '==', 'Child').onSnapshot(snap => {
         availableSiblings = [];
         const sSel = document.getElementById('siblingSelect');
@@ -581,7 +575,6 @@ button.btn-google, .btn-google {
       });
     }
 
-    // ATOMIC SIBLING TRANSFERS
     async function sendSiblingTransfer() {
       const sel = document.getElementById('siblingSelect');
       const opt = sel.options[sel.selectedIndex];
