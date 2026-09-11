@@ -102,7 +102,13 @@
     <div class="card" id="loginCard" style="text-align: center; padding: 36px 20px; margin-top: 30px;">
       <div style="font-size: 3.2rem; margin-bottom: 8px;">🚀</div>
       <h2 style="margin: 0 0 6px; font-weight: 900; font-size: 1.5rem;">Family PiggyBank</h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Pick your name & enter your PIN</p>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Sign in with Google or select your name</p>
+      
+      <!-- Primary Child Sign-in (Google OAuth) -->
+      <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
+      
+      <div style="margin: 18px 0 14px; font-size: 0.8rem; color: var(--text-muted);">— or use 4-Digit PIN (Younger Kids) —</div>
+
       <div class="form-group">
         <label for="childNameSelect">Hero Name</label>
         <select id="childNameSelect"><option value="">Loading heroes...</option></select>
@@ -111,9 +117,7 @@
         <label for="pinInput">4-Digit Secret PIN</label>
         <input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;">
       </div>
-      <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock Dashboard</button>
-      <div style="margin: 14px 0 6px; font-size: 0.8rem; color: var(--text-muted);">— or —</div>
-      <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
+      <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
     </div>
 
     <!-- TAB 1: DASHBOARD -->
@@ -136,7 +140,6 @@
         <div id="deniedList" style="margin-top: 4px; font-size: 0.82rem; color: #cbd5e1;"></div>
       </div>
 
-      <!-- Slicers & Stats -->
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <h3 style="margin:0;">📊 Savings Stats</h3>
@@ -167,7 +170,6 @@
           </div>
         </div>
 
-        <!-- Sibling Sharing Breakdown -->
         <div class="sibling-stat-card">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <strong style="color: #67e8f9;">🤝 Sibling Transfers</strong>
@@ -327,6 +329,7 @@
         sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
       });
 
+      // Check for cached child session
       const cached = sessionStorage.getItem('child_session');
       if (cached) {
         currentChild = JSON.parse(cached);
@@ -366,7 +369,8 @@
           .get();
 
         if (userSnap.empty) {
-          return alert(`No child account found for email: ${email}. Please ask your parent to add your email in the Admin Console.`);
+          auth.signOut();
+          return alert(`No child account found for email: ${email}. Please ask your parent to add this email under Members.`);
         }
 
         const childDoc = userSnap.docs[0];
@@ -389,7 +393,6 @@
       bindChildData();
     }
 
-    // BULLETPROOF CATCH-UP LOGIC
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -840,7 +843,7 @@
       }
 
       let aiBlock = "";
-      if (activeFamilyDoc && activeFamilyDoc.aiEnabled && activeFamilyDoc.geminiApiKey) {
+      if (activeFamilyDoc && activeFamilyDoc.aiEnabled) {
         aiBlock = `
           <div class="ai-coach-card">
             <div style="display:flex; justify-content:space-between;">
@@ -860,13 +863,24 @@
       return `<div class="goal-roadmap">💡 ${strategy}${aiBlock}</div>`;
     }
 
+    // SECURE DYNAMIC GEMINI INVOCATION: Reads key from protected vault inside authenticated click
     async function askGemini(goalId, title, target, question) {
       const box = document.getElementById(`aiBox_${goalId}`);
       box.style.display = 'block';
       box.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is thinking...</span>`;
 
-      const prompt = `
-You are "PiggyCoach", an upbeat, encouraging financial mentor for kids.
+      try {
+        // Fetch key from protected /settings/secrets subcollection
+        const secretDoc = await db.collection('families').doc(familyId).collection('settings').doc('secrets').get();
+        if (!secretDoc.exists || !secretDoc.data().geminiApiKey) {
+          box.innerHTML = `<span style="color:#f87171;">PiggyCoach is currently resting. Ask your parent to connect the AI Key in settings!</span>`;
+          return;
+        }
+
+        const apiKey = secretDoc.data().geminiApiKey;
+
+        const prompt = `
+You are "PiggyCoach", an upbeat, encouraging financial mentor for kids and teens.
 Student: ${currentChild.name}
 Goal: ${title} (${activeCurrency}${target})
 Current Savings: ${activeCurrency}${currentChildBalance}
@@ -875,10 +889,9 @@ Available Chores: ${JSON.stringify(activeChores.map(c => c.title + ' (+' + activ
 Weekly Allowance: ${JSON.stringify(activeSchedules.filter(s => s.frequency === 'WEEKLY').map(s => s.title + ': ' + activeCurrency + s.amount))}
 
 Child Question: "${question}"
-Instructions: Speak directly to ${currentChild.name} in 3 punchy sentences with fun emojis. Give a real plan combining pocket money and a couple chores. Finish completely.`;
+Instructions: Speak directly to ${currentChild.name} in 3 punchy, age-appropriate sentences with fun emojis. Give a real plan combining pocket money and chores. Finish completely.`;
 
-      try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${activeFamilyDoc.geminiApiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -891,7 +904,7 @@ Instructions: Speak directly to ${currentChild.name} in 3 punchy sentences with 
         const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
         box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:4px;">${reply || 'Keep up the steady saving!'}</div>`;
       } catch (err) {
-        box.innerHTML = `<span style="color:#f87171;">Coach note: ${err.message}</span>`;
+        box.innerHTML = `<span style="color:#f87171;">PiggyCoach note: ${err.message}</span>`;
       }
     }
 
