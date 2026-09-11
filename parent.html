@@ -63,7 +63,6 @@
       </div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
         <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
-        <!-- SHARE CHILD LINK BUTTON -->
         <button id="copyChildLinkBtn" class="btn btn-gray" style="display:none;" onclick="copyChildLink()">📋 Copy Child Link</button>
         <a id="childAppLinkBtn" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none; display:none;">Open Child App ↗</a>
         <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
@@ -108,7 +107,7 @@
         <div class="card">
           <h3>📜 Live Activity Feed</h3>
           <table>
-            <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th></tr></thead>
+            <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th><th>Action</th></tr></thead>
             <tbody id="transactionsTable"></tbody>
           </table>
         </div>
@@ -177,7 +176,7 @@
         </div>
       </div>
 
-      <!-- TAB 4: SCHEDULES (UPDATED WITH NAMED DAYS) -->
+      <!-- TAB 4: SCHEDULES -->
       <div id="tab-schedules" class="tab-pane">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -208,13 +207,13 @@
             <div class="form-group" id="schedDayContainer">
               <label>Payout Day</label>
               <select id="schedDaySelect">
-                <option value="5">Friday</option>
                 <option value="6">Saturday</option>
                 <option value="0">Sunday</option>
                 <option value="1">Monday</option>
                 <option value="2">Tuesday</option>
                 <option value="3">Wednesday</option>
                 <option value="4">Thursday</option>
+                <option value="5">Friday</option>
               </select>
               <input type="text" id="schedDayText" placeholder="Day (1-31) or DD/MM" style="display:none;">
             </div>
@@ -224,7 +223,7 @@
         </div>
       </div>
 
-      <!-- TAB 5: MEMBERS (WITH NEGATIVE & POSITIVE OPENING BALANCES) -->
+      <!-- TAB 5: MEMBERS -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
           <h3>👨‍👩‍👧‍👦 Family Members</h3>
@@ -276,7 +275,6 @@
           <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Settings</button>
         </div>
 
-        <!-- PERIOD LEDGER CLOSING -->
         <div class="card" style="border-left:4px solid var(--danger);">
           <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
           <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
@@ -336,7 +334,6 @@
       }
     }
 
-    // SHARE CHILD LINK TO CLIPBOARD
     function copyChildLink() {
       if (!familyId) return;
       const baseUrl = window.location.href.split('parent.html')[0];
@@ -539,6 +536,7 @@
         calculateBalances();
       });
 
+      // TRANSACTIONS WITH DELETE ACTION
       famRef.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snap => {
         const tBody = document.getElementById('transactionsTable');
         tBody.innerHTML = '';
@@ -556,6 +554,9 @@
               <td><span class="badge ${badgeClass}">${tx.type}</span></td>
               <td style="color:${isPos?'var(--success)':'var(--danger)'}; font-weight:800;">${isPos?'+':''}${activeCurrency}${Number(tx.amount).toLocaleString()}</td>
               <td>${tx.desc}</td>
+              <td>
+                <button class="btn btn-red" style="padding:3px 8px; font-size:0.72rem;" onclick="deleteTransaction('${doc.id}')">🗑️</button>
+              </td>
             </tr>
           `;
         });
@@ -611,7 +612,7 @@
         snap.forEach(doc => {
           const s = doc.data();
           let displayDay = s.scheduleDay;
-          if (s.frequency === 'WEEKLY' && dayNames[Number(s.scheduleDay)]) {
+          if (s.frequency === 'WEEKLY' && dayNames[Number(s.scheduleDay)] !== undefined) {
             displayDay = dayNames[Number(s.scheduleDay)];
           }
           sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button></td></tr>`;
@@ -638,7 +639,15 @@
       document.getElementById('statTotalOwed').innerText = activeCurrency + total.toLocaleString();
     }
 
-    // FIXED: SUPPORTS NEGATIVE & POSITIVE OPENING BALANCES
+    async function deleteTransaction(txId) {
+      if (!confirm("Are you sure you want to delete this transaction? The child's balance will update automatically.")) return;
+      try {
+        await db.collection('families').doc(familyId).collection('transactions').doc(txId).delete();
+      } catch (err) {
+        alert("Failed to delete transaction: " + err.message);
+      }
+    }
+
     async function addMember() {
       const name = document.getElementById('memName').value.trim();
       const email = document.getElementById('memEmail').value.trim().toLowerCase();
@@ -749,7 +758,7 @@
       await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'denied', reason });
     }
 
-    // FIXED: INITIATES lastRunDate TO TODAY TO PREVENT PHANTOM DUMPS
+    // ADDS SCHEDULE & PAYS OUT FIRST OCCURRENCE IF SCHEDULED FOR TODAY
     async function addSchedule() {
       const title = document.getElementById('schedTitle').value.trim();
       const targetEmail = document.getElementById('schedTargetSelect').value;
@@ -763,11 +772,26 @@
         scheduleDay = document.getElementById('schedDayText').value.trim();
       }
 
-      if (!title || !scheduleDay || !amount) return alert("Please complete all schedule fields.");
+      if (!title || scheduleDay === '' || !amount) return alert("Please complete all schedule fields.");
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
+      const dOfWeek = now.getDay();
+      const dOfMonth = now.getDate();
+      const ddmm = `${day}/${month}`;
 
-      await db.collection('families').doc(familyId).collection('schedules').add({
+      let matchesToday = false;
+      if (frequency === 'WEEKLY' && Number(scheduleDay) === dOfWeek) matchesToday = true;
+      if (frequency === 'MONTHLY' && Number(scheduleDay) === dOfMonth) matchesToday = true;
+      if (frequency === 'ANNUAL_DATE' && scheduleDay.trim() === ddmm) matchesToday = true;
+
+      const batch = db.batch();
+      const schedRef = db.collection('families').doc(familyId).collection('schedules').doc();
+
+      batch.set(schedRef, {
         title,
         targetEmail,
         frequency,
@@ -775,16 +799,42 @@
         amount,
         status: 'Active',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        lastRunDate: todayStr 
+        lastRunDate: todayStr
       });
+
+      // If scheduled for today, disburse immediately on day 1
+      if (matchesToday) {
+        const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
+        const childEmails = usersSnap.docs.map(d => d.data().email.toLowerCase().trim());
+        const recipients = (targetEmail === 'all') ? childEmails : [targetEmail];
+
+        recipients.forEach(email => {
+          const txRef = db.collection('families').doc(familyId).collection('transactions').doc();
+          batch.set(txRef, {
+            email,
+            type: 'Allowance',
+            amount: amount,
+            desc: `Scheduled Payout: ${title}`,
+            date: todayStr,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+      }
+
+      await batch.commit();
 
       document.getElementById('schedTitle').value = '';
       document.getElementById('schedAmount').value = '';
       if (document.getElementById('schedDayText')) document.getElementById('schedDayText').value = '';
-      alert(`Schedule "${title}" saved! Payouts will start cleanly from the next due cycle.`);
+      
+      if (matchesToday) {
+        alert(`Schedule "${title}" saved! Today's first payout of ${activeCurrency}${amount} has been disbursed.`);
+      } else {
+        alert(`Schedule "${title}" saved! Payouts will start cleanly on the next due date.`);
+      }
     }
 
-    // FIXED: PREVENTS HISTORICAL DUMPS IF lastRunDate IS BLANK
+    // BULLETPROOF CATCH-UP LOGIC
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -797,9 +847,11 @@
         const childEmails = usersSnap.docs.map(d => d.data().email.toLowerCase().trim());
         if (childEmails.length === 0) return;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString().split('T')[0];
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
 
         let totalCatchUpGenerated = 0;
 
@@ -808,34 +860,43 @@
           const amount = Number(s.amount) || 0;
           if (amount <= 0) continue;
 
-          let pointerDate = new Date();
-          if (s.lastRunDate && s.lastRunDate.includes('-')) {
-            const parts = s.lastRunDate.split('-');
-            pointerDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-            pointerDate.setDate(pointerDate.getDate() + 1);
-          } else {
-            pointerDate = new Date(today);
-          }
-          pointerDate.setHours(0, 0, 0, 0);
-
-          if (pointerDate > today) {
-            if (!s.lastRunDate) await doc.ref.update({ lastRunDate: todayStr });
+          if (s.lastRunDate === todayStr) {
             continue;
           }
 
-          const maxLookback = new Date(today);
-          maxLookback.setDate(maxLookback.getDate() - 180);
-          if (pointerDate < maxLookback) {
-            pointerDate = new Date(maxLookback);
+          if (!s.lastRunDate) {
+            await doc.ref.update({ lastRunDate: todayStr });
+            continue;
+          }
+
+          const parts = s.lastRunDate.split('-').map(Number);
+          let pointer = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+          pointer.setHours(0, 0, 0, 0);
+
+          const targetToday = new Date(year, now.getMonth(), now.getDate());
+          targetToday.setHours(0, 0, 0, 0);
+
+          if (pointer > targetToday) {
+            continue;
+          }
+
+          const safetyFloor = new Date(targetToday);
+          safetyFloor.setDate(safetyFloor.getDate() - 60);
+          if (pointer < safetyFloor) {
+            pointer = new Date(safetyFloor);
           }
 
           const missedDates = [];
 
-          while (pointerDate <= today) {
-            const dOfWeek = pointerDate.getDay();
-            const dOfMonth = pointerDate.getDate();
-            const ddmm = String(dOfMonth).padStart(2, '0') + '/' + String(pointerDate.getMonth() + 1).padStart(2, '0');
-            const dateStr = pointerDate.toISOString().split('T')[0];
+          while (pointer <= targetToday) {
+            const pYear = pointer.getFullYear();
+            const pMonth = String(pointer.getMonth() + 1).padStart(2, '0');
+            const pDay = String(pointer.getDate()).padStart(2, '0');
+            const curDateStr = `${pYear}-${pMonth}-${pDay}`;
+
+            const dOfWeek = pointer.getDay();
+            const dOfMonth = pointer.getDate();
+            const ddmm = `${pDay}/${pMonth}`;
 
             let matched = false;
             if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dOfWeek) {
@@ -847,10 +908,10 @@
             }
 
             if (matched) {
-              missedDates.push(dateStr);
+              missedDates.push(curDateStr);
             }
 
-            pointerDate.setDate(pointerDate.getDate() + 1);
+            pointer.setDate(pointer.getDate() + 1);
           }
 
           if (missedDates.length > 0) {
@@ -889,7 +950,6 @@
       }
     }
 
-    // PERIOD LEDGER CLOSING
     async function runPeriodClosing() {
       if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?")) return;
 
