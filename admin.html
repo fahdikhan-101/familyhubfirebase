@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SaaS Super Admin Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root { --primary: #6366f1; --success: #10b981; --danger: #ef4444; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px; margin: 0; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 24px; }
+    .card { background: var(--card); border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+    th { text-align: left; padding: 10px; border-bottom: 1px solid #334155; color: #94a3b8; }
+    td { padding: 12px 10px; border-bottom: 1px solid #334155; }
+    .btn { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; color: #fff; font-size: 0.8rem; }
+    .btn-green { background: var(--success); }
+    .btn-red { background: var(--danger); }
+    .btn-blue { background: var(--primary); }
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+    .status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .status-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .status-suspended { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>🛡️ SaaS Super-Admin Portal</h2>
+      <button id="authBtn" class="btn btn-blue" onclick="handleAuth()">Sign in with Google</button>
+    </div>
+
+    <div id="adminContent" style="display:none;">
+      <!-- Quick Direct Provision Form -->
+      <div class="card">
+        <h3>➕ Manually Authorize & Provision Family</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <input type="text" id="manualName" placeholder="Family Name (e.g. Khan Family)" style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
+          <input type="email" id="manualEmail" placeholder="Parent Google Email" style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff;">
+          <button class="btn btn-green" onclick="provisionDirect()">Authorize & Provision</button>
+        </div>
+      </div>
+
+      <!-- Access Requests / Current Subscribers Table -->
+      <div class="card">
+        <h3>📋 Platform Subscribers & Inquiries</h3>
+        <table>
+          <thead>
+            <tr><th>Email</th><th>Family Name</th><th>Family ID</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="subscriberList"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyTTAZ9sQNHiioYInGDuiOjkWin0TjfIo",
+      authDomain: "family-allowance-hub.firebaseapp.com",
+      projectId: "family-allowance-hub",
+      storageBucket: "family-allowance-hub.firebasestorage.app",
+      messagingSenderId: "90520973036",
+      appId: "1:90520973036:web:3b9b3cca2fe0c7c882ffc9"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      const btn = document.getElementById('authBtn');
+      const content = document.getElementById('adminContent');
+      if (user) {
+        btn.innerText = `Sign Out (${user.email})`;
+        content.style.display = 'block';
+        loadSubscribers();
+      } else {
+        btn.innerText = "Sign in with Google";
+        content.style.display = 'none';
+      }
+    });
+
+    function handleAuth() {
+      if (auth.currentUser) auth.signOut();
+      else auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    }
+
+    function loadSubscribers() {
+      db.collection('platform_subscriptions').onSnapshot(snap => {
+        const tbody = document.getElementById('subscriberList');
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+          const d = doc.data();
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${d.email}</strong></td>
+              <td>${d.familyName || '—'}</td>
+              <td><code>${d.familyId || 'None'}</code></td>
+              <td><span class="badge status-${d.status}">${d.status}</span></td>
+              <td>
+                ${d.status === 'pending' ? `<button class="btn btn-green" onclick="approveRequest('${doc.id}', '${d.email}', '${d.familyName}')">Approve</button>` : ''}
+                ${d.status === 'active' ? `<button class="btn btn-red" onclick="toggleStatus('${doc.id}', '${d.familyId}', 'suspended')">Suspend</button>` : ''}
+                ${d.status === 'suspended' ? `<button class="btn btn-green" onclick="toggleStatus('${doc.id}', '${d.familyId}', 'active')">Reactivate</button>` : ''}
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    async function provisionDirect() {
+      const name = document.getElementById('manualName').value.trim();
+      const email = document.getElementById('manualEmail').value.trim().toLowerCase();
+      if (!name || !email) return alert("Fill all fields");
+
+      const familyId = 'fam_' + Math.random().toString(36).substring(2, 10);
+      const famRef = db.collection('families').doc(familyId);
+
+      // Create Family Tenant
+      await famRef.set({
+        familyName: name,
+        currency: "Rs. ",
+        geminiApiKey: "",
+        aiEnabled: false,
+        ownerEmail: email,
+        status: "active",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Default Starter Chores & Rules
+      await famRef.collection('chores').add({ title: "Clean Bedroom", reward: 50 });
+      await famRef.collection('rules').add({ type: "Reward", title: "Exam Excellence", amount: 500 });
+      await famRef.collection('users').add({ name: name.split(' ')[0] || "Parent", email: email, role: "Parent", pinHash: "" });
+
+      // Record Subscription
+      await db.collection('platform_subscriptions').doc(email).set({
+        email: email,
+        familyName: name,
+        familyId: familyId,
+        status: "active",
+        approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      document.getElementById('manualName').value = '';
+      document.getElementById('manualEmail').value = '';
+      alert(`Provisioned! Family ID: ${familyId}\nShare link: parent.html?familyId=${familyId}`);
+    }
+
+    async function approveRequest(docId, email, familyName) {
+      document.getElementById('manualName').value = familyName;
+      document.getElementById('manualEmail').value = email;
+      await provisionDirect();
+    }
+
+    async function toggleStatus(subDocId, familyId, newStatus) {
+      await db.collection('platform_subscriptions').doc(subDocId).update({ status: newStatus });
+      if (familyId) {
+        await db.collection('families').doc(familyId).update({ status: newStatus });
+      }
+    }
+  </script>
+</body>
+</html>
