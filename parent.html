@@ -598,7 +598,7 @@ button.btn-google, .btn-google {
       const userRef = famRef.collection('users').doc();
       batch.set(userRef, { name, email, role, pinHash, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
 
-      if (role === 'Child' && openingBal > 0) {
+      if (role === 'Child' && openingBal !== 0 && !isNaN(openingBal)) {
         const txRef = famRef.collection('transactions').doc();
         const now = new Date();
         batch.set(txRef, {
