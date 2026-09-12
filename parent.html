@@ -99,8 +99,10 @@
       </div>
     </div>
 
+    <!-- ONBOARDING & GATEWAY STATES -->
     <div id="onboardSection" class="card" style="display:none; text-align:center; padding:36px 20px;"></div>
 
+    <!-- MAIN ADMIN INTERFACE -->
     <div id="adminMain" style="display:none;">
       <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-overview', this)">📊 Overview</button>
@@ -338,7 +340,7 @@
     let cachedChildren = [];
     let cachedRules = [];
     let currentUser = null;
-    let unsubscribers = []; // Tracks listeners for clean re-attachment
+    let unsubscribers = [];
 
     auth.onAuthStateChanged(user => {
       currentUser = user;
@@ -356,13 +358,17 @@
       }
     });
 
+    // Forced account picker: lets you sign into different accounts cleanly
     function handleAuthAction() {
       if (currentUser) {
-        auth.signOut();
-        sessionStorage.clear();
-        location.reload();
+        auth.signOut().then(() => {
+          sessionStorage.clear();
+          localStorage.removeItem('family_id');
+          location.reload();
+        });
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
       }
     }
@@ -373,6 +379,7 @@
         const onboardSec = document.getElementById('onboardSection');
         const adminMain = document.getElementById('adminMain');
 
+        // State 1: Unauthenticated
         if (!user) {
           onboardSec.style.display = 'block';
           adminMain.style.display = 'none';
@@ -387,76 +394,86 @@
           return;
         }
 
-        const email = user.email.toLowerCase();
-        
-        // 1. Check Platform Subscription
-        let subDoc = await db.collection('platform_subscriptions').doc(email).get();
+        const email = user.email.toLowerCase().trim();
 
-        // Fallback: If not found under exact lowercase email, search by email field
-        if (!subDoc.exists) {
-          const qSnap = await db.collection('platform_subscriptions').where('email', '==', email).limit(1).get();
-          if (!qSnap.empty) subDoc = qSnap.docs[0];
+        // State 2: Check subscription record
+        try {
+          let subDoc = await db.collection('platform_subscriptions').doc(email).get();
+
+          if (!subDoc.exists) {
+            const qSnap = await db.collection('platform_subscriptions').where('email', '==', email).limit(1).get();
+            if (!qSnap.empty) subDoc = qSnap.docs[0];
+          }
+
+          // Unregistered user -> Prompt for family setup
+          if (!subDoc || !subDoc.exists) {
+            adminMain.style.display = 'none';
+            onboardSec.style.display = 'block';
+            onboardSec.innerHTML = `
+              <div style="font-size:3rem; margin-bottom:10px;">👋</div>
+              <h2>Welcome to Family Allowance Hub!</h2>
+              <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+                Signed in as <strong>${email}</strong>.<br>
+                Please enter your family name below to request access.
+              </p>
+              <div style="max-width:340px; margin:0 auto;">
+                <input type="text" id="reqFamName" placeholder="Your Family Name (e.g. Khan Family)" style="margin-bottom:12px;">
+                <button class="btn btn-blue" style="width:100%;" onclick="submitAccessRequest('${email}')">Submit Request to Admin</button>
+              </div>
+            `;
+            return;
+          }
+
+          const subData = subDoc.data();
+
+          // State 3: Pending review
+          if (subData.status === 'pending') {
+            adminMain.style.display = 'none';
+            onboardSec.style.display = 'block';
+            onboardSec.innerHTML = `
+              <div style="font-size:3rem; margin-bottom:10px;">⏳</div>
+              <h2>Access Request Pending</h2>
+              <p style="color:var(--text-muted); font-size:0.9rem;">
+                Your access request for <strong>${subData.familyName || 'your family'}</strong> is currently under review by the administrator.
+              </p>
+            `;
+            return;
+          }
+
+          // State 4: Suspended
+          if (subData.status === 'suspended') {
+            adminMain.style.display = 'none';
+            onboardSec.style.display = 'block';
+            onboardSec.innerHTML = `
+              <div style="font-size:3rem; margin-bottom:10px;">🛑</div>
+              <h2>Account Suspended</h2>
+              <p style="color:var(--text-muted); font-size:0.9rem;">
+                Your family workspace has been paused by the platform administrator.
+              </p>
+            `;
+            return;
+          }
+
+          // State 5: Active verified subscriber
+          familyId = subData.familyId;
+          localStorage.setItem('family_id', familyId);
+
+          onboardSec.style.display = 'none';
+          adminMain.style.display = 'block';
+
+          const childBtn = document.getElementById('childAppLinkBtn');
+          if (childBtn) {
+            childBtn.style.display = 'inline-flex';
+            childBtn.href = `app.html?familyId=${familyId}`;
+          }
+
+          initRealtimeListeners();
+          runCatchUpScheduledPayouts(db, familyId, false);
+
+        } catch (err) {
+          console.error("Subscription check error:", err);
+          alert("Error verifying account status: " + err.message);
         }
-
-        if (!subDoc.exists) {
-          onboardSec.style.display = 'block';
-          adminMain.style.display = 'none';
-          onboardSec.innerHTML = `
-            <div style="font-size:3rem; margin-bottom:10px;">👋</div>
-            <h2>Request Platform Access</h2>
-            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
-              Hello <strong>${email}</strong>! Submit your family name below to request access.
-            </p>
-            <div style="max-width:340px; margin:0 auto;">
-              <input type="text" id="reqFamName" placeholder="Your Family Name (e.g. Khan Family)" style="margin-bottom:12px;">
-              <button class="btn btn-blue" style="width:100%;" onclick="submitAccessRequest('${email}')">Submit Request to Admin</button>
-            </div>
-          `;
-          return;
-        }
-
-        const subData = subDoc.data();
-
-        if (subData.status === 'pending') {
-          onboardSec.style.display = 'block';
-          adminMain.style.display = 'none';
-          onboardSec.innerHTML = `
-            <div style="font-size:3rem; margin-bottom:10px;">⏳</div>
-            <h2>Access Request Pending</h2>
-            <p style="color:var(--text-muted); font-size:0.9rem;">
-              Your access request for <strong>${subData.familyName}</strong> is currently under review by the administrator.
-            </p>
-          `;
-          return;
-        }
-
-        if (subData.status === 'suspended') {
-          onboardSec.style.display = 'block';
-          adminMain.style.display = 'none';
-          onboardSec.innerHTML = `
-            <div style="font-size:3rem; margin-bottom:10px;">🛑</div>
-            <h2>Account Suspended</h2>
-            <p style="color:var(--text-muted); font-size:0.9rem;">
-              Your family workspace has been paused by the platform administrator.
-            </p>
-          `;
-          return;
-        }
-
-        // CRITICAL FIX: Assign verified familyId from subscription and persist
-        familyId = subData.familyId;
-        localStorage.setItem('family_id', familyId);
-
-        onboardSec.style.display = 'none';
-        adminMain.style.display = 'block';
-
-        const childBtn = document.getElementById('childAppLinkBtn');
-        childBtn.style.display = 'inline-flex';
-        childBtn.href = `app.html?familyId=${familyId}`;
-
-        // Initialize listeners with guaranteed familyId
-        initRealtimeListeners();
-        runCatchUpScheduledPayouts(db, familyId, false);
       });
     });
 
@@ -524,7 +541,6 @@
     function initRealtimeListeners() {
       if (!familyId) return;
 
-      // Clean up any existing listeners before attaching
       unsubscribers.forEach(u => u());
       unsubscribers = [];
 
