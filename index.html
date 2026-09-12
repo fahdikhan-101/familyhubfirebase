@@ -21,7 +21,8 @@
     .user-details { display: flex; flex-direction: column; }
     .user-name { font-weight: 800; font-size: 0.95rem; }
     .user-rank { font-size: 0.72rem; color: #a5b4fc; font-weight: 700; text-transform: uppercase; }
-    .btn-lock { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--card-border); color: var(--text-muted); border-radius: 10px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .btn-lock { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--card-border); color: var(--text-muted); border-radius: 10px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease; }
+    .btn-lock:active { transform: scale(0.95); }
     .card { background: var(--card-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
     .balance-card { text-align: center; background: linear-gradient(135deg, rgba(79, 70, 229, 0.35) 0%, rgba(236, 72, 153, 0.2) 100%); border: 1px solid rgba(255, 255, 255, 0.15); padding: 24px 16px; }
     .balance-title { font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
@@ -29,10 +30,10 @@
     h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #ffffff; }
     .form-group { margin-bottom: 12px; text-align: left; }
     label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-    input, select { width: 100%; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1.5px solid var(--card-border); border-radius: 12px; font-size: 0.95rem; color: #fff; outline: none; }
+    input, select { width: 100%; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1.5px solid var(--card-border); border-radius: 12px; font-size: 0.95rem; color: #fff; outline: none; transition: border-color 0.2s; }
     input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3); }
-    button.btn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    button.btn:active { transform: scale(0.98); }
+    button.btn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.15s ease, opacity 0.2s; }
+    button.btn:active { transform: scale(0.97); }
     .btn-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     .btn-blue { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
     .btn-purple { background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%); }
@@ -46,27 +47,74 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 500px; margin: 0 auto; }
-    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; gap: 4px; padding: 8px 14px; }
-    .nav-item .icon { font-size: 1.3rem; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; gap: 4px; padding: 8px 14px; transition: all 0.15s ease; }
+    .nav-item .icon { font-size: 1.3rem; transition: transform 0.15s ease; }
+    .nav-item:active .icon { transform: scale(1.18); }
     .nav-item.active { color: #38bdf8; }
     .goal-card { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 16px; padding: 14px; margin-bottom: 14px; }
     .goal-header { display: flex; justify-content: space-between; align-items: center; }
     .goal-title { font-weight: 800; font-size: 1rem; color: #fff; }
-    .btn-delete-goal { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; cursor: pointer; font-size: 0.85rem; border-radius: 8px; padding: 4px 8px; }
+    .btn-delete-goal { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; cursor: pointer; font-size: 0.85rem; border-radius: 8px; padding: 4px 8px; transition: transform 0.15s ease; }
+    .btn-delete-goal:active { transform: scale(0.9); }
     .goal-progress-bg { background: rgba(255, 255, 255, 0.08); border-radius: 9999px; height: 10px; overflow: hidden; margin: 8px 0; }
     .goal-progress-fill { background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%); height: 100%; border-radius: 9999px; transition: width 0.4s ease; }
     .goal-stats { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); }
     .goal-roadmap { margin-top: 10px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 12px; font-size: 0.8rem; line-height: 1.45; }
+    
+    /* AI COACH & TACTILE CHIPS ROW */
     .ai-coach-card { margin-top: 10px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 12px; }
-    .chip { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-border); color: #cbd5e1; padding: 4px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .chip-row, .slicer-chips, .filter-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      padding: 4px 2px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .chip-row::-webkit-scrollbar, .slicer-chips::-webkit-scrollbar, .filter-chips::-webkit-scrollbar {
+      display: none;
+    }
+    .chip, .slicer {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1.2px solid rgba(255, 255, 255, 0.14);
+      color: #cbd5e1;
+      padding: 7px 13px;
+      border-radius: 9999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chip:active, .slicer:active {
+      transform: scale(0.93);
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+    .slicer.active, .chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+    .chip:disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
     .kid-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
     .kid-stat-box { background: rgba(15, 23, 42, 0.5); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px; text-align: center; }
     .kid-stat-title { font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
     .kid-stat-val { font-size: 1.25rem; font-weight: 900; margin: 3px 0 0; }
     .sibling-stat-card { background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 14px; padding: 12px; margin-top: 10px; font-size: 0.8rem; }
-    .slicer-chips, .filter-chips { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 2px; }
-    .slicer { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: var(--text-muted); padding: 5px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .slicer.active { background: var(--primary); color: white; border-color: var(--primary); }
     .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
     .pos { color: var(--success); font-weight: 800; font-size: 0.95rem; }
     .neg { color: var(--danger); font-weight: 800; font-size: 0.95rem; }
@@ -277,7 +325,7 @@
     let activeCurrency = "Rs. ";
     let activeFamilyDoc = null;
     let currentChild = null;
-    let authMethod = "PIN"; // "GOOGLE" or "PIN"
+    let authMethod = "PIN";
     let currentChildBalance = 0;
     let rawHistory = [];
     let childGoals = [];
@@ -331,7 +379,6 @@
         sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
       });
 
-      // Restore session if available
       const cached = sessionStorage.getItem('child_session');
       const cachedAuth = sessionStorage.getItem('child_auth_method');
       if (cached) {
@@ -401,7 +448,6 @@
       bindChildData();
     }
 
-    // BULLETPROOF CATCH-UP LOGIC
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
       if (!familyId) return;
 
@@ -854,23 +900,21 @@
       let aiBlock = "";
       if (activeFamilyDoc && activeFamilyDoc.aiEnabled) {
         if (authMethod === "GOOGLE") {
-          // Google Authenticated: Key vault is accessible
           aiBlock = `
             <div class="ai-coach-card">
               <div style="display:flex; justify-content:space-between;">
                 <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
-                <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 5px; border-radius:4px; font-weight:800;">LIVE</span>
+                <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 6px; border-radius:6px; font-weight:800;">LIVE</span>
               </div>
-              <div style="display:flex; gap:6px; margin-top:8px; overflow-x:auto;">
-                <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How can I reach this faster?')">⚡ Reach faster?</button>
-                <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
-                <button class="chip" onclick="askGemini('${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How does my birthday windfall help?')">🎂 Birthday strategy?</button>
+              <div class="chip-row">
+                <button class="chip" onclick="askGemini(this, '${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How can I reach this faster?')">⚡ Reach faster?</button>
+                <button class="chip" onclick="askGemini(this, '${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
+                <button class="chip" onclick="askGemini(this, '${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How does my birthday windfall help?')">🎂 Birthday strategy?</button>
               </div>
-              <div id="aiBox_${goal.id}" style="display:none; margin-top:8px; font-size:0.8rem; color:#e2e8f0; background:rgba(15,23,42,0.6); padding:8px; border-radius:8px;"></div>
+              <div id="aiBox_${goal.id}" style="display:none; margin-top:8px; font-size:0.8rem; color:#e2e8f0; background:rgba(15,23,42,0.6); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.06);"></div>
             </div>
           `;
         } else {
-          // PIN Login: Protected banner disabling AI to prevent exposing parent key
           aiBlock = `
             <div class="ai-coach-card" style="background: rgba(15, 23, 42, 0.4); border-color: rgba(255, 255, 255, 0.1);">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -891,19 +935,29 @@
     }
 
     // ========================================================================
-    // CONTEXT-AWARE PIGGYCOACH AI ENGINE
+    // TACTILE & CONTEXT-AWARE PIGGYCOACH AI ENGINE
     // ========================================================================
-    async function askGemini(goalId, title, target, question) {
+    async function askGemini(btnElement, goalId, title, target, question) {
       if (authMethod !== "GOOGLE") {
         return alert("AI Coach is available when logged in with Google to protect your family's key.");
       }
 
+      const row = btnElement ? btnElement.closest('.chip-row') : null;
+      if (row) {
+        row.querySelectorAll('.chip').forEach(c => c.disabled = true);
+      }
+      const originalText = btnElement ? btnElement.innerText : '';
+      if (btnElement) {
+        btnElement.innerText = '⏳ Thinking...';
+        btnElement.style.borderColor = 'var(--cyan)';
+        btnElement.style.color = 'var(--cyan)';
+      }
+
       const box = document.getElementById(`aiBox_${goalId}`);
       box.style.display = 'block';
-      box.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is analyzing your savings & upcoming windfalls...</span>`;
+      box.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is calculating your complete savings strategy...</span>`;
 
       try {
-        // Fetch key from protected /settings/secrets subcollection
         const secretDoc = await db.collection('families').doc(familyId).collection('settings').doc('secrets').get();
         if (!secretDoc.exists || !secretDoc.data().geminiApiKey) {
           box.innerHTML = `<span style="color:#f87171;">PiggyCoach requires an active API key in Parent Settings.</span>`;
@@ -912,7 +966,6 @@
 
         const apiKey = secretDoc.data().geminiApiKey.trim();
 
-        // Build comprehensive financial context including all schedules (weekly, monthly, birthdays)
         const schedulesContext = activeSchedules.map(s => {
           let timing = s.frequency;
           if (s.frequency === 'WEEKLY') {
@@ -954,7 +1007,7 @@ Instructions:
 3. If they need to speed it up before then, recommend 1 or 2 specific chores from their catalog.
 4. Keep the reply to 3–4 concise, impactful sentences. Finish completely with no trailing thoughts.`;
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -963,9 +1016,7 @@ Instructions:
             generationConfig: {
               temperature: 0.7,
               maxOutputTokens: 2048,
-              thinkingConfig: {
-                thinkingBudget: 0
-              }
+              thinkingConfig: { thinkingBudget: 0 }
             }
           })
         });
@@ -979,7 +1030,7 @@ Instructions:
         const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (reply) {
-          box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:6px; line-height:1.45;">${reply}</div>`;
+          box.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:6px; line-height:1.5;">${reply}</div>`;
         } else {
           box.innerHTML = `<span style="color:#f87171;">PiggyCoach couldn't calculate advice right now. Please try again!</span>`;
         }
@@ -987,6 +1038,15 @@ Instructions:
       } catch (err) {
         console.error("PiggyCoach Error:", err);
         box.innerHTML = `<span style="color:#f87171;">PiggyCoach Error: ${err.message}</span>`;
+      } finally {
+        if (row) {
+          row.querySelectorAll('.chip').forEach(c => c.disabled = false);
+        }
+        if (btnElement) {
+          btnElement.innerText = originalText;
+          btnElement.style.borderColor = '';
+          btnElement.style.color = '';
+        }
       }
     }
 
