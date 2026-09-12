@@ -100,7 +100,6 @@
       <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
         <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
         <button id="copyChildLinkBtn" class="btn btn-gray" style="display:none;" onclick="copyChildLink()">📋 Copy Child Link</button>
-        <a id="childAppLinkBtn" href="#" target="_blank" class="btn btn-blue" style="text-decoration:none; display:none;">Open Child App ↗</a>
         <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
       </div>
     </div>
@@ -460,10 +459,8 @@
         onboardSec.style.display = 'none';
         adminMain.style.display = 'block';
 
-        const childBtn = document.getElementById('childAppLinkBtn');
+        
         const copyBtn = document.getElementById('copyChildLinkBtn');
-        childBtn.style.display = 'inline-flex';
-        copyBtn.style.display = 'inline-flex';
         childBtn.href = `app.html?familyId=${familyId}`;
 
         initRealtimeListeners();
