@@ -17,7 +17,6 @@
     h1 { margin: 0; font-size: 1.6rem; font-weight: 900; }
     h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
 
-    /* CLEAN TACTILE NAVIGATION TABS (NO HORIZONTAL SCROLLBAR) */
     .nav-tabs {
       display: flex;
       gap: 8px;
@@ -28,9 +27,7 @@
       -ms-overflow-style: none;
       -webkit-overflow-scrolling: touch;
     }
-    .nav-tabs::-webkit-scrollbar {
-      display: none;
-    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
     .tab-btn {
       background: rgba(255,255,255,0.06);
       border: 1px solid var(--card-border);
@@ -44,9 +41,7 @@
       user-select: none;
       transition: all 0.15s ease;
     }
-    .tab-btn:active {
-      transform: scale(0.95);
-    }
+    .tab-btn:active { transform: scale(0.95); }
     .tab-btn.active {
       background: var(--primary);
       color: #fff;
@@ -95,11 +90,11 @@
     <div class="header-bar">
       <div>
         <h1 id="familyHeaderTitle">Family Allowance Hub</h1>
-        <span style="font-size:0.82rem; color:var(--text-muted);">Firestore Parent Admin Console</span>
+        <span style="font-size:0.82rem; color:var(--text-muted);">Parent Administration Portal</span>
       </div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
         <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
-        <button id="copyChildLinkBtn" class="btn btn-gray" style="display:none;" onclick="copyChildLink()">📋 Copy Child Link</button>
+        <a id="childAppLinkBtn" href="app.html" target="_blank" class="btn btn-blue" style="text-decoration:none; display:none;">Preview Child View ↗</a>
         <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
       </div>
     </div>
@@ -299,7 +294,7 @@
         </div>
 
         <div class="card" style="border-left:4px solid var(--primary);">
-          <h3>🤖 AI PiggyCoach Settings (BYOK Secret Vault)</h3>
+          <h3>🤖 AI PiggyCoach Settings (Secret Vault)</h3>
           <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
             Your Gemini API Key is stored in an encrypted private subcollection accessible only by authenticated family members.
           </p>
@@ -343,6 +338,7 @@
     let cachedChildren = [];
     let cachedRules = [];
     let currentUser = null;
+    let unsubscribers = []; // Tracks listeners for clean re-attachment
 
     auth.onAuthStateChanged(user => {
       currentUser = user;
@@ -363,26 +359,12 @@
     function handleAuthAction() {
       if (currentUser) {
         auth.signOut();
+        sessionStorage.clear();
         location.reload();
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
       }
-    }
-
-    function copyChildLink() {
-      if (!familyId) return;
-      const baseUrl = window.location.href.split('parent.html')[0];
-      const childUrl = `${baseUrl}index.html?familyId=${familyId}`;
-      
-      navigator.clipboard.writeText(childUrl).then(() => {
-        const btn = document.getElementById('copyChildLinkBtn');
-        const oldText = btn.innerText;
-        btn.innerText = "✅ Link Copied!";
-        setTimeout(() => btn.innerText = oldText, 2500);
-      }).catch(err => {
-        prompt("Copy this link for your children:", childUrl);
-      });
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -406,7 +388,15 @@
         }
 
         const email = user.email.toLowerCase();
-        const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+        
+        // 1. Check Platform Subscription
+        let subDoc = await db.collection('platform_subscriptions').doc(email).get();
+
+        // Fallback: If not found under exact lowercase email, search by email field
+        if (!subDoc.exists) {
+          const qSnap = await db.collection('platform_subscriptions').where('email', '==', email).limit(1).get();
+          if (!qSnap.empty) subDoc = qSnap.docs[0];
+        }
 
         if (!subDoc.exists) {
           onboardSec.style.display = 'block';
@@ -415,8 +405,7 @@
             <div style="font-size:3rem; margin-bottom:10px;">👋</div>
             <h2>Request Platform Access</h2>
             <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
-              Hello <strong>${email}</strong>! Access is currently invitation-only.
-              Submit your family details below to request access from the platform owner.
+              Hello <strong>${email}</strong>! Submit your family name below to request access.
             </p>
             <div style="max-width:340px; margin:0 auto;">
               <input type="text" id="reqFamName" placeholder="Your Family Name (e.g. Khan Family)" style="margin-bottom:12px;">
@@ -435,7 +424,7 @@
             <div style="font-size:3rem; margin-bottom:10px;">⏳</div>
             <h2>Access Request Pending</h2>
             <p style="color:var(--text-muted); font-size:0.9rem;">
-              Your access request for <strong>${subData.familyName}</strong> is under review by the administrator.
+              Your access request for <strong>${subData.familyName}</strong> is currently under review by the administrator.
             </p>
           `;
           return;
@@ -454,15 +443,18 @@
           return;
         }
 
+        // CRITICAL FIX: Assign verified familyId from subscription and persist
         familyId = subData.familyId;
         localStorage.setItem('family_id', familyId);
+
         onboardSec.style.display = 'none';
         adminMain.style.display = 'block';
 
-        
-        const copyBtn = document.getElementById('copyChildLinkBtn');
+        const childBtn = document.getElementById('childAppLinkBtn');
+        childBtn.style.display = 'inline-flex';
         childBtn.href = `app.html?familyId=${familyId}`;
 
+        // Initialize listeners with guaranteed familyId
         initRealtimeListeners();
         runCatchUpScheduledPayouts(db, familyId, false);
       });
@@ -530,9 +522,15 @@
     }
 
     function initRealtimeListeners() {
+      if (!familyId) return;
+
+      // Clean up any existing listeners before attaching
+      unsubscribers.forEach(u => u());
+      unsubscribers = [];
+
       const famRef = db.collection('families').doc(familyId);
 
-      famRef.onSnapshot(doc => {
+      const u1 = famRef.onSnapshot(doc => {
         if (!doc.exists) return;
         const d = doc.data();
         activeCurrency = d.currency || "Rs. ";
@@ -541,14 +539,16 @@
         document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
       });
+      unsubscribers.push(u1);
 
-      famRef.collection('settings').doc('secrets').onSnapshot(doc => {
+      const u2 = famRef.collection('settings').doc('secrets').onSnapshot(doc => {
         if (doc.exists) {
           document.getElementById('setGeminiKey').value = doc.data().geminiApiKey || '';
         }
       });
+      unsubscribers.push(u2);
 
-      famRef.collection('users').onSnapshot(snap => {
+      const u3 = famRef.collection('users').onSnapshot(snap => {
         cachedChildren = [];
         const mBody = document.getElementById('membersTable');
         const actSelect = document.getElementById('actionChildSelect');
@@ -574,8 +574,9 @@
         });
         calculateBalances();
       });
+      unsubscribers.push(u3);
 
-      famRef.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snap => {
+      const u4 = famRef.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snap => {
         const tBody = document.getElementById('transactionsTable');
         tBody.innerHTML = '';
         snap.forEach(doc => {
@@ -600,8 +601,9 @@
         });
         calculateBalances();
       });
+      unsubscribers.push(u4);
 
-      famRef.collection('choreLog').where('status', '==', 'pending').onSnapshot(snap => {
+      const u5 = famRef.collection('choreLog').where('status', '==', 'pending').onSnapshot(snap => {
         const pBody = document.getElementById('pendingChoresTable');
         document.getElementById('statPendingCount').innerText = snap.size;
         pBody.innerHTML = '';
@@ -621,8 +623,9 @@
           `;
         });
       });
+      unsubscribers.push(u5);
 
-      famRef.collection('chores').onSnapshot(snap => {
+      const u6 = famRef.collection('chores').onSnapshot(snap => {
         const cBody = document.getElementById('choresCatalogTable');
         cBody.innerHTML = '';
         snap.forEach(doc => {
@@ -630,8 +633,9 @@
           cBody.innerHTML += `<tr><td><strong>${c.title}</strong></td><td>${activeCurrency}${c.reward}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('chores', '${doc.id}')">✕</button></td></tr>`;
         });
       });
+      unsubscribers.push(u6);
 
-      famRef.collection('rules').onSnapshot(snap => {
+      const u7 = famRef.collection('rules').onSnapshot(snap => {
         cachedRules = [];
         const rBody = document.getElementById('rulesCatalogTable');
         rBody.innerHTML = '';
@@ -642,8 +646,9 @@
         });
         filterPresetRules();
       });
+      unsubscribers.push(u7);
 
-      famRef.collection('schedules').onSnapshot(snap => {
+      const u8 = famRef.collection('schedules').onSnapshot(snap => {
         const sBody = document.getElementById('schedulesTable');
         sBody.innerHTML = '';
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -656,9 +661,11 @@
           sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button></td></tr>`;
         });
       });
+      unsubscribers.push(u8);
     }
 
     async function calculateBalances() {
+      if (!familyId) return;
       const snap = await db.collection('families').doc(familyId).collection('transactions').get();
       const balMap = {};
       snap.forEach(d => {
@@ -895,9 +902,7 @@
           const amount = Number(s.amount) || 0;
           if (amount <= 0) continue;
 
-          if (s.lastRunDate === todayStr) {
-            continue;
-          }
+          if (s.lastRunDate === todayStr) continue;
 
           if (!s.lastRunDate) {
             await doc.ref.update({ lastRunDate: todayStr });
@@ -911,15 +916,11 @@
           const targetToday = new Date(year, now.getMonth(), now.getDate());
           targetToday.setHours(0, 0, 0, 0);
 
-          if (pointer > targetToday) {
-            continue;
-          }
+          if (pointer > targetToday) continue;
 
           const safetyFloor = new Date(targetToday);
           safetyFloor.setDate(safetyFloor.getDate() - 60);
-          if (pointer < safetyFloor) {
-            pointer = new Date(safetyFloor);
-          }
+          if (pointer < safetyFloor) pointer = new Date(safetyFloor);
 
           const missedDates = [];
 
@@ -942,10 +943,7 @@
               matched = true;
             }
 
-            if (matched) {
-              missedDates.push(curDateStr);
-            }
-
+            if (matched) missedDates.push(curDateStr);
             pointer.setDate(pointer.getDate() + 1);
           }
 
