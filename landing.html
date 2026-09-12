@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Allowance Hub — Raise Financially Confident Kids</title>
+  <meta name="description" content="The modern family pocket money and chores platform with automated payouts, sibling sharing, and AI financial coaching.">
+  <style>
+    :root {
+      --primary: #6366f1; --primary-dark: #4f46e5; --accent: #ec4899; --success: #10b981;
+      --cyan: #06b6d4; --bg: #0b0f19; --card-bg: rgba(30, 41, 59, 0.6);
+      --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; }
+    
+    /* BACKGROUND GLOWS */
+    .glow-blob { position: fixed; border-radius: 50%; filter: blur(140px); pointer-events: none; z-index: 0; }
+    .glow-1 { width: 500px; height: 500px; background: rgba(99, 102, 241, 0.15); top: -100px; left: -100px; }
+    .glow-2 { width: 450px; height: 450px; background: rgba(236, 72, 153, 0.12); top: 30%; right: -120px; }
+
+    nav { display: flex; justify-content: space-between; align-items: center; max-width: 1150px; margin: 0 auto; padding: 24px 20px; position: relative; z-index: 10; }
+    .logo { font-size: 1.35rem; font-weight: 900; display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; }
+    .btn-cta { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 10px 22px; border-radius: 9999px; text-decoration: none; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35); transition: transform 0.2s, opacity 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-cta:hover { transform: translateY(-2px); opacity: 0.95; }
+    .btn-cta:active { transform: translateY(0); }
+
+    /* HERO SECTION */
+    .hero { max-width: 1000px; margin: 60px auto 40px; padding: 0 20px; text-align: center; position: relative; z-index: 10; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); padding: 6px 16px; border-radius: 9999px; font-size: 0.82rem; font-weight: 800; color: #c7d2fe; margin-bottom: 24px; }
+    h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 900; letter-spacing: -1.5px; line-height: 1.15; margin-bottom: 20px; }
+    h1 span { background: linear-gradient(135deg, #a5b4fc 0%, #ec4899 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-desc { font-size: 1.15rem; color: var(--text-muted); max-width: 680px; margin: 0 auto 36px; }
+    .hero-actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .btn-ghost { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-border); color: #fff; padding: 12px 26px; border-radius: 9999px; font-weight: 700; font-size: 0.95rem; text-decoration: none; transition: background 0.2s; }
+    .btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+
+    /* APP MOCKUP SHOWCASE */
+    .mockup-container { max-width: 820px; margin: 50px auto 80px; padding: 0 20px; position: relative; z-index: 10; }
+    .mockup-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 24px; padding: 28px; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.6); display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+    @media (max-width: 768px) { .mockup-card { grid-template-columns: 1fr; } }
+    .mockup-screen { background: #0f172a; border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 20px; }
+
+    /* FEATURE GRID */
+    .section-title { text-align: center; max-width: 700px; margin: 0 auto 48px; padding: 0 20px; position: relative; z-index: 10; }
+    .section-title h2 { font-size: 2.2rem; font-weight: 900; margin-bottom: 12px; }
+    .grid { max-width: 1150px; margin: 0 auto 90px; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; position: relative; z-index: 10; }
+    .card-feature { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--card-border); border-radius: 20px; padding: 28px; transition: transform 0.2s, border-color 0.2s; }
+    .card-feature:hover { transform: translateY(-4px); border-color: rgba(99, 102, 241, 0.4); }
+    .icon-box { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 18px; }
+
+    /* INTERACTIVE CALCULATOR */
+    .calc-box { max-width: 600px; margin: 0 auto 90px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid var(--card-border); border-radius: 24px; padding: 32px 24px; text-align: center; position: relative; z-index: 10; }
+    .calc-slider { width: 100%; margin: 16px 0; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 8px; border-radius: 9999px; outline: none; }
+    .calc-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); cursor: pointer; box-shadow: 0 0 10px rgba(99,102,241,0.6); }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--card-border); padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; position: relative; z-index: 10; }
+    footer a { color: #a5b4fc; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="glow-blob glow-1"></div>
+  <div class="glow-blob glow-2"></div>
+
+  <!-- NAVBAR -->
+  <nav>
+    <a href="#" class="logo">🐷 Family Allowance Hub</a>
+    <a href="parent.html" class="btn-cta">Parent Portal ↗</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">✨ Multi-Tenant SaaS • Powered by Google Firebase & Gemini 3.5</div>
+    <h1>Turn Pocket Money into <span>Real Financial Literacy</span></h1>
+    <p class="hero-desc">
+      Ditch manual spreadsheets and forgotten promises. Automate weekly allowances, gamify chore bounties, enable sibling sharing, and give your kids an AI financial mentor.
+    </p>
+    <div class="hero-actions">
+      <a href="parent.html" class="btn-cta" style="padding: 13px 32px; font-size: 1.05rem;">Start Your Family Hub Free 🚀</a>
+      <a href="#features" class="btn-ghost">Explore Features ↓</a>
+    </div>
+  </section>
+
+  <!-- LIVE APP PREVIEW -->
+  <section class="mockup-container">
+    <div class="mockup-card">
+      <div>
+        <span style="font-size: 0.75rem; font-weight: 800; color: #a5b4fc; text-transform: uppercase;">Smart AI Mentor</span>
+        <h3 style="font-size: 1.6rem; font-weight: 900; margin: 6px 0 12px; color: #fff;">PiggyCoach Knows The Numbers</h3>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 18px;">
+          Kids don't just see a balance—they ask PiggyCoach how to reach their target items. The AI factors in their weekly pocket money, upcoming birthdays, and suggests exact chores to get there on time.
+        </p>
+        <div style="font-size: 0.85rem; color: #34d399; font-weight: 700;">✓ Automated Catch-Up Payouts (Zero Lost Dollars)</div>
+        <div style="font-size: 0.85rem; color: #34d399; font-weight: 700; margin-top: 4px;">✓ COPPA-Compliant BYOK Private Vault</div>
+      </div>
+      <div class="mockup-screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+          <span style="font-weight: 800; font-size: 0.9rem;">🎯 Lego Millennium Falcon</span>
+          <span style="font-weight: 800; font-size: 0.8rem; color: #ec4899;">65% Saved</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 9999px; overflow:hidden; margin-bottom: 12px;">
+          <div style="background: linear-gradient(90deg, #10b981, #06b6d4); height: 100%; width: 65%;"></div>
+        </div>
+        <div style="background: rgba(99,102,241,0.1); border: 1px dashed rgba(99,102,241,0.3); border-radius: 12px; padding: 12px; font-size: 0.8rem;">
+          <strong style="color: #c7d2fe;">🤖 PiggyCoach:</strong>
+          <div style="margin-top: 4px; color: #e2e8f0; line-height: 1.4;">
+            "You only need Rs. 1,400 more! Your weekly pocket money lands on Friday, so if you fold the laundry twice, you can buy it this weekend! 🚀"
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section-title" id="features">
+    <span style="font-size: 0.8rem; font-weight: 800; color: #38bdf8; text-transform: uppercase;">Engineered for Busy Parents</span>
+    <h2>Everything You Need in One Hub</h2>
+  </section>
+
+  <div class="grid">
+    <div class="card-feature">
+      <div class="icon-box" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">📅</div>
+      <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff;">Autopilot Allowances</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Set Weekly, Monthly, or Annual Birthday windfalls. Our zero-loop catch-up engine guarantees kids never miss a payment even if you don't open the app for weeks.
+      </p>
+    </div>
+
+    <div class="card-feature">
+      <div class="icon-box" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">🧹</div>
+      <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff;">Chore Bounties & Approval</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Kids complete chores and submit them with a single tap. You review and approve in seconds with full control over rewards and penalties.
+      </p>
+    </div>
+
+    <div class="card-feature">
+      <div class="icon-box" style="background: rgba(6, 182, 212, 0.2); color: #67e8f9;">🤝</div>
+      <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff;">Sibling Sharing & Gifting</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Teach empathy and sharing. Kids can transfer savings to their siblings for birthday gifts or shared toy purchases with instant double-entry ledger tracking.
+      </p>
+    </div>
+
+    <div class="card-feature">
+      <div class="icon-box" style="background: rgba(236, 72, 153, 0.2); color: #f472b6;">🔒</div>
+      <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff;">Protected Family Vault</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Bring Your Own Key (BYOK) Gemini AI integration. Keys are isolated in a restricted Firestore subcollection accessible only via authenticated Google token checks.
+      </p>
+    </div>
+
+    <div class="card-feature">
+      <div class="icon-box" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">📦</div>
+      <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff;">Period Ledger Closing</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Keep your database lean and responsive. Archive completed months with one click, carrying closing balances forward cleanly without losing historical totals.
+      </p>
+    </div>
+
+    <div class="card-feature">
+      <div class="icon-box" style="background: rgba(129, 140, 248, 0.2); color: #a5b4fc;">📱</div>
+      <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; color: #fff;">Instant PWA Install</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        No 50 MB app downloads. Install straight from Safari or Chrome onto iPhones, Android tablets, or laptops with offline caching support.
+      </p>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE CALCULATOR -->
+  <section class="calc-box">
+    <h3 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 8px;">See What Your Kids Could Save</h3>
+    <p style="color: var(--text-muted); font-size: 0.88rem;">Adjust your family's weekly pocket money:</p>
+    
+    <input type="range" class="calc-slider" id="calcSlider" min="200" max="5000" step="100" value="1000" oninput="updateCalc(this.value)">
+    
+    <div style="font-size: 2.4rem; font-weight: 900; color: #38bdf8; margin: 12px 0;" id="calcOutput">Rs. 52,000 / yr</div>
+    <p style="font-size: 0.82rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 20px;">
+      In 1 year, your child could independently fund their hobbies, tech wishlist, and school savings through automated habit tracking.
+    </p>
+    <a href="parent.html" class="btn-cta">Set Up Your Family Allowance →</a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="margin-bottom: 12px;">
+      <a href="parent.html">Parent Login</a>
+      <a href="landing.html#features">Features</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+    </div>
+    <p>© 2026 Family Allowance Hub. Built for modern parents and future savers.</p>
+  </footer>
+
+  <script>
+    function updateCalc(val) {
+      const yearly = Number(val) * 52;
+      document.getElementById('calcOutput').innerText = 'Rs. ' + yearly.toLocaleString() + ' / yr';
+    }
+  </script>
+</body>
+</html>
