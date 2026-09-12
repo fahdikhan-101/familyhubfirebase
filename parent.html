@@ -10,15 +10,50 @@
       --danger: #ef4444; --cyan: #06b6d4; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.75);
       --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
     }
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 80%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; }
     .container { max-width: 950px; margin: 0 auto; padding: 20px 16px 80px; }
     .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 20px; border-bottom: 1px solid var(--card-border); margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
     h1 { margin: 0; font-size: 1.6rem; font-weight: 900; }
     h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
-    .nav-tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
-    .tab-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
-    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* CLEAN TACTILE NAVIGATION TABS (NO HORIZONTAL SCROLLBAR) */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      padding: 4px 2px 8px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .nav-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 9px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:active {
+      transform: scale(0.95);
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
     .card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--card-border); border-radius: 18px; padding: 20px; margin-bottom: 16px; }
@@ -29,7 +64,8 @@
     .form-group { margin-bottom: 14px; text-align: left; }
     label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
     input, select { width: 100%; padding: 12px 14px; background: rgba(15,23,42,0.6); border: 1.5px solid var(--card-border); border-radius: 12px; font-size: 0.95rem; color: #fff; outline: none; }
-    button.btn { padding: 10px 16px; border: none; border-radius: 12px; font-size: 0.88rem; font-weight: 800; cursor: pointer; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.2s; }
+    button.btn { padding: 10px 16px; border: none; border-radius: 12px; font-size: 0.88rem; font-weight: 800; cursor: pointer; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.15s ease, opacity 0.2s; }
+    button.btn:active { transform: scale(0.97); }
     button.btn:hover { opacity: 0.9; }
     .btn-blue { background: linear-gradient(135deg, #6366f1, #4f46e5); }
     .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
@@ -69,10 +105,8 @@
       </div>
     </div>
 
-    <!-- SUBSCRIPTION STATUS & GATEWAY -->
     <div id="onboardSection" class="card" style="display:none; text-align:center; padding:36px 20px;"></div>
 
-    <!-- MAIN ADMIN INTERFACE -->
     <div id="adminMain" style="display:none;">
       <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-overview', this)">📊 Overview</button>
@@ -265,7 +299,6 @@
           <button class="btn btn-blue" onclick="saveCurrency()">Save Currency</button>
         </div>
 
-        <!-- PROTECTED BYOK GEMINI CONFIGURATION -->
         <div class="card" style="border-left:4px solid var(--primary);">
           <h3>🤖 AI PiggyCoach Settings (BYOK Secret Vault)</h3>
           <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
@@ -502,7 +535,6 @@
     function initRealtimeListeners() {
       const famRef = db.collection('families').doc(familyId);
 
-      // Public Document Listener
       famRef.onSnapshot(doc => {
         if (!doc.exists) return;
         const d = doc.data();
@@ -513,7 +545,6 @@
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
       });
 
-      // Protected Subcollection Listener (Secrets Vault)
       famRef.collection('settings').doc('secrets').onSnapshot(doc => {
         if (doc.exists) {
           document.getElementById('setGeminiKey').value = doc.data().geminiApiKey || '';
@@ -547,7 +578,6 @@
         calculateBalances();
       });
 
-      // Transactions Listener with Delete Action
       famRef.collection('transactions').orderBy('timestamp', 'desc').onSnapshot(snap => {
         const tBody = document.getElementById('transactionsTable');
         tBody.innerHTML = '';
@@ -837,7 +867,7 @@
       if (document.getElementById('schedDayText')) document.getElementById('schedDayText').value = '';
       
       if (matchesToday) {
-        alert(`Schedule "${title}" saved! Today first payout of ${activeCurrency}${amount} has been disbursed.`);
+        alert(`Schedule "${title}" saved! Today's first payout of ${activeCurrency}${amount} has been disbursed.`);
       } else {
         alert(`Schedule "${title}" saved! Payouts will start on the next due date.`);
       }
@@ -1004,7 +1034,6 @@
       alert("Currency saved!");
     }
 
-    // SAVES SENSITIVE KEY TO THE ISOLATED SUBCOLLECTION
     async function saveAiSettings() {
       const geminiApiKey = document.getElementById('setGeminiKey').value.trim();
       const aiEnabled = document.getElementById('setAiEnabled').checked;
