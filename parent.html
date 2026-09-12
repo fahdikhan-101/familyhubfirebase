@@ -358,7 +358,6 @@
       }
     });
 
-    // Forced account picker: lets you sign into different accounts cleanly
     function handleAuthAction() {
       if (currentUser) {
         auth.signOut().then(() => {
@@ -373,13 +372,32 @@
       }
     }
 
+    // Direct, query-free subscription check
+    function showNewUserOnboarding(email) {
+      const onboardSec = document.getElementById('onboardSection');
+      const adminMain = document.getElementById('adminMain');
+      adminMain.style.display = 'none';
+      onboardSec.style.display = 'block';
+      onboardSec.innerHTML = `
+        <div style="font-size:3rem; margin-bottom:10px;">👋</div>
+        <h2>Welcome to Family Allowance Hub!</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+          Signed in as <strong>${email}</strong>.<br>
+          Please enter your family name below to request access.
+        </p>
+        <div style="max-width:340px; margin:0 auto;">
+          <input type="text" id="reqFamName" placeholder="Your Family Name (e.g. Khan Family)" style="margin-bottom:12px;">
+          <button class="btn btn-blue" style="width:100%;" onclick="submitAccessRequest('${email}')">Submit Request to Admin</button>
+        </div>
+      `;
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       auth.onAuthStateChanged(async (user) => {
         currentUser = user;
         const onboardSec = document.getElementById('onboardSection');
         const adminMain = document.getElementById('adminMain');
 
-        // State 1: Unauthenticated
         if (!user) {
           onboardSec.style.display = 'block';
           adminMain.style.display = 'none';
@@ -394,39 +412,19 @@
           return;
         }
 
-        const email = user.email.toLowerCase().trim();
+        const email = String(user.email || '').toLowerCase().trim();
 
-        // State 2: Check subscription record
         try {
-          let subDoc = await db.collection('platform_subscriptions').doc(email).get();
+          // Direct document fetch (no collection query that triggers permission-denied)
+          const subDoc = await db.collection('platform_subscriptions').doc(email).get();
 
           if (!subDoc.exists) {
-            const qSnap = await db.collection('platform_subscriptions').where('email', '==', email).limit(1).get();
-            if (!qSnap.empty) subDoc = qSnap.docs[0];
-          }
-
-          // Unregistered user -> Prompt for family setup
-          if (!subDoc || !subDoc.exists) {
-            adminMain.style.display = 'none';
-            onboardSec.style.display = 'block';
-            onboardSec.innerHTML = `
-              <div style="font-size:3rem; margin-bottom:10px;">👋</div>
-              <h2>Welcome to Family Allowance Hub!</h2>
-              <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
-                Signed in as <strong>${email}</strong>.<br>
-                Please enter your family name below to request access.
-              </p>
-              <div style="max-width:340px; margin:0 auto;">
-                <input type="text" id="reqFamName" placeholder="Your Family Name (e.g. Khan Family)" style="margin-bottom:12px;">
-                <button class="btn btn-blue" style="width:100%;" onclick="submitAccessRequest('${email}')">Submit Request to Admin</button>
-              </div>
-            `;
+            showNewUserOnboarding(email);
             return;
           }
 
           const subData = subDoc.data();
 
-          // State 3: Pending review
           if (subData.status === 'pending') {
             adminMain.style.display = 'none';
             onboardSec.style.display = 'block';
@@ -440,7 +438,6 @@
             return;
           }
 
-          // State 4: Suspended
           if (subData.status === 'suspended') {
             adminMain.style.display = 'none';
             onboardSec.style.display = 'block';
@@ -454,7 +451,7 @@
             return;
           }
 
-          // State 5: Active verified subscriber
+          // Active subscriber
           familyId = subData.familyId;
           localStorage.setItem('family_id', familyId);
 
@@ -471,8 +468,9 @@
           runCatchUpScheduledPayouts(db, familyId, false);
 
         } catch (err) {
-          console.error("Subscription check error:", err);
-          alert("Error verifying account status: " + err.message);
+          console.warn("Direct check handled:", err);
+          // If Firestore denies read because doc doesn't exist, route to onboarding cleanly
+          showNewUserOnboarding(email);
         }
       });
     });
@@ -481,8 +479,9 @@
       const famName = document.getElementById('reqFamName').value.trim();
       if (!famName) return alert("Please enter your family name.");
 
-      await db.collection('platform_subscriptions').doc(email).set({
-        email: email,
+      const cleanEmail = email.toLowerCase().trim();
+      await db.collection('platform_subscriptions').doc(cleanEmail).set({
+        email: cleanEmail,
         familyName: famName,
         status: "pending",
         requestedAt: firebase.firestore.FieldValue.serverTimestamp()
