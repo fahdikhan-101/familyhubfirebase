@@ -411,11 +411,12 @@
           return;
         }
 
-        const email = String(user.email || '').toLowerCase().trim();
+        const userEmail = String(user.email || '').toLowerCase().trim();
+        let resolvedFamilyId = null;
 
         try {
-          // 1. Check if user is a primary subscriber
-          const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+          // 1. Direct Owner Check
+          const subDoc = await db.collection('platform_subscriptions').doc(userEmail).get();
 
           if (subDoc.exists) {
             const subData = subDoc.data();
@@ -445,48 +446,67 @@
               return;
             }
 
-            familyId = subData.familyId;
-          } else {
-            // 2. Co-Parent Check: Look up user in family members (e.g., Wife added by husband)
-            const memberSnap = await db.collectionGroup('users')
-              .where('email', '==', email)
-              .get();
+            resolvedFamilyId = subData.familyId;
+          }
 
-            let foundParentFamilyId = null;
-            memberSnap.forEach(doc => {
-              const uData = doc.data();
-              if (uData.role === 'Parent') {
-                // Doc path is families/{familyId}/users/{userId}
-                foundParentFamilyId = doc.ref.parent.parent.id;
+          // 2. Co-Parent Check (Wife / Partner)
+          if (!resolvedFamilyId) {
+            // Path A: Check current local candidate if exists
+            const candidateFamId = urlParams.get('familyId') || localStorage.getItem('family_id');
+            if (candidateFamId) {
+              try {
+                const checkUserSnap = await db.collection('families').doc(candidateFamId).collection('users').get();
+                checkUserSnap.forEach(d => {
+                  const u = d.data();
+                  if (String(u.email || '').toLowerCase().trim() === userEmail && u.role === 'Parent') {
+                    resolvedFamilyId = candidateFamId;
+                  }
+                });
+              } catch (e) {}
+            }
+
+            // Path B: Scoped collectionGroup query matching user's own email (satisfies security rule)
+            if (!resolvedFamilyId) {
+              try {
+                const memberSnap = await db.collectionGroup('users')
+                  .where('email', '==', userEmail)
+                  .get();
+
+                memberSnap.forEach(doc => {
+                  const uData = doc.data();
+                  if (uData.role === 'Parent') {
+                    resolvedFamilyId = doc.ref.parent.parent.id;
+                  }
+                });
+              } catch (cgErr) {
+                console.warn("CollectionGroup query error (check if index is building):", cgErr);
               }
-            });
-
-            if (foundParentFamilyId) {
-              familyId = foundParentFamilyId;
-            } else {
-              // Not a subscriber and not an invited parent -> Show onboarding
-              showNewUserOnboarding(email);
-              return;
             }
           }
 
-          // Verified Parent / Owner: Activate Dashboard
-          localStorage.setItem('family_id', familyId);
-          onboardSec.style.display = 'none';
-          adminMain.style.display = 'block';
+          // 3. Mount or Onboard
+          if (resolvedFamilyId) {
+            familyId = resolvedFamilyId;
+            localStorage.setItem('family_id', familyId);
 
-          const childBtn = document.getElementById('childAppLinkBtn');
-          if (childBtn) {
-            childBtn.style.display = 'inline-flex';
-            childBtn.href = `app.html?familyId=${familyId}`;
+            onboardSec.style.display = 'none';
+            adminMain.style.display = 'block';
+
+            const childBtn = document.getElementById('childAppLinkBtn');
+            if (childBtn) {
+              childBtn.style.display = 'inline-flex';
+              childBtn.href = `app.html?familyId=${familyId}`;
+            }
+
+            initRealtimeListeners();
+            runCatchUpScheduledPayouts(db, familyId, false);
+          } else {
+            showNewUserOnboarding(userEmail);
           }
 
-          initRealtimeListeners();
-          runCatchUpScheduledPayouts(db, familyId, false);
-
         } catch (err) {
-          console.warn("Parent resolution handled:", err);
-          showNewUserOnboarding(email);
+          console.error("Authentication resolution error:", err);
+          showNewUserOnboarding(userEmail);
         }
       });
     });
