@@ -25,7 +25,6 @@
     .btn-lock:active { transform: scale(0.95); }
     .card { background: var(--card-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
     
-    /* INTERACTIVE PIGGY HERO CARD */
     .balance-card { text-align: center; background: linear-gradient(135deg, rgba(79, 70, 229, 0.35) 0%, rgba(236, 72, 153, 0.2) 100%); border: 1px solid rgba(255, 255, 255, 0.15); padding: 22px 16px 20px; position: relative; overflow: hidden; }
     .piggy-mascot { font-size: 3.2rem; cursor: pointer; display: inline-block; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); user-select: none; }
     .piggy-mascot:active { transform: scale(1.25) rotate(-8deg); }
@@ -114,19 +113,25 @@
       <h2 style="margin: 0 0 6px; font-weight: 900; font-size: 1.5rem;">Family PiggyBank</h2>
       <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Sign in with Google to enable AI Coaching, or use your PIN</p>
       
+      <!-- Primary Child Sign-in (Google OAuth with Option 1 Auto-Discovery) -->
       <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
       
-      <div style="margin: 18px 0 14px; font-size: 0.8rem; color: var(--text-muted);">— or use 4-Digit PIN (Younger Kids) —</div>
+      <div id="pinLoginContainer" style="display:none;">
+        <div style="margin: 18px 0 14px; font-size: 0.8rem; color: var(--text-muted);">— or use 4-Digit PIN —</div>
+        <div class="form-group">
+          <label for="childNameSelect">Hero Name</label>
+          <select id="childNameSelect"><option value="">Loading heroes...</option></select>
+        </div>
+        <div class="form-group">
+          <label for="pinInput">4-Digit Secret PIN</label>
+          <input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;">
+        </div>
+        <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
+      </div>
 
-      <div class="form-group">
-        <label for="childNameSelect">Hero Name</label>
-        <select id="childNameSelect"><option value="">Loading heroes...</option></select>
+      <div id="noFamilyNotice" style="margin-top:16px; font-size:0.78rem; color:var(--text-muted);">
+        Signing in with Google will automatically locate your family vault!
       </div>
-      <div class="form-group">
-        <label for="pinInput">4-Digit Secret PIN</label>
-        <input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;">
-      </div>
-      <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
     </div>
 
     <!-- TAB 1: DASHBOARD -->
@@ -297,7 +302,6 @@
     let currentFilter = 'ALL';
     let currentChildTimeframe = 'ALL';
 
-    // BROWSER AUDIO SYNTHESIZER: Instant coin sound without downloading external audio files
     function playChimeSound() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -330,12 +334,12 @@
       return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      if (!familyId) return alert("Family ID missing. Please open the link shared by your parent.");
+    async function loadFamilyData(famId) {
+      familyId = famId;
       localStorage.setItem('family_id', familyId);
 
       const famDoc = await db.collection('families').doc(familyId).get();
-      if (!famDoc.exists) return alert("Family not found.");
+      if (!famDoc.exists) return alert("Family workspace not found.");
       activeFamilyDoc = famDoc.data();
 
       if (activeFamilyDoc.status && activeFamilyDoc.status !== 'active') {
@@ -352,22 +356,31 @@
       activeCurrency = activeFamilyDoc.currency || "Rs. ";
       document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
 
+      // Populate PIN Hero Select
       const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
       const sel = document.getElementById('childNameSelect');
       sel.innerHTML = '<option value="">-- Choose Name --</option>';
       usersSnap.forEach(d => {
         sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
       });
+      document.getElementById('pinLoginContainer').style.display = 'block';
+      document.getElementById('noFamilyNotice').style.display = 'none';
+
+      runCatchUpScheduledPayouts(db, familyId, false);
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (familyId) {
+        await loadFamilyData(familyId);
+      }
 
       const cached = sessionStorage.getItem('child_session');
       const cachedAuth = sessionStorage.getItem('child_auth_method');
-      if (cached) {
+      if (cached && familyId) {
         currentChild = JSON.parse(cached);
         authMethod = cachedAuth || "PIN";
         unlockApp();
       }
-
-      runCatchUpScheduledPayouts(db, familyId, false);
     });
 
     async function attemptLogin() {
@@ -391,20 +404,36 @@
       }
     }
 
+    // Option 1: Direct child auto-discovery
     async function loginWithGoogle() {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         const res = await auth.signInWithPopup(provider);
-        const email = res.user.email.toLowerCase();
+        const email = String(res.user.email || '').toLowerCase().trim();
 
-        const userSnap = await db.collection('families').doc(familyId).collection('users')
+        // Check platform_subscriptions for child's familyId
+        let famId = familyId;
+        if (!famId) {
+          const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+          if (subDoc.exists && subDoc.data().familyId) {
+            famId = subDoc.data().familyId;
+            await loadFamilyData(famId);
+          } else {
+            auth.signOut();
+            return alert(`No family linked for ${email}. Please ask your parent to add your email in their Parent Admin Console!`);
+          }
+        }
+
+        // Find child in the family's users collection
+        const userSnap = await db.collection('families').doc(famId).collection('users')
           .where('email', '==', email)
           .where('role', '==', 'Child')
           .get();
 
         if (userSnap.empty) {
           auth.signOut();
-          return alert(`No child account found for email: ${email}. Please ask your parent to add this email under Members in the Parent Console.`);
+          return alert(`Child account not found for ${email}. Please ask your parent to add you under Members.`);
         }
 
         const childDoc = userSnap.docs[0];
@@ -784,7 +813,6 @@
       });
     }
 
-    // SYNCED GOALS RENDERER: Renders unique scoped IDs and a common class for multi-view updates
     function renderGoals() {
       const container = document.getElementById('goalsContainer');
       const homeSpotlight = document.getElementById('homeGoalSpotlight');
@@ -797,7 +825,6 @@
         return;
       }
 
-      // 1. Render Home Spotlight Card
       if (homeSpotlight && homeContent) {
         const top = childGoals[0];
         const pct = Math.min(Math.round((currentChildBalance / top.targetAmount) * 100), 100);
@@ -819,7 +846,6 @@
         `;
       }
 
-      // 2. Render Goals Tab Cards
       childGoals.forEach(g => {
         const pct = Math.min(Math.round((currentChildBalance / g.targetAmount) * 100), 100);
         const done = currentChildBalance >= g.targetAmount;
@@ -888,7 +914,6 @@
                 <button class="chip" onclick="askGemini(this, '${goal.id}', '${goal.title}', ${goal.targetAmount}, 'Which chores should I focus on?')">🧹 Best chores?</button>
                 <button class="chip" onclick="askGemini(this, '${goal.id}', '${goal.title}', ${goal.targetAmount}, 'How does my birthday windfall help?')">🎂 Birthday strategy?</button>
               </div>
-              <!-- Shared class 'ai-box-${goal.id}' ensures simultaneous sync in both Home and Goals tabs -->
               <div id="${scopePrefix}_aiBox_${goal.id}" class="ai-response-box ai-box-${goal.id}"></div>
             </div>
           `;
@@ -912,15 +937,11 @@
       return `<div class="goal-roadmap">💡 ${strategy}${aiBlock}</div>`;
     }
 
-    // ========================================================================
-    // TACTILE & CONTEXT-AWARE PIGGYCOACH AI ENGINE (SYNCS TO BOTH VIEWS)
-    // ========================================================================
     async function askGemini(btnElement, goalId, title, target, question) {
       if (authMethod !== "GOOGLE") {
         return alert("AI Coach is available when logged in with Google to protect your family's key.");
       }
 
-      // Lock buttons in row and give tactile feedback
       const row = btnElement ? btnElement.closest('.chip-row') : null;
       if (row) {
         row.querySelectorAll('.chip').forEach(c => c.disabled = true);
@@ -932,7 +953,6 @@
         btnElement.style.color = 'var(--cyan)';
       }
 
-      // Target all elements tied to this goal (Home Spotlight + Goals Tab)
       const targetBoxes = document.querySelectorAll(`.ai-box-${goalId}`);
       targetBoxes.forEach(b => {
         b.style.display = 'block';
