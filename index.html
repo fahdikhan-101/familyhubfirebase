@@ -22,10 +22,10 @@
     .logo { font-size: 1.35rem; font-weight: 900; display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; }
     .nav-actions { display: flex; gap: 10px; align-items: center; }
     
-    .btn-cta { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 10px 22px; border-radius: 9999px; text-decoration: none; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35); transition: transform 0.2s, opacity 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-cta { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 10px 22px; border-radius: 9999px; text-decoration: none; font-weight: 800; font-size: 0.9rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35); transition: transform 0.2s, opacity 0.2s; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: none; }
     .btn-cta:hover { transform: translateY(-2px); opacity: 0.95; }
     .btn-cta:active { transform: translateY(0); }
-    .btn-ghost { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-border); color: #fff; padding: 9px 18px; border-radius: 9999px; font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: background 0.2s, transform 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-ghost { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-border); color: #fff; padding: 9px 18px; border-radius: 9999px; font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: background 0.2s, transform 0.2s; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     .btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
     .btn-ghost:active { transform: scale(0.97); }
 
@@ -62,9 +62,16 @@
     .calc-slider { width: 100%; margin: 18px 0; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 8px; border-radius: 9999px; outline: none; }
     .calc-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--primary); cursor: pointer; box-shadow: 0 0 12px rgba(99,102,241,0.6); }
 
+    /* MODAL FOR DIRECT CHILD AUTH & FAMILY RESOLUTION */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
+    .modal-box { background: #1e293b; border: 1px solid var(--card-border); border-radius: 24px; max-width: 400px; width: 100%; padding: 28px 24px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+
     footer { border-top: 1px solid var(--card-border); padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; position: relative; z-index: 10; }
     footer a { color: #a5b4fc; text-decoration: none; margin: 0 10px; }
   </style>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -75,7 +82,7 @@
   <nav>
     <a href="#" class="logo">🐷 Family Allowance Hub</a>
     <div class="nav-actions">
-      <a id="childPortalBtn" href="app.html" class="btn-ghost">Child PiggyBank 🚀</a>
+      <button onclick="handleChildEntry()" class="btn-ghost">Child PiggyBank 🚀</button>
       <a id="parentPortalNavBtn" href="parent.html" class="btn-cta">Parent Portal ↗</a>
     </div>
   </nav>
@@ -89,7 +96,7 @@
     </p>
     <div class="hero-actions">
       <a id="parentHeroBtn" href="parent.html" class="btn-cta" style="padding: 13px 32px; font-size: 1.05rem;">Get Started Free 🚀</a>
-      <a id="heroChildBtn" href="app.html" class="btn-ghost" style="padding: 13px 26px; font-size: 1.05rem;">Open Child PiggyBank 🧒</a>
+      <button onclick="handleChildEntry()" class="btn-ghost" style="padding: 13px 26px; font-size: 1.05rem;">Open Child PiggyBank 🧒</button>
     </div>
   </section>
 
@@ -249,11 +256,28 @@
     <a id="calcParentCta" href="parent.html" class="btn-cta">Set Up Your Family Hub Free →</a>
   </section>
 
+  <!-- CHILD FAMILY IDENTIFIER MODAL -->
+  <div class="modal-backdrop" id="childModal">
+    <div class="modal-box">
+      <div style="font-size: 2.6rem; margin-bottom: 6px;">🧒</div>
+      <h3 style="font-size: 1.3rem; font-weight: 900; margin-bottom: 6px;">Open Your PiggyBank</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px;">
+        Sign in with your Google account to automatically locate your family vault:
+      </p>
+      <button onclick="childGoogleLogin()" class="btn-cta" style="width: 100%; justify-content: center; background: #fff; color: #0f172a; margin-bottom: 12px;">
+        Sign in with Google
+      </button>
+      <button onclick="closeChildModal()" class="btn-ghost" style="width: 100%; justify-content: center;">
+        Cancel
+      </button>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
     <div style="margin-bottom: 14px;">
       <a id="footerParentLink" href="parent.html">Parent Login</a>
-      <a id="footerChildLink" href="app.html">Child PiggyBank</a>
+      <a href="javascript:void(0)" onclick="handleChildEntry()">Child PiggyBank</a>
       <a href="#features">Features</a>
       <a href="privacy.html">Privacy Policy</a>
       <a href="terms.html">Terms of Service</a>
@@ -262,12 +286,71 @@
   </footer>
 
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyTTAZ9sQNHiioYInGDuiOjkWin0TjfIo",
+      authDomain: "family-allowance-hub.firebaseapp.com",
+      projectId: "family-allowance-hub",
+      storageBucket: "family-allowance-hub.firebasestorage.app",
+      messagingSenderId: "90520973036",
+      appId: "1:90520973036:web:3b9b3cca2fe0c7c882ffc9"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
     function updateCalc(val) {
       const yearly = Number(val) * 52;
       document.getElementById('calcOutput').innerText = 'Rs. ' + yearly.toLocaleString() + ' / yr';
     }
 
-    // Attach familyId to all relevant portals
+    // Handles the Child Entry Click: If familyId exists, go straight in. Otherwise, open direct login modal.
+    function handleChildEntry() {
+      const savedFamilyId = localStorage.getItem('family_id');
+      if (savedFamilyId) {
+        window.location.href = `app.html?familyId=${savedFamilyId}`;
+      } else {
+        document.getElementById('childModal').style.display = 'flex';
+      }
+    }
+
+    function closeChildModal() {
+      document.getElementById('childModal').style.display = 'none';
+    }
+
+    // Child Google Sign In directly from Landing Page
+    async function childGoogleLogin() {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        const res = await auth.signInWithPopup(provider);
+        const email = String(res.user.email || '').toLowerCase().trim();
+
+        // Search which family this child belongs to
+        const snap = await db.collectionGroup('users')
+          .where('email', '==', email)
+          .get();
+
+        if (snap.empty) {
+          auth.signOut();
+          return alert(`No child account found for ${email}. Please ask your parents to add your email in their Parent Admin Console first!`);
+        }
+
+        let matchedFamilyId = null;
+        snap.forEach(doc => {
+          matchedFamilyId = doc.ref.parent.parent.id;
+        });
+
+        if (matchedFamilyId) {
+          localStorage.setItem('family_id', matchedFamilyId);
+          window.location.href = `app.html?familyId=${matchedFamilyId}`;
+        }
+      } catch (err) {
+        alert("Child Sign In Error: " + err.message);
+      }
+    }
+
+    // Handle any incoming familyId parameters from shared links
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       let familyId = urlParams.get('familyId');
@@ -280,10 +363,6 @@
 
       if (familyId) {
         const query = `?familyId=${familyId}`;
-        document.getElementById('childPortalBtn').href = `app.html${query}`;
-        document.getElementById('heroChildBtn').href = `app.html${query}`;
-        document.getElementById('footerChildLink').href = `app.html${query}`;
-        
         document.getElementById('parentPortalNavBtn').href = `parent.html${query}`;
         document.getElementById('parentHeroBtn').href = `parent.html${query}`;
         document.getElementById('calcParentCta').href = `parent.html${query}`;
