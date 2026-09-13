@@ -372,7 +372,6 @@
       }
     }
 
-    // Direct, query-free subscription check
     function showNewUserOnboarding(email) {
       const onboardSec = document.getElementById('onboardSection');
       const adminMain = document.getElementById('adminMain');
@@ -415,46 +414,64 @@
         const email = String(user.email || '').toLowerCase().trim();
 
         try {
-          // Direct document fetch (no collection query that triggers permission-denied)
+          // 1. Check if user is a primary subscriber
           const subDoc = await db.collection('platform_subscriptions').doc(email).get();
 
-          if (!subDoc.exists) {
-            showNewUserOnboarding(email);
-            return;
+          if (subDoc.exists) {
+            const subData = subDoc.data();
+            if (subData.status === 'pending') {
+              adminMain.style.display = 'none';
+              onboardSec.style.display = 'block';
+              onboardSec.innerHTML = `
+                <div style="font-size:3rem; margin-bottom:10px;">⏳</div>
+                <h2>Access Request Pending</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem;">
+                  Your access request for <strong>${subData.familyName || 'your family'}</strong> is currently under review.
+                </p>
+              `;
+              return;
+            }
+
+            if (subData.status === 'suspended') {
+              adminMain.style.display = 'none';
+              onboardSec.style.display = 'block';
+              onboardSec.innerHTML = `
+                <div style="font-size:3rem; margin-bottom:10px;">🛑</div>
+                <h2>Account Suspended</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem;">
+                  Your family workspace has been paused by the administrator.
+                </p>
+              `;
+              return;
+            }
+
+            familyId = subData.familyId;
+          } else {
+            // 2. Co-Parent Check: Look up user in family members (e.g., Wife added by husband)
+            const memberSnap = await db.collectionGroup('users')
+              .where('email', '==', email)
+              .get();
+
+            let foundParentFamilyId = null;
+            memberSnap.forEach(doc => {
+              const uData = doc.data();
+              if (uData.role === 'Parent') {
+                // Doc path is families/{familyId}/users/{userId}
+                foundParentFamilyId = doc.ref.parent.parent.id;
+              }
+            });
+
+            if (foundParentFamilyId) {
+              familyId = foundParentFamilyId;
+            } else {
+              // Not a subscriber and not an invited parent -> Show onboarding
+              showNewUserOnboarding(email);
+              return;
+            }
           }
 
-          const subData = subDoc.data();
-
-          if (subData.status === 'pending') {
-            adminMain.style.display = 'none';
-            onboardSec.style.display = 'block';
-            onboardSec.innerHTML = `
-              <div style="font-size:3rem; margin-bottom:10px;">⏳</div>
-              <h2>Access Request Pending</h2>
-              <p style="color:var(--text-muted); font-size:0.9rem;">
-                Your access request for <strong>${subData.familyName || 'your family'}</strong> is currently under review by the administrator.
-              </p>
-            `;
-            return;
-          }
-
-          if (subData.status === 'suspended') {
-            adminMain.style.display = 'none';
-            onboardSec.style.display = 'block';
-            onboardSec.innerHTML = `
-              <div style="font-size:3rem; margin-bottom:10px;">🛑</div>
-              <h2>Account Suspended</h2>
-              <p style="color:var(--text-muted); font-size:0.9rem;">
-                Your family workspace has been paused by the platform administrator.
-              </p>
-            `;
-            return;
-          }
-
-          // Active subscriber
-          familyId = subData.familyId;
+          // Verified Parent / Owner: Activate Dashboard
           localStorage.setItem('family_id', familyId);
-
           onboardSec.style.display = 'none';
           adminMain.style.display = 'block';
 
@@ -468,8 +485,7 @@
           runCatchUpScheduledPayouts(db, familyId, false);
 
         } catch (err) {
-          console.warn("Direct check handled:", err);
-          // If Firestore denies read because doc doesn't exist, route to onboarding cleanly
+          console.warn("Parent resolution handled:", err);
           showNewUserOnboarding(email);
         }
       });
