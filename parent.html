@@ -236,7 +236,7 @@
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0;">👨‍👩‍👧‍👦 Family Members</h3>
-            <button class="btn btn-gray" style="font-size:0.75rem; padding:6px 12px;" onclick="syncCoParentSubscriptions()">🔄 Sync Co-Parent Access</button>
+            <button class="btn btn-gray" style="font-size:0.75rem; padding:6px 12px;" onclick="syncAllMembersSubscriptions()">🔄 Sync Member Pointers</button>
           </div>
           <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Portal Access</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
         </div>
@@ -545,7 +545,6 @@
       });
       unsubscribers.push(u2);
 
-      // Track active subscriptions for this family
       const uSub = db.collection('platform_subscriptions')
         .where('familyId', '==', familyId)
         .where('status', '==', 'active')
@@ -558,7 +557,6 @@
         });
       unsubscribers.push(uSub);
 
-      // Listen to users collection
       let cachedMembersSnap = [];
       const u3 = famRef.collection('users').onSnapshot(snap => {
         cachedChildren = [];
@@ -686,14 +684,10 @@
 
         if (isOwner) {
           accessColumnHtml = `<span class="badge badge-owner">👑 Owner</span>`;
-        } else if (isParent) {
-          if (isLinked) {
-            accessColumnHtml = `<span class="badge badge-linked">✓ Linked</span>`;
-          } else {
-            accessColumnHtml = `<button id="btnLink_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}" class="btn btn-green" style="padding:3px 9px; font-size:0.74rem;" onclick="linkParentSubscription('${cleanEmail}', this)">🔗 Link Access</button>`;
-          }
+        } else if (isLinked) {
+          accessColumnHtml = `<span class="badge badge-linked">✓ Linked</span>`;
         } else {
-          accessColumnHtml = `<span style="color:var(--text-muted); font-size:0.78rem;">PIN App</span>`;
+          accessColumnHtml = `<button class="btn btn-green" style="padding:3px 9px; font-size:0.74rem;" onclick="linkMemberSubscription('${cleanEmail}', '${u.role}', this)">🔗 Link Access</button>`;
         }
 
         mBody.innerHTML += `
@@ -707,9 +701,9 @@
       });
     }
 
-    async function linkParentSubscription(parentEmail, btnElement) {
+    async function linkMemberSubscription(memberEmail, role, btnElement) {
       if (!familyId) return alert("Family ID missing");
-      const cleanEmail = parentEmail.toLowerCase().trim();
+      const cleanEmail = memberEmail.toLowerCase().trim();
       if (btnElement) {
         btnElement.disabled = true;
         btnElement.innerText = "⏳ Linking...";
@@ -720,7 +714,7 @@
           email: cleanEmail,
           familyId: familyId,
           familyName: activeFamilyName,
-          role: "Parent",
+          role: role,
           status: "active",
           linkedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
@@ -729,7 +723,7 @@
         refreshMembersTable();
         alert(`Access granted! ${cleanEmail} can now log into this Family Hub.`);
       } catch (err) {
-        alert("Error linking parent: " + err.message);
+        alert("Error linking member: " + err.message);
         if (btnElement) {
           btnElement.disabled = false;
           btnElement.innerText = "🔗 Link Access";
@@ -737,21 +731,21 @@
       }
     }
 
-    async function syncCoParentSubscriptions() {
+    async function syncAllMembersSubscriptions() {
       if (!familyId) return alert("No active family found.");
       try {
-        const snap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Parent').get();
+        const snap = await db.collection('families').doc(familyId).collection('users').get();
         let count = 0;
 
         for (const doc of snap.docs) {
           const u = doc.data();
           const cleanEmail = String(u.email || '').toLowerCase().trim();
-          if (cleanEmail !== activeOwnerEmail) {
+          if (cleanEmail && cleanEmail !== activeOwnerEmail) {
             await db.collection('platform_subscriptions').doc(cleanEmail).set({
               email: cleanEmail,
               familyId: familyId,
               familyName: activeFamilyName,
-              role: "Parent",
+              role: u.role || "Child",
               status: "active",
               syncedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
@@ -761,7 +755,7 @@
         }
 
         refreshMembersTable();
-        alert(`Synced ${count} parent account(s)! Your co-parents can now log in directly.`);
+        alert(`Synced ${count} member account(s)! All parents and children can now sign in directly.`);
       } catch (err) {
         alert("Sync error: " + err.message);
       }
@@ -810,16 +804,24 @@
       const pinHash = (role === 'Child') ? await hashPin(pin) : '';
 
       try {
-        // 1. Add user document in /families/{familyId}/users
+        // Step 1: Add user to family
         await famRef.collection('users').add({
-          name,
-          email,
-          role,
-          pinHash,
+          name, email, role, pinHash,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // 2. If opening balance provided for child, record transaction
+        // Step 2: Write direct pointer to platform_subscriptions
+        await db.collection('platform_subscriptions').doc(email).set({
+          email: email,
+          familyId: familyId,
+          familyName: activeFamilyName,
+          role: role,
+          status: "active",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        linkedSubscriptionsSet.add(email);
+
+        // Step 3: Record opening balance if applicable
         if (role === 'Child' && openingBal !== 0 && !isNaN(openingBal)) {
           const now = new Date();
           await famRef.collection('transactions').add({
@@ -832,24 +834,11 @@
           });
         }
 
-        // 3. If Parent, automatically grant access in platform_subscriptions
-        if (role === 'Parent') {
-          await db.collection('platform_subscriptions').doc(email).set({
-            email: email,
-            familyId: familyId,
-            familyName: activeFamilyName,
-            role: "Parent",
-            status: "active",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-          linkedSubscriptionsSet.add(email);
-        }
-
         document.getElementById('memName').value = '';
         document.getElementById('memEmail').value = '';
         document.getElementById('memPin').value = '';
         document.getElementById('memOpeningBalance').value = '0';
-        alert(`Member ${name} added successfully!`);
+        alert(`Member ${name} added and portal access granted!`);
       } catch (err) {
         alert("Error adding member: " + err.message);
       }
