@@ -18,36 +18,17 @@
     h3 { margin: 0 0 12px; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
 
     .nav-tabs {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      margin-bottom: 20px;
-      padding: 4px 2px 8px;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      -webkit-overflow-scrolling: touch;
+      display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding: 4px 2px 8px;
+      scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;
     }
     .nav-tabs::-webkit-scrollbar { display: none; }
     .tab-btn {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      padding: 9px 18px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
-      white-space: nowrap;
-      user-select: none;
-      transition: all 0.15s ease;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--text-muted);
+      padding: 9px 18px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+      white-space: nowrap; user-select: none; transition: all 0.15s ease;
     }
     .tab-btn:active { transform: scale(0.95); }
-    .tab-btn.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-    }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); }
 
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
@@ -66,12 +47,7 @@
     .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
     .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .btn-gray { background: rgba(255,255,255,0.1); color: #cbd5e1; }
-    button.btn-google, .btn-google {
-      background: #ffffff !important;
-      color: #0f172a !important;
-      border: 1px solid #cbd5e1;
-      font-weight: 800;
-    }
+    button.btn-google, .btn-google { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1; font-weight: 800; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); }
     td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; }
@@ -256,14 +232,17 @@
       <!-- TAB 5: MEMBERS -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
-          <h3>👨‍👩‍👧‍👦 Family Members</h3>
-          <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;">👨‍👩‍👧‍👦 Family Members</h3>
+            <button class="btn btn-gray" style="font-size:0.75rem; padding:6px 12px;" onclick="syncCoParentSubscriptions()">🔄 Sync Co-Parent Access</button>
+          </div>
+          <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Access</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
         </div>
 
         <div class="card" style="border-left:4px solid var(--cyan);">
           <h3>+ Add Family Member & Opening Balance</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div class="form-group"><label>Full Name</label><input type="text" id="memName" placeholder="e.g. Abdullah, Mom"></div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="memName" placeholder="e.g. Abdullah, Wife"></div>
             <div class="form-group"><label>Email Address</label><input type="email" id="memEmail" placeholder="member@gmail.com"></div>
           </div>
           <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
@@ -337,6 +316,7 @@
     let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
 
     let activeCurrency = "Rs. ";
+    let activeFamilyName = "Family";
     let cachedChildren = [];
     let cachedRules = [];
     let currentUser = null;
@@ -412,14 +392,14 @@
         }
 
         const userEmail = String(user.email || '').toLowerCase().trim();
-        let resolvedFamilyId = null;
 
         try {
-          // 1. Direct Owner Check
+          // Direct, single-document pointer check
           const subDoc = await db.collection('platform_subscriptions').doc(userEmail).get();
 
           if (subDoc.exists) {
             const subData = subDoc.data();
+
             if (subData.status === 'pending') {
               adminMain.style.display = 'none';
               onboardSec.style.display = 'block';
@@ -446,47 +426,8 @@
               return;
             }
 
-            resolvedFamilyId = subData.familyId;
-          }
-
-          // 2. Co-Parent Check (Wife / Partner)
-          if (!resolvedFamilyId) {
-            // Path A: Check current local candidate if exists
-            const candidateFamId = urlParams.get('familyId') || localStorage.getItem('family_id');
-            if (candidateFamId) {
-              try {
-                const checkUserSnap = await db.collection('families').doc(candidateFamId).collection('users').get();
-                checkUserSnap.forEach(d => {
-                  const u = d.data();
-                  if (String(u.email || '').toLowerCase().trim() === userEmail && u.role === 'Parent') {
-                    resolvedFamilyId = candidateFamId;
-                  }
-                });
-              } catch (e) {}
-            }
-
-            // Path B: Scoped collectionGroup query matching user's own email (satisfies security rule)
-            if (!resolvedFamilyId) {
-              try {
-                const memberSnap = await db.collectionGroup('users')
-                  .where('email', '==', userEmail)
-                  .get();
-
-                memberSnap.forEach(doc => {
-                  const uData = doc.data();
-                  if (uData.role === 'Parent') {
-                    resolvedFamilyId = doc.ref.parent.parent.id;
-                  }
-                });
-              } catch (cgErr) {
-                console.warn("CollectionGroup query error (check if index is building):", cgErr);
-              }
-            }
-          }
-
-          // 3. Mount or Onboard
-          if (resolvedFamilyId) {
-            familyId = resolvedFamilyId;
+            // Successfully resolved (Owner or pre-linked Co-Parent)
+            familyId = subData.familyId;
             localStorage.setItem('family_id', familyId);
 
             onboardSec.style.display = 'none';
@@ -500,12 +441,51 @@
 
             initRealtimeListeners();
             runCatchUpScheduledPayouts(db, familyId, false);
-          } else {
-            showNewUserOnboarding(userEmail);
+            return;
           }
 
+          // Fallback: If no direct subscription, check candidate family from storage or URL
+          const candidateFamId = urlParams.get('familyId') || localStorage.getItem('family_id');
+          if (candidateFamId) {
+            try {
+              const uSnap = await db.collection('families').doc(candidateFamId).collection('users').get();
+              let isParent = false;
+              uSnap.forEach(d => {
+                const u = d.data();
+                if (String(u.email || '').toLowerCase().trim() === userEmail && u.role === 'Parent') {
+                  isParent = true;
+                }
+              });
+
+              if (isParent) {
+                // Link this co-parent in platform_subscriptions so she never has to check again
+                await db.collection('platform_subscriptions').doc(userEmail).set({
+                  email: userEmail,
+                  familyId: candidateFamId,
+                  familyName: "Family",
+                  role: "Parent",
+                  status: "active",
+                  linkedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                familyId = candidateFamId;
+                localStorage.setItem('family_id', familyId);
+
+                onboardSec.style.display = 'none';
+                adminMain.style.display = 'block';
+
+                initRealtimeListeners();
+                runCatchUpScheduledPayouts(db, familyId, false);
+                return;
+              }
+            } catch (candErr) {}
+          }
+
+          // Neither a subscriber nor an invited parent
+          showNewUserOnboarding(userEmail);
+
         } catch (err) {
-          console.error("Authentication resolution error:", err);
+          console.error("Auth status error:", err);
           showNewUserOnboarding(userEmail);
         }
       });
@@ -585,7 +565,8 @@
         if (!doc.exists) return;
         const d = doc.data();
         activeCurrency = d.currency || "Rs. ";
-        document.getElementById('familyHeaderTitle').innerText = `${d.familyName || 'Family'} Allowance Hub`;
+        activeFamilyName = d.familyName || "Family";
+        document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} Allowance Hub`;
         document.getElementById('setCurrency').value = activeCurrency;
         document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
@@ -610,11 +591,17 @@
 
         snap.forEach(doc => {
           const u = doc.data();
+          const cleanEmail = String(u.email || '').toLowerCase().trim();
+          const isParent = (u.role === 'Parent');
+
           mBody.innerHTML += `
             <tr>
               <td><strong>${u.name}</strong></td>
               <td>${u.email}</td>
               <td>${u.role}</td>
+              <td>
+                ${isParent ? `<button class="btn btn-green" style="padding:2px 8px; font-size:0.72rem;" onclick="linkParentSubscription('${cleanEmail}')">🔗 Link Access</button>` : '<span style="color:var(--text-muted); font-size:0.75rem;">PIN App</span>'}
+              </td>
               <td><button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteDoc('users', '${doc.id}')">✕</button></td>
             </tr>`;
           if (u.role === 'Child') {
@@ -715,6 +702,51 @@
       unsubscribers.push(u8);
     }
 
+    // Explicitly creates pointer in platform_subscriptions so Co-Parent accesses dashboard immediately
+    async function linkParentSubscription(parentEmail) {
+      if (!familyId) return alert("Family ID missing");
+      const cleanEmail = parentEmail.toLowerCase().trim();
+      try {
+        await db.collection('platform_subscriptions').doc(cleanEmail).set({
+          email: cleanEmail,
+          familyId: familyId,
+          familyName: activeFamilyName,
+          role: "Parent",
+          status: "active",
+          linkedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        alert(`Access linked! ${cleanEmail} can now log into the Parent Portal.`);
+      } catch (err) {
+        alert("Error linking parent: " + err.message);
+      }
+    }
+
+    // Automatically syncs all existing co-parents
+    async function syncCoParentSubscriptions() {
+      if (!familyId) return alert("No active family found.");
+      try {
+        const snap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Parent').get();
+        const batch = db.batch();
+        snap.forEach(doc => {
+          const u = doc.data();
+          const cleanEmail = String(u.email || '').toLowerCase().trim();
+          const ref = db.collection('platform_subscriptions').doc(cleanEmail);
+          batch.set(ref, {
+            email: cleanEmail,
+            familyId: familyId,
+            familyName: activeFamilyName,
+            role: "Parent",
+            status: "active",
+            syncedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        });
+        await batch.commit();
+        alert(`Successfully synced ${snap.size} parent accounts! Your co-parents can now log in.`);
+      } catch (err) {
+        alert("Sync error: " + err.message);
+      }
+    }
+
     async function calculateBalances() {
       if (!familyId) return;
       const snap = await db.collection('families').doc(familyId).collection('transactions').get();
@@ -760,6 +792,19 @@
       const pinHash = (role === 'Child') ? await hashPin(pin) : '';
       const userRef = famRef.collection('users').doc();
       batch.set(userRef, { name, email, role, pinHash, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+      // If adding a parent, write access directly into platform_subscriptions
+      if (role === 'Parent') {
+        const subRef = db.collection('platform_subscriptions').doc(email);
+        batch.set(subRef, {
+          email: email,
+          familyId: familyId,
+          familyName: activeFamilyName,
+          role: "Parent",
+          status: "active",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
 
       if (role === 'Child' && openingBal !== 0 && !isNaN(openingBal)) {
         const txRef = famRef.collection('transactions').doc();
