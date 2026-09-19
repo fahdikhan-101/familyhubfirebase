@@ -57,6 +57,8 @@
     .badge-transfer { background: rgba(6,182,212,0.2); color: #67e8f9; }
     .badge-owner { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .badge-linked { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .progress-bar-bg { background: rgba(255,255,255,0.08); border-radius: 9999px; height: 8px; width: 100%; overflow: hidden; margin-top: 6px; }
+    .progress-bar-fill { background: linear-gradient(90deg, #6366f1, #06b6d4); height: 100%; border-radius: 9999px; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
@@ -235,13 +237,16 @@
       <div id="tab-members" class="tab-pane">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h3 style="margin:0;">👨‍👩‍👧‍👦 Family Members</h3>
-            <button class="btn btn-gray" style="font-size:0.75rem; padding:6px 12px;" onclick="syncAllMembersSubscriptions()">🔄 Sync Member Pointers</button>
+            <div>
+              <h3 style="margin:0;">👨‍👩‍👧‍👦 Family Members</h3>
+              <span id="quotaDisplay" style="font-size:0.75rem; color:var(--text-muted);"></span>
+            </div>
+            <button id="btnSyncAllMembers" class="btn btn-gray" style="font-size:0.75rem; padding:6px 12px; display:none;" onclick="syncAllMembersSubscriptions()">🔄 Sync Member Access</button>
           </div>
           <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Portal Access</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
         </div>
 
-        <div class="card" style="border-left:4px solid var(--cyan);">
+        <div id="addMemberCard" class="card" style="border-left:4px solid var(--cyan); display:none;">
           <h3>+ Add Family Member & Opening Balance</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Full Name</label><input type="text" id="memName" placeholder="e.g. Sabeen, Abdullah"></div>
@@ -268,7 +273,7 @@
         </div>
       </div>
 
-      <!-- TAB 6: SETTINGS & PERIOD CLOSING -->
+      <!-- TAB 6: SETTINGS & SUPER ADMIN CONTROLS -->
       <div id="tab-settings" class="tab-pane">
         <div class="card">
           <h3>⚙️ General Currency</h3>
@@ -287,6 +292,52 @@
           </div>
           <div class="form-group"><label>Gemini API Key</label><input type="password" id="setGeminiKey" placeholder="AIzaSy..."></div>
           <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Secrets</button>
+        </div>
+
+        <!-- SUPER ADMIN GLOBAL LIMITS & DRILL-DOWN STORAGE INSPECTOR -->
+        <div id="superAdminLimitsCard" class="card" style="display:none; border-left:4px solid var(--warning);">
+          <h3 style="color:#fbbf24;">🛡️ Super Admin: Platform Storage & Family Inspector</h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
+            Audit complete space utilization across all families, inspect per-member usage, and configure global quotas.
+          </p>
+          
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div class="form-group">
+              <label>Global Max Parents</label>
+              <input type="number" id="globalMaxParents" min="1" max="10" placeholder="2">
+            </div>
+            <div class="form-group">
+              <label>Global Max Children</label>
+              <input type="number" id="globalMaxChildren" min="1" max="20" placeholder="6">
+            </div>
+          </div>
+          <button class="btn btn-blue" style="margin-bottom:20px;" onclick="saveGlobalLimits()">💾 Save Global Quotas</button>
+
+          <!-- Storage Drill-Down Tool -->
+          <div style="background:rgba(15,23,42,0.6); border:1px solid var(--card-border); border-radius:14px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <strong style="font-size:0.9rem; color:#fff;">📊 Family Space Utilization Inspector</strong>
+              <button class="btn btn-gray" style="font-size:0.75rem; padding:4px 10px;" onclick="runStorageAudit()">⚡ Calculate Space Usage</button>
+            </div>
+            
+            <div id="storageAuditSummary" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
+              Click "Calculate Space Usage" to inspect total database storage across family subcollections.
+            </div>
+
+            <div id="storageAuditResults" style="display:none;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Family Workspace</th>
+                    <th>Total Records</th>
+                    <th>Total Space</th>
+                    <th>Drill-Down Breakdown</th>
+                  </tr>
+                </thead>
+                <tbody id="storageAuditTable"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <div class="card" style="border-left:4px solid var(--danger);">
@@ -314,17 +365,22 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
+    const SUPER_ADMIN_EMAIL = "fahd.i.khan@gmail.com";
+
     const urlParams = new URLSearchParams(window.location.search);
     let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
 
     let activeCurrency = "Rs. ";
     let activeFamilyName = "Family";
     let activeOwnerEmail = "";
+    let isCurrentUserManagerOwner = false;
     let cachedChildren = [];
     let cachedRules = [];
     let linkedSubscriptionsSet = new Set();
     let currentUser = null;
     let unsubscribers = [];
+
+    let globalLimits = { maxParents: 2, maxChildren: 6 };
 
     auth.onAuthStateChanged(user => {
       currentUser = user;
@@ -335,10 +391,14 @@
         authBtn.innerText = "Sign Out";
         authBtn.className = "btn btn-gray";
         badge.innerText = user.displayName || user.email;
+        if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
+          document.getElementById('superAdminLimitsCard').style.display = 'block';
+        }
       } else {
         authBtn.innerText = "Sign in with Google";
         authBtn.className = "btn btn-google";
         badge.innerText = "";
+        document.getElementById('superAdminLimitsCard').style.display = 'none';
       }
     });
 
@@ -398,6 +458,15 @@
         const userEmail = String(user.email || '').toLowerCase().trim();
 
         try {
+          try {
+            const limDoc = await db.collection('platform_config').doc('limits').get();
+            if (limDoc.exists) {
+              globalLimits = limDoc.data();
+            }
+            document.getElementById('globalMaxParents').value = globalLimits.maxParents || 2;
+            document.getElementById('globalMaxChildren').value = globalLimits.maxChildren || 6;
+          } catch (e) {}
+
           const subDoc = await db.collection('platform_subscriptions').doc(userEmail).get();
 
           if (subDoc.exists) {
@@ -531,10 +600,20 @@
         activeCurrency = d.currency || "Rs. ";
         activeFamilyName = d.familyName || "Family";
         activeOwnerEmail = String(d.ownerEmail || '').toLowerCase().trim();
+        
+        const myEmail = String(currentUser?.email || '').toLowerCase().trim();
+        isCurrentUserManagerOwner = (myEmail === activeOwnerEmail || myEmail === SUPER_ADMIN_EMAIL);
+
+        // Control Owner Privileges in the UI
+        document.getElementById('addMemberCard').style.display = isCurrentUserManagerOwner ? 'block' : 'none';
+        document.getElementById('btnSyncAllMembers').style.display = isCurrentUserManagerOwner ? 'inline-flex' : 'none';
+
         document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} Allowance Hub`;
         document.getElementById('setCurrency').value = activeCurrency;
         document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
+
+        refreshMembersTable();
       });
       unsubscribers.push(u1);
 
@@ -599,7 +678,7 @@
               <td style="color:${isPos?'var(--success)':'var(--danger)'}; font-weight:800;">${isPos?'+':''}${activeCurrency}${Number(tx.amount).toLocaleString()}</td>
               <td>${tx.desc}</td>
               <td>
-                <button class="btn btn-red" style="padding:3px 8px; font-size:0.72rem;" onclick="deleteTransaction('${doc.id}')">🗑️</button>
+                ${isCurrentUserManagerOwner ? `<button class="btn btn-red" style="padding:3px 8px; font-size:0.72rem;" onclick="deleteTransaction('${doc.id}')">🗑️</button>` : ''}
               </td>
             </tr>
           `;
@@ -674,20 +753,39 @@
       if (!mBody || !window._cachedMembers) return;
       mBody.innerHTML = '';
 
+      let parentCount = 0;
+      let childCount = 0;
+
       window._cachedMembers.forEach(u => {
         const cleanEmail = String(u.email || '').toLowerCase().trim();
         const isOwner = (cleanEmail === activeOwnerEmail);
         const isParent = (u.role === 'Parent');
         const isLinked = linkedSubscriptionsSet.has(cleanEmail) || isOwner;
 
+        if (isParent) parentCount++;
+        else childCount++;
+
         let accessColumnHtml = '';
+        let actionsColumnHtml = '';
 
         if (isOwner) {
           accessColumnHtml = `<span class="badge badge-owner">👑 Owner</span>`;
-        } else if (isLinked) {
-          accessColumnHtml = `<span class="badge badge-linked">✓ Linked</span>`;
+          actionsColumnHtml = `<span style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">Protected</span>`;
         } else {
-          accessColumnHtml = `<button class="btn btn-green" style="padding:3px 9px; font-size:0.74rem;" onclick="linkMemberSubscription('${cleanEmail}', '${u.role}', this)">🔗 Link Access</button>`;
+          if (isLinked) {
+            accessColumnHtml = `<span class="badge badge-linked">✓ Linked</span>`;
+          } else {
+            accessColumnHtml = isCurrentUserManagerOwner 
+              ? `<button class="btn btn-green" style="padding:3px 9px; font-size:0.74rem;" onclick="linkMemberSubscription('${cleanEmail}', '${u.role}', this)">🔗 Link Access</button>`
+              : `<span style="color:var(--text-muted); font-size:0.74rem;">Pending Link</span>`;
+          }
+
+          // ONLY Owner or Super Admin sees the Delete button
+          if (isCurrentUserManagerOwner) {
+            actionsColumnHtml = `<button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteMember('${u.id}', '${cleanEmail}')">✕</button>`;
+          } else {
+            actionsColumnHtml = `<span style="color:var(--text-muted); font-size:0.72rem;">Read-only</span>`;
+          }
         }
 
         mBody.innerHTML += `
@@ -696,9 +794,41 @@
             <td>${u.email}</td>
             <td>${u.role}</td>
             <td>${accessColumnHtml}</td>
-            <td><button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteDoc('users', '${u.id}')">✕</button></td>
+            <td>${actionsColumnHtml}</td>
           </tr>`;
       });
+
+      const qDisp = document.getElementById('quotaDisplay');
+      if (qDisp) {
+        qDisp.innerHTML = `Parents: <strong>${parentCount}</strong> / ${globalLimits.maxParents || 2} &nbsp;|&nbsp; Children: <strong>${childCount}</strong> / ${globalLimits.maxChildren || 6}`;
+      }
+    }
+
+    // FIX 1 & 3: Owner-only deletion with atomic batch removal from platform_subscriptions
+    async function deleteMember(userId, memberEmail) {
+      if (!isCurrentUserManagerOwner) {
+        return alert("Only the family owner can delete members.");
+      }
+      if (memberEmail === activeOwnerEmail) {
+        return alert("The family owner cannot be deleted.");
+      }
+      if (!confirm(`Are you sure you want to remove ${memberEmail}? This will revoke their platform access immediately.`)) return;
+
+      try {
+        const batch = db.batch();
+        const userDocRef = db.collection('families').doc(familyId).collection('users').doc(userId);
+        const subDocRef = db.collection('platform_subscriptions').doc(memberEmail);
+
+        batch.delete(userDocRef);
+        batch.delete(subDocRef);
+
+        await batch.commit();
+
+        linkedSubscriptionsSet.delete(memberEmail);
+        alert(`Member ${memberEmail} removed and portal access revoked successfully.`);
+      } catch (err) {
+        alert("Error removing member: " + err.message);
+      }
     }
 
     async function linkMemberSubscription(memberEmail, role, btnElement) {
@@ -755,10 +885,226 @@
         }
 
         refreshMembersTable();
-        alert(`Synced ${count} member account(s)! All parents and children can now sign in directly.`);
+        alert(`Synced ${count} member account(s)!`);
       } catch (err) {
         alert("Sync error: " + err.message);
       }
+    }
+
+    async function addMember() {
+      if (!isCurrentUserManagerOwner) {
+        return alert("Only the family owner can add new members.");
+      }
+
+      const name = document.getElementById('memName').value.trim();
+      const email = document.getElementById('memEmail').value.trim().toLowerCase();
+      const role = document.getElementById('memRole').value;
+      const pin = document.getElementById('memPin').value.trim();
+      const openingBal = Number(document.getElementById('memOpeningBalance').value) || 0;
+
+      if (!name || !email) return alert("Please fill in name and email address.");
+      if (role === 'Child' && !pin) return alert("Please provide a 4-digit PIN for the child.");
+
+      const currentParents = (window._cachedMembers || []).filter(m => m.role === 'Parent').length;
+      const currentChildren = (window._cachedMembers || []).filter(m => m.role === 'Child').length;
+
+      if (role === 'Parent' && currentParents >= (globalLimits.maxParents || 2)) {
+        return alert(`Cannot add parent: Reached quota of ${globalLimits.maxParents || 2} parents.`);
+      }
+      if (role === 'Child' && currentChildren >= (globalLimits.maxChildren || 6)) {
+        return alert(`Cannot add child: Reached quota of ${globalLimits.maxChildren || 6} children.`);
+      }
+
+      const famRef = db.collection('families').doc(familyId);
+      const pinHash = (role === 'Child') ? await hashPin(pin) : '';
+
+      try {
+        await famRef.collection('users').add({
+          name, email, role, pinHash,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await db.collection('platform_subscriptions').doc(email).set({
+          email: email,
+          familyId: familyId,
+          familyName: activeFamilyName,
+          role: role,
+          status: "active",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        linkedSubscriptionsSet.add(email);
+
+        if (role === 'Child' && openingBal !== 0 && !isNaN(openingBal)) {
+          const now = new Date();
+          await famRef.collection('transactions').add({
+            email: email,
+            type: 'Allowance',
+            amount: openingBal,
+            desc: `Initial Opening Balance`,
+            date: now.toISOString().split('T')[0],
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        document.getElementById('memName').value = '';
+        document.getElementById('memEmail').value = '';
+        document.getElementById('memPin').value = '';
+        document.getElementById('memOpeningBalance').value = '0';
+        alert(`Member ${name} added successfully!`);
+      } catch (err) {
+        alert("Error adding member: " + err.message);
+      }
+    }
+
+    async function saveGlobalLimits() {
+      if (!currentUser || currentUser.email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
+        return alert("Super Admin privileges required.");
+      }
+      const maxParents = Number(document.getElementById('globalMaxParents').value) || 2;
+      const maxChildren = Number(document.getElementById('globalMaxChildren').value) || 6;
+
+      try {
+        await db.collection('platform_config').doc('limits').set({
+          maxParents,
+          maxChildren,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        globalLimits = { maxParents, maxChildren };
+        refreshMembersTable();
+        alert(`Quotas saved: Max ${maxParents} Parents, Max ${maxChildren} Children.`);
+      } catch (err) {
+        alert("Error saving limits: " + err.message);
+      }
+    }
+
+    // ========================================================================
+    // FIX 2: SUPER ADMIN DRILL-DOWN STORAGE CALCULATION ENGINE
+    // ========================================================================
+    async function runStorageAudit() {
+      if (!currentUser || currentUser.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return;
+
+      const summaryDiv = document.getElementById('storageAuditSummary');
+      const tableBody = document.getElementById('storageAuditTable');
+      const resultsDiv = document.getElementById('storageAuditResults');
+
+      summaryDiv.innerHTML = "⏳ Calculating complete space utilization across families and subcollections...";
+      resultsDiv.style.display = 'block';
+      tableBody.innerHTML = '';
+
+      try {
+        const familiesSnap = await db.collection('families').get();
+        let platformTotalBytes = 0;
+        let platformTotalDocs = 0;
+
+        for (const famDoc of familiesSnap.docs) {
+          const fData = famDoc.data();
+          const fId = famDoc.id;
+
+          let familyDocBytes = roughDocSize(fData);
+          let familyDocCount = 1;
+
+          // Member and Subcollection Storage Buckets
+          const memberStorageMap = {}; // email -> { docs, bytes }
+
+          // 1. Fetch Users
+          const usersSnap = await famDoc.ref.collection('users').get();
+          usersSnap.forEach(d => {
+            const u = d.data();
+            const sz = roughDocSize(u);
+            familyDocBytes += sz;
+            familyDocCount++;
+            const uEmail = String(u.email || d.id).toLowerCase();
+            memberStorageMap[uEmail] = { name: u.name || 'Member', role: u.role || 'User', docs: 1, bytes: sz };
+          });
+
+          // 2. Fetch Transactions (Mapped per child)
+          const txSnap = await famDoc.ref.collection('transactions').get();
+          txSnap.forEach(d => {
+            const tx = d.data();
+            const sz = roughDocSize(tx);
+            familyDocBytes += sz;
+            familyDocCount++;
+            const txEmail = String(tx.email || 'system').toLowerCase();
+            if (!memberStorageMap[txEmail]) {
+              memberStorageMap[txEmail] = { name: txEmail, role: 'Ledger', docs: 0, bytes: 0 };
+            }
+            memberStorageMap[txEmail].docs++;
+            memberStorageMap[txEmail].bytes += sz;
+          });
+
+          // 3. Fetch ChoreLogs (Mapped per child)
+          const choreLogSnap = await famDoc.ref.collection('choreLog').get();
+          choreLogSnap.forEach(d => {
+            const cl = d.data();
+            const sz = roughDocSize(cl);
+            familyDocBytes += sz;
+            familyDocCount++;
+            const clEmail = String(cl.childEmail || 'system').toLowerCase();
+            if (!memberStorageMap[clEmail]) {
+              memberStorageMap[clEmail] = { name: clEmail, role: 'Chores', docs: 0, bytes: 0 };
+            }
+            memberStorageMap[clEmail].docs++;
+            memberStorageMap[clEmail].bytes += sz;
+          });
+
+          // 4. Fetch Goals (Mapped per child)
+          const goalsSnap = await famDoc.ref.collection('goals').get();
+          goalsSnap.forEach(d => {
+            const g = d.data();
+            const sz = roughDocSize(g);
+            familyDocBytes += sz;
+            familyDocCount++;
+            const gEmail = String(g.email || 'system').toLowerCase();
+            if (!memberStorageMap[gEmail]) {
+              memberStorageMap[gEmail] = { name: gEmail, role: 'Goals', docs: 0, bytes: 0 };
+            }
+            memberStorageMap[gEmail].docs++;
+            memberStorageMap[gEmail].bytes += sz;
+          });
+
+          // 5. Shared Subcollections (Chores catalog, Schedules, Settings)
+          const choresSnap = await famDoc.ref.collection('chores').get();
+          choresSnap.forEach(d => { familyDocBytes += roughDocSize(d.data()); familyDocCount++; });
+
+          const schedSnap = await famDoc.ref.collection('schedules').get();
+          schedSnap.forEach(d => { familyDocBytes += roughDocSize(d.data()); familyDocCount++; });
+
+          platformTotalBytes += familyDocBytes;
+          platformTotalDocs += familyDocCount;
+
+          // Format Drill-Down HTML for this family
+          let drillDownHtml = '<div style="font-size:0.75rem; line-height:1.5;">';
+          Object.keys(memberStorageMap).forEach(mEmail => {
+            const m = memberStorageMap[mEmail];
+            drillDownHtml += `<div>• <strong>${m.name}</strong> (${m.role}): ${m.docs} docs ~ ${(m.bytes / 1024).toFixed(2)} KB</div>`;
+          });
+          drillDownHtml += '</div>';
+
+          tableBody.innerHTML += `
+            <tr>
+              <td>
+                <strong>${fData.familyName || 'Family'}</strong>
+                <div style="font-size:0.72rem; color:var(--text-muted);">${fData.ownerEmail}</div>
+              </td>
+              <td>${familyDocCount} docs</td>
+              <td><strong>${(familyDocBytes / 1024).toFixed(2)} KB</strong></td>
+              <td>${drillDownHtml}</td>
+            </tr>
+          `;
+        }
+
+        summaryDiv.innerHTML = `✅ Platform Audit Complete: <strong>${familiesSnap.size}</strong> Families, <strong>${platformTotalDocs}</strong> Total Documents, consuming <strong>${(platformTotalBytes / 1024).toFixed(2)} KB</strong> (~${(platformTotalBytes / (1024 * 1024)).toFixed(3)} MB).`;
+      } catch (err) {
+        summaryDiv.innerHTML = `<span style="color:#f87171;">Audit error: ${err.message}</span>`;
+      }
+    }
+
+    // Calculates approximate document payload size + index overhead in bytes
+    function roughDocSize(obj) {
+      if (!obj) return 128;
+      const str = JSON.stringify(obj);
+      // UTF-8 payload length + 32-byte BSON/Firestore document & collection indexing overhead
+      return (new TextEncoder().encode(str)).length + 128;
     }
 
     async function calculateBalances() {
@@ -787,60 +1133,6 @@
         await db.collection('families').doc(familyId).collection('transactions').doc(txId).delete();
       } catch (err) {
         alert("Failed to delete transaction: " + err.message);
-      }
-    }
-
-    async function addMember() {
-      const name = document.getElementById('memName').value.trim();
-      const email = document.getElementById('memEmail').value.trim().toLowerCase();
-      const role = document.getElementById('memRole').value;
-      const pin = document.getElementById('memPin').value.trim();
-      const openingBal = Number(document.getElementById('memOpeningBalance').value) || 0;
-
-      if (!name || !email) return alert("Please fill in name and email address.");
-      if (role === 'Child' && !pin) return alert("Please provide a 4-digit PIN for the child.");
-
-      const famRef = db.collection('families').doc(familyId);
-      const pinHash = (role === 'Child') ? await hashPin(pin) : '';
-
-      try {
-        // Step 1: Add user to family
-        await famRef.collection('users').add({
-          name, email, role, pinHash,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // Step 2: Write direct pointer to platform_subscriptions
-        await db.collection('platform_subscriptions').doc(email).set({
-          email: email,
-          familyId: familyId,
-          familyName: activeFamilyName,
-          role: role,
-          status: "active",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        linkedSubscriptionsSet.add(email);
-
-        // Step 3: Record opening balance if applicable
-        if (role === 'Child' && openingBal !== 0 && !isNaN(openingBal)) {
-          const now = new Date();
-          await famRef.collection('transactions').add({
-            email: email,
-            type: 'Allowance',
-            amount: openingBal,
-            desc: `Initial Opening Balance`,
-            date: now.toISOString().split('T')[0],
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        }
-
-        document.getElementById('memName').value = '';
-        document.getElementById('memEmail').value = '';
-        document.getElementById('memPin').value = '';
-        document.getElementById('memOpeningBalance').value = '0';
-        alert(`Member ${name} added and portal access granted!`);
-      } catch (err) {
-        alert("Error adding member: " + err.message);
       }
     }
 
