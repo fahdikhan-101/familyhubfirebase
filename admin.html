@@ -2,141 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SaaS Super Admin & Telemetry Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Master Admin — Family Allowance Hub</title>
   <style>
     :root {
-      --primary: #6366f1;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --cyan: #06b6d4;
-      --bg: #0f172a;
-      --card: #1e293b;
-      --card-border: rgba(255, 255, 255, 0.1);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
+      --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
+      --danger: #ef4444; --cyan: #06b6d4; --bg: #0b0f19; --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 80%); color: var(--text); padding: 24px 16px; margin: 0; min-height: 100vh; }
-    .container { max-width: 1150px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 16px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-    .header h2 { margin: 0; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
-    .stat-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; text-align: center; }
-    .stat-title { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
-    .stat-value { font-size: 1.6rem; font-weight: 900; margin: 6px 0 0; }
-    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
-    .card h3 { margin: 0 0 12px; font-size: 1.05rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-    th { text-align: left; padding: 10px; border-bottom: 1px solid var(--card-border); color: var(--text-muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px; }
-    td { padding: 12px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-    input { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--card-border); background: #0f172a; color: #fff; font-size: 0.9rem; outline: none; }
-    input:focus { border-color: var(--primary); }
-    button.btn, .btn { padding: 8px 14px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; color: #fff; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; min-height: 100vh; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 20px; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 1.8rem; font-weight: 900; margin: 0; }
+    .badge-admin { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); padding: 4px 10px; border-radius: 9999px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 20px; }
+    .stat-title { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-val { font-size: 2.2rem; font-weight: 900; margin-top: 6px; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 24px; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th { text-align: left; font-size: 0.74rem; text-transform: uppercase; color: var(--text-muted); padding: 12px 10px; border-bottom: 1px solid var(--card-border); }
+    td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; vertical-align: top; }
+    
+    button.btn { padding: 8px 14px; border: none; border-radius: 10px; font-size: 0.82rem; font-weight: 800; cursor: pointer; color: white; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
     button.btn:hover { opacity: 0.9; }
-    .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
-    .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
-    .btn-blue { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-    .btn-gray { background: rgba(255, 255, 255, 0.1); color: #cbd5e1; }
-    button.btn-google, .btn-google { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1; font-weight: 800; }
-    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+    .btn-green { background: var(--success); }
+    .btn-blue { background: var(--primary); }
+    .btn-red { background: var(--danger); }
+    .btn-gray { background: rgba(255,255,255,0.1); color: #cbd5e1; }
+    
+    input { width: 100%; padding: 10px 14px; background: rgba(15,23,42,0.6); border: 1.5px solid var(--card-border); border-radius: 10px; font-size: 0.9rem; color: #fff; outline: none; }
+    .status-badge { font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
     .status-active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .status-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
     .status-suspended { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-    .metric-num { font-weight: 800; font-family: monospace; font-size: 0.9rem; }
-    .locked-screen { text-align: center; padding: 60px 20px; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
+
   <div class="container">
     <div class="header">
-      <h2>🛡️ SaaS Super-Admin & Resource Telemetry</h2>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="adminEmailBadge" style="font-size: 0.8rem; color: var(--text-muted);"></span>
-        <button id="authBtn" class="btn btn-google" onclick="handleAuth()">Sign in with Google</button>
+      <div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <h1>Platform Super Admin</h1>
+          <span class="badge-admin">Root Authority</span>
+        </div>
+        <span style="font-size:0.85rem; color:var(--text-muted);">Family Allowance Hub Infrastructure</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span id="adminEmailBadge" style="font-size:0.85rem; color:var(--text-muted);"></span>
+        <button id="authBtn" class="btn btn-gray" onclick="handleAuth()">Sign In</button>
       </div>
     </div>
 
-    <!-- LOCKED ACCESS SCREEN -->
-    <div id="lockedScreen" class="card locked-screen">
-      <div style="font-size: 3rem; margin-bottom: 12px;">🔒</div>
-      <h3 style="margin-bottom: 8px;">Super-Admin Authentication Required</h3>
-      <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 420px; margin: 0 auto 20px;">
-        Please sign in with the platform owner Google account to view subscriber metrics and manage tenants.
+    <!-- LOCK SCREEN FOR NON-SUPER-ADMINS -->
+    <div id="lockCard" class="card" style="text-align:center; padding:50px 20px;">
+      <div style="font-size:3rem; margin-bottom:10px;">🛡️</div>
+      <h2>Restricted Super Admin Area</h2>
+      <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+        Sign in with the designated platform administrator Google Account (<code>fahd.i.khan@gmail.com</code>).
       </p>
-      <button class="btn btn-google" style="margin: 0 auto;" onclick="handleAuth()">Sign in with Google</button>
+      <button class="btn btn-blue" onclick="handleAuth()">Sign in with Google</button>
     </div>
 
-    <!-- MAIN ADMIN & TELEMETRY INTERFACE -->
-    <div id="adminContent" style="display:none;">
-      
-      <!-- GLOBAL RESOURCE METRICS SUMMARY -->
+    <!-- ADMIN CONSOLE -->
+    <div id="adminPanel" style="display:none;">
+      <!-- PLATFORM STATS -->
       <div class="stats-grid">
-        <div class="stat-box" style="border-top: 3px solid var(--cyan);">
-          <div class="stat-title">Total Estimated Storage</div>
-          <div class="stat-value" id="globalStorage" style="color:#67e8f9;">0 KB</div>
+        <div class="stat-card" style="border-top:3px solid var(--primary);">
+          <div class="stat-title">Active Families (Deduplicated)</div>
+          <div class="stat-val" id="statActiveFamilies" style="color:#818cf8;">0</div>
         </div>
-        <div class="stat-box" style="border-top: 3px solid var(--primary);">
-          <div class="stat-title">Total Operations (R / W / D)</div>
-          <div class="stat-value" id="globalOps" style="color:#818cf8;">0 / 0 / 0</div>
+        <div class="stat-card" style="border-top:3px solid var(--warning);">
+          <div class="stat-title">Pending Access Requests</div>
+          <div class="stat-val" id="statPendingRequests" style="color:#fbbf24;">0</div>
         </div>
-        <div class="stat-box" style="border-top: 3px solid var(--success);">
-          <div class="stat-title">Estimated Egress</div>
-          <div class="stat-value" id="globalEgress" style="color:#34d399;">0 KB</div>
-        </div>
-        <div class="stat-box" style="border-top: 3px solid var(--warning);">
-          <div class="stat-title">Active Families</div>
-          <div class="stat-value" id="globalFamilies" style="color:#fbbf24;">0</div>
+        <div class="stat-card" style="border-top:3px solid var(--cyan);">
+          <div class="stat-title">Total Platform Storage</div>
+          <div class="stat-val" id="statPlatformStorage" style="color:#67e8f9;">0 KB</div>
         </div>
       </div>
 
-      <!-- DIRECT PROVISIONING FORM -->
-      <div class="card">
-        <h3>➕ Authorize & Provision New Family</h3>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
-          <input type="text" id="manualName" placeholder="Family Name (e.g. Khan Family)" style="flex: 1.2; min-width: 220px;">
-          <input type="email" id="manualEmail" placeholder="Parent Google Email" style="flex: 1.5; min-width: 250px;">
-          <button class="btn btn-green" onclick="provisionDirect()">Authorize & Provision</button>
-        </div>
-      </div>
-
-      <!-- PER-FAMILY USAGE & TELEMETRY TABLE -->
-      <div class="card">
-        <h3>
-          <span>📊 Per-Family Resource Utilization & Operations</span>
-          <button class="btn btn-gray" onclick="refreshAllTelemetry()">🔄 Recalculate Storage & Metrics</button>
-        </h3>
+      <!-- 1. PENDING ACCESS ONBOARDING REQUESTS -->
+      <div class="card" style="border-left:4px solid var(--warning);">
+        <h3>⏳ Pending Family Onboarding Requests</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-6px;">
+          Review new family subscription signups. Approving provisions a fresh isolated tenant workspace.
+        </p>
         <table>
           <thead>
-            <tr>
-              <th>Family / ID</th>
-              <th>Status</th>
-              <th>Storage / Memory</th>
-              <th>Est. Reads</th>
-              <th>Est. Writes</th>
-              <th>Est. Deletes</th>
-              <th>Network Egress</th>
-              <th>Actions</th>
-            </tr>
+            <tr><th>Email</th><th>Family Name</th><th>Requested Date</th><th>Actions</th></tr>
           </thead>
-          <tbody id="subscriberList">
-            <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:16px;">Loading telemetry...</td></tr>
-          </tbody>
+          <tbody id="pendingRequestsTable"></tbody>
+        </table>
+      </div>
+
+      <!-- 2. GLOBAL QUOTA LIMITS -->
+      <div class="card" style="border-left:4px solid var(--accent);">
+        <h3>⚙️ Global Family Quota Policies</h3>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-6px;">
+          These bounds are enforced globally across all tenant workspaces during member creation.
+        </p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:12px; align-items:flex-end;">
+          <div><label style="font-size:0.75rem; font-weight:800; color:var(--text-muted);">MAX PARENTS PER FAMILY</label><input type="number" id="cfgMaxParents" min="1" max="10"></div>
+          <div><label style="font-size:0.75rem; font-weight:800; color:var(--text-muted);">MAX CHILDREN PER FAMILY</label><input type="number" id="cfgMaxChildren" min="1" max="25"></div>
+          <button class="btn btn-blue" onclick="saveGlobalLimits()">💾 Update Quotas</button>
+        </div>
+      </div>
+
+      <!-- 3. ACTIVE FAMILY WORKSPACES & STORAGE INSPECTOR -->
+      <div class="card" style="border-left:4px solid var(--cyan);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3 style="margin:0;">🏢 Family Workspaces & Space Utilization</h3>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Drill-down storage audit calculating database records and byte footprints per member.</span>
+          </div>
+          <button class="btn btn-gray" onclick="auditPlatformStorage()">⚡ Recalculate Storage</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Family Workspace</th><th>Status</th><th>Total Records</th><th>Footprint</th><th>Member Breakdown</th><th>Admin Actions</th></tr>
+          </thead>
+          <tbody id="familiesInspectorTable"></tbody>
         </table>
       </div>
     </div>
   </div>
 
   <script>
-    // ========================================================================
-    // SUPER ADMIN CONFIGURATION
-    // ========================================================================
-    const SUPER_ADMIN_EMAIL = "fahd.i.khan@gmail.com"; // <-- Put your Google email here
-
     const firebaseConfig = {
       apiKey: "AIzaSyDyTTAZ9sQNHiioYInGDuiOjkWin0TjfIo",
       authDomain: "family-allowance-hub.firebaseapp.com",
@@ -150,40 +149,37 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
+    const SUPER_ADMIN_EMAIL = "fahd.i.khan@gmail.com";
     let currentUser = null;
-    let cachedSubscribers = [];
 
-    auth.onAuthStateChanged(user => {
+    auth.onAuthStateChanged(async (user) => {
       currentUser = user;
       const authBtn = document.getElementById('authBtn');
       const badge = document.getElementById('adminEmailBadge');
-      const lockedScreen = document.getElementById('lockedScreen');
-      const adminContent = document.getElementById('adminContent');
+      const lockCard = document.getElementById('lockCard');
+      const adminPanel = document.getElementById('adminPanel');
 
-      if (user) {
-        if (user.email.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
-          alert(`Access Denied: ${user.email} is not authorized.`);
-          auth.signOut();
-          return;
-        }
+      if (user && user.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
         authBtn.innerText = "Sign Out";
-        authBtn.className = "btn btn-gray";
         badge.innerText = user.email;
-        lockedScreen.style.display = "none";
-        adminContent.style.display = "block";
-        loadSubscribers();
+        lockCard.style.display = 'none';
+        adminPanel.style.display = 'block';
+        loadAdminData();
       } else {
-        authBtn.innerText = "Sign in with Google";
-        authBtn.className = "btn btn-google";
+        if (user) {
+          alert(`Access denied for ${user.email}. Super Admin privileges required.`);
+          auth.signOut();
+        }
+        authBtn.innerText = "Sign In";
         badge.innerText = "";
-        lockedScreen.style.display = "block";
-        adminContent.style.display = "none";
+        lockCard.style.display = 'block';
+        adminPanel.style.display = 'none';
       }
     });
 
     function handleAuth() {
       if (currentUser) {
-        auth.signOut();
+        auth.signOut().then(() => location.reload());
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
@@ -191,261 +187,269 @@
       }
     }
 
-    function estimateDocSize(data) {
-      const jsonStr = JSON.stringify(data || {});
-      return new Blob([jsonStr]).size + 32;
-    }
-
-    function formatBytes(bytes) {
-      if (!bytes || bytes === 0) return '0 B';
-      const k = 1024;
-      const sizes = ['B', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    async function calculateFamilyStorage(familyId) {
-      if (!familyId) return { bytes: 0, docCount: 0 };
-      const famRef = db.collection('families').doc(familyId);
-      
-      let totalBytes = 0;
-      let docCount = 0;
-
-      const rootDoc = await famRef.get();
-      if (rootDoc.exists) {
-        totalBytes += estimateDocSize(rootDoc.data());
-        docCount++;
-      }
-
-      const collections = ['users', 'transactions', 'chores', 'choreLog', 'rules', 'schedules', 'goals'];
-      for (const col of collections) {
-        const snap = await famRef.collection(col).get();
-        docCount += snap.size;
-        snap.forEach(d => {
-          totalBytes += estimateDocSize(d.data());
-        });
-      }
-
-      return { bytes: totalBytes, docCount };
-    }
-
-    function loadSubscribers() {
-      db.collection('platform_subscriptions').onSnapshot(snap => {
-        cachedSubscribers = [];
-        snap.forEach(doc => {
-          cachedSubscribers.push({ id: doc.id, ...doc.data() });
-        });
-        renderSubscriberTable();
-      });
-    }
-
-    async function renderSubscriberTable() {
-      const tbody = document.getElementById('subscriberList');
-      tbody.innerHTML = '';
-
-      if (cachedSubscribers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:16px;">No subscribers found.</td></tr>';
-        return;
-      }
-
-      let gStorage = 0, gReads = 0, gWrites = 0, gDeletes = 0, gEgress = 0, gActiveFam = 0;
-
-      for (const sub of cachedSubscribers) {
-        const email = sub.email || sub.id;
-        const status = sub.status || 'pending';
-        const famId = sub.familyId || '';
-        const famName = sub.familyName || '—';
-
-        if (status === 'active') gActiveFam++;
-
-        const usage = sub.usage || {};
-        const reads = usage.reads || 0;
-        const writes = usage.writes || 0;
-        const deletes = usage.deletes || 0;
-        const storageBytes = sub.storageBytes || 0;
-        const egressBytes = usage.egressBytes || (reads * 350);
-
-        gStorage += storageBytes;
-        gReads += reads;
-        gWrites += writes;
-        gDeletes += deletes;
-        gEgress += egressBytes;
-
-        tbody.innerHTML += `
-          <tr>
-            <td>
-              <strong>${famName}</strong>
-              <div style="font-size:0.72rem; color:var(--text-muted);">${email}</div>
-              <code style="font-size:0.7rem; color:#a5b4fc;">${famId || 'No ID'}</code>
-            </td>
-            <td><span class="badge status-${status}">${status}</span></td>
-            <td>
-              <span class="metric-num" style="color:#67e8f9;">${formatBytes(storageBytes)}</span>
-              <div style="font-size:0.7rem; color:var(--text-muted);">${sub.docCount || 0} docs</div>
-            </td>
-            <td><span class="metric-num" style="color:#818cf8;">${reads.toLocaleString()}</span></td>
-            <td><span class="metric-num" style="color:#34d399;">${writes.toLocaleString()}</span></td>
-            <td><span class="metric-num" style="color:#fca5a5;">${deletes.toLocaleString()}</span></td>
-            <td><span class="metric-num" style="color:#fbbf24;">${formatBytes(egressBytes)}</span></td>
-            <td>
-              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                ${famId ? `<button class="btn btn-gray" style="padding:4px 8px; font-size:0.7rem;" title="Scan Storage" onclick="auditSingleFamily('${sub.id}', '${famId}')">Scan</button>` : ''}
-                ${status === 'pending' ? `<button class="btn btn-green" style="padding:4px 8px; font-size:0.7rem;" title="Approve Request" onclick="approveRequest('${sub.id}', '${email}', '${famName}')">✓ Approve</button>` : ''}
-                ${status === 'active' ? `<button class="btn btn-red" style="padding:4px 8px; font-size:0.7rem;" title="Suspend Tenant" onclick="toggleStatus('${sub.id}', '${famId}', 'suspended')">🛑 Suspend</button>` : ''}
-                ${status === 'suspended' ? `<button class="btn btn-green" style="padding:4px 8px; font-size:0.7rem;" title="Reactivate Tenant" onclick="toggleStatus('${sub.id}', '${famId}', 'active')">✨ Reactivate</button>` : ''}
-                <button class="btn btn-red" style="padding:4px 8px; font-size:0.7rem; background:#7f1d1d;" title="Permanently Delete" onclick="deleteFamilyPermanently('${sub.id}', '${famId}', '${famName}')">🗑️ Delete</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }
-
-      document.getElementById('globalStorage').innerText = formatBytes(gStorage);
-      document.getElementById('globalOps').innerText = `${gReads.toLocaleString()} / ${gWrites.toLocaleString()} / ${gDeletes.toLocaleString()}`;
-      document.getElementById('globalEgress').innerText = formatBytes(gEgress);
-      document.getElementById('globalFamilies').innerText = gActiveFam;
-    }
-
-    async function auditSingleFamily(subDocId, familyId) {
-      const stats = await calculateFamilyStorage(familyId);
-      await db.collection('platform_subscriptions').doc(subDocId).update({
-        storageBytes: stats.bytes,
-        docCount: stats.docCount,
-        lastAudit: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
-
-    async function refreshAllTelemetry() {
-      const btn = event.target;
-      btn.disabled = true;
-      btn.innerText = "⏳ Scanning...";
-      for (const sub of cachedSubscribers) {
-        if (sub.familyId) {
-          await auditSingleFamily(sub.id, sub.familyId);
+    async function loadAdminData() {
+      // 1. Load Global Platform Quotas
+      try {
+        const limDoc = await db.collection('platform_config').doc('limits').get();
+        if (limDoc.exists) {
+          const l = limDoc.data();
+          document.getElementById('cfgMaxParents').value = l.maxParents || 2;
+          document.getElementById('cfgMaxChildren').value = l.maxChildren || 6;
+        } else {
+          document.getElementById('cfgMaxParents').value = 2;
+          document.getElementById('cfgMaxChildren').value = 6;
         }
-      }
-      btn.disabled = false;
-      btn.innerText = "🔄 Recalculate Storage & Metrics";
-    }
+      } catch (e) {}
 
-    async function provisionDirect() {
-      const name = document.getElementById('manualName').value.trim();
-      const email = document.getElementById('manualEmail').value.trim().toLowerCase();
-      if (!name || !email) return alert("Please fill both the family name and parent email.");
-
-      const familyId = 'fam_' + Math.random().toString(36).substring(2, 10);
-      const famRef = db.collection('families').doc(familyId);
-
-      try {
-        const batch = db.batch();
-
-        batch.set(famRef, {
-          familyName: name,
-          currency: "Rs. ",
-          geminiApiKey: "",
-          aiEnabled: false,
-          ownerEmail: email,
-          status: "active",
-          usage: { reads: 0, writes: 5, deletes: 0, egressBytes: 0 },
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        const chore1 = famRef.collection('chores').doc();
-        batch.set(chore1, { title: "Clean Bedroom", reward: 50 });
-        const chore2 = famRef.collection('chores').doc();
-        batch.set(chore2, { title: "Fold Laundry", reward: 30 });
-        const rule1 = famRef.collection('rules').doc();
-        batch.set(rule1, { type: "Reward", title: "Exam Excellence", amount: 500 });
-        const rule2 = famRef.collection('rules').doc();
-        batch.set(rule2, { type: "Penalty", title: "Unapproved Screen Time", amount: 200 });
-
-        const userRef = famRef.collection('users').doc();
-        batch.set(userRef, {
-          name: name.split(' ')[0] || "Parent",
-          email: email,
-          role: "Parent",
-          pinHash: "",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        const subRef = db.collection('platform_subscriptions').doc(email);
-        batch.set(subRef, {
-          email: email,
-          familyName: name,
-          familyId: familyId,
-          status: "active",
-          storageBytes: 1850,
-          docCount: 6,
-          usage: { reads: 0, writes: 5, deletes: 0, egressBytes: 1500 },
-          approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        await batch.commit();
-
-        document.getElementById('manualName').value = '';
-        document.getElementById('manualEmail').value = '';
-        alert(`Successfully provisioned!\nFamily ID: ${familyId}\nParent: ${email}`);
-      } catch (err) {
-        alert("Provisioning failed: " + err.message);
-      }
-    }
-
-    async function approveRequest(docId, email, familyName) {
-      document.getElementById('manualName').value = familyName === '—' ? '' : familyName;
-      document.getElementById('manualEmail').value = email;
-      await provisionDirect();
-    }
-
-    async function toggleStatus(subDocId, familyId, newStatus) {
-      try {
-        await db.collection('platform_subscriptions').doc(subDocId).update({ status: newStatus });
-        if (familyId) {
-          await db.collection('families').doc(familyId).update({ status: newStatus });
-        }
-      } catch (err) {
-        alert("Status update error: " + err.message);
-      }
-    }
-
-    // ========================================================================
-    // COMPLETE RECURSIVE DELETION FOR A FAMILY TENANT
-    // ========================================================================
-    async function deleteFamilyPermanently(subDocId, familyId, familyName) {
-      const confirm1 = confirm(`⚠️ DANGER: Are you sure you want to PERMANENTLY delete "${familyName}" (${familyId || subDocId})? This will delete all member accounts, ledgers, and chores.`);
-      if (!confirm1) return;
-
-      const confirm2 = prompt(`To confirm deletion, type the family name "${familyName}":`);
-      if (confirm2 !== familyName) {
-        return alert("Confirmation mismatch. Deletion cancelled.");
-      }
-
-      try {
-        if (familyId) {
-          const famRef = db.collection('families').doc(familyId);
-          const subcollections = ['users', 'transactions', 'chores', 'choreLog', 'rules', 'schedules', 'goals'];
-
-          // Delete all subcollection documents in chunks
-          for (const col of subcollections) {
-            const snap = await famRef.collection(col).get();
-            if (!snap.empty) {
-              const batch = db.batch();
-              snap.forEach(doc => batch.delete(doc.ref));
-              await batch.commit();
-            }
+      // 2. Real-time Pending Requests
+      db.collection('platform_subscriptions')
+        .where('status', '==', 'pending')
+        .onSnapshot(snap => {
+          document.getElementById('statPendingRequests').innerText = snap.size;
+          const tbody = document.getElementById('pendingRequestsTable');
+          tbody.innerHTML = '';
+          if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:16px;">No pending onboarding requests.</td></tr>';
+            return;
           }
+          snap.forEach(doc => {
+            const req = doc.data();
+            const dateStr = req.requestedAt ? new Date(req.requestedAt.toMillis()).toLocaleDateString() : 'Recent';
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${req.email}</strong></td>
+                <td>${req.familyName || 'Family'}</td>
+                <td>${dateStr}</td>
+                <td>
+                  <button class="btn btn-green" onclick="approveFamilyRequest('${doc.id}', '${req.email}', '${req.familyName || 'Family'}')">✓ Approve</button>
+                  <button class="btn btn-red" onclick="rejectFamilyRequest('${doc.id}')">✕ Reject</button>
+                </td>
+              </tr>
+            `;
+          });
+        });
 
-          // Delete root family document
-          await famRef.delete();
+      // 3. Initial Audit Run
+      auditPlatformStorage();
+    }
+
+    // Provision new family tenant workspace
+    async function approveFamilyRequest(subDocId, email, familyName) {
+      if (!confirm(`Provision new family workspace for ${email}?`)) return;
+
+      const cleanEmail = email.toLowerCase().trim();
+      const newFamilyRef = db.collection('families').doc();
+      const familyId = newFamilyRef.id;
+
+      const batch = db.batch();
+
+      // 1. Create Tenant Document
+      batch.set(newFamilyRef, {
+        familyName: familyName,
+        ownerEmail: cleanEmail,
+        currency: "Rs. ",
+        status: "active",
+        aiEnabled: true,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // 2. Add Owner as First User
+      const userRef = newFamilyRef.collection('users').doc();
+      batch.set(userRef, {
+        name: familyName + " Admin",
+        email: cleanEmail,
+        role: "Parent",
+        pinHash: "",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // 3. Activate Subscription Pointer
+      const subRef = db.collection('platform_subscriptions').doc(cleanEmail);
+      batch.set(subRef, {
+        email: cleanEmail,
+        familyId: familyId,
+        familyName: familyName,
+        role: "Parent",
+        status: "active",
+        approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      await batch.commit();
+      alert(`Family workspace created! ID: ${familyId}`);
+      auditPlatformStorage();
+    }
+
+    async function rejectFamilyRequest(subDocId) {
+      if (!confirm("Reject and delete this registration request?")) return;
+      await db.collection('platform_subscriptions').doc(subDocId).delete();
+      alert("Request removed.");
+    }
+
+    async function saveGlobalLimits() {
+      const maxParents = Number(document.getElementById('cfgMaxParents').value) || 2;
+      const maxChildren = Number(document.getElementById('cfgMaxChildren').value) || 6;
+
+      await db.collection('platform_config').doc('limits').set({
+        maxParents,
+        maxChildren,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      alert("Global quotas updated successfully!");
+    }
+
+    // Comprehensive Drill-Down Storage & Metric Calculator
+    async function auditPlatformStorage() {
+      const tbody = document.getElementById('familiesInspectorTable');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px;">⏳ Calculating storage utilization...</td></tr>';
+
+      try {
+        const familiesSnap = await db.collection('families').get();
+        document.getElementById('statActiveFamilies').innerText = familiesSnap.size;
+
+        let totalPlatformBytes = 0;
+        let htmlRows = '';
+
+        for (const famDoc of familiesSnap.docs) {
+          const fData = famDoc.data();
+          const fId = famDoc.id;
+
+          let familyBytes = roughDocSize(fData);
+          let totalRecords = 1;
+
+          const memberMap = {}; // email -> { name, role, docs, bytes }
+
+          // Fetch users
+          const usersSnap = await famDoc.ref.collection('users').get();
+          usersSnap.forEach(d => {
+            const u = d.data();
+            const sz = roughDocSize(u);
+            familyBytes += sz;
+            totalRecords++;
+            const em = String(u.email || d.id).toLowerCase();
+            memberMap[em] = { id: d.id, name: u.name || 'Member', role: u.role || 'User', docs: 1, bytes: sz };
+          });
+
+          // Fetch transactions
+          const txSnap = await famDoc.ref.collection('transactions').get();
+          txSnap.forEach(d => {
+            const tx = d.data();
+            const sz = roughDocSize(tx);
+            familyBytes += sz;
+            totalRecords++;
+            const em = String(tx.email || 'system').toLowerCase();
+            if (memberMap[em]) {
+              memberMap[em].docs++;
+              memberMap[em].bytes += sz;
+            }
+          });
+
+          // Fetch chores & schedules
+          const choreLogSnap = await famDoc.ref.collection('choreLog').get();
+          choreLogSnap.forEach(d => { familyBytes += roughDocSize(d.data()); totalRecords++; });
+
+          const choresCatalogSnap = await famDoc.ref.collection('chores').get();
+          choresCatalogSnap.forEach(d => { familyBytes += roughDocSize(d.data()); totalRecords++; });
+
+          const schedSnap = await famDoc.ref.collection('schedules').get();
+          schedSnap.forEach(d => { familyBytes += roughDocSize(d.data()); totalRecords++; });
+
+          totalPlatformBytes += familyBytes;
+
+          // Format Member Drill-Down View
+          let memberDrillDownHtml = '<div style="font-size:0.75rem; line-height:1.6;">';
+          Object.keys(memberMap).forEach(em => {
+            const m = memberMap[em];
+            memberDrillDownHtml += `
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; border-bottom:1px dashed rgba(255,255,255,0.06); padding:2px 0;">
+                <span>• <strong>${m.name}</strong> (${m.role}): ${m.docs} docs ~ ${(m.bytes / 1024).toFixed(1)} KB</span>
+                ${m.role !== 'Parent' || em !== fData.ownerEmail.toLowerCase() ? `<button class="btn btn-red" style="padding:1px 5px; font-size:0.68rem;" onclick="adminDeleteFamilyMember('${fId}', '${m.id}', '${em}')">Remove</button>` : ''}
+              </div>
+            `;
+          });
+          memberDrillDownHtml += '</div>';
+
+          const isActive = (fData.status === 'active');
+
+          htmlRows += `
+            <tr>
+              <td>
+                <strong>${fData.familyName || 'Family'}</strong>
+                <div style="font-size:0.72rem; color:var(--text-muted);">${fData.ownerEmail}</div>
+                <div style="font-size:0.68rem; color:#64748b;">ID: ${fId}</div>
+              </td>
+              <td><span class="status-badge ${isActive ? 'status-active' : 'status-suspended'}">${fData.status || 'Active'}</span></td>
+              <td><strong>${totalRecords}</strong></td>
+              <td><strong>${(familyBytes / 1024).toFixed(1)} KB</strong></td>
+              <td style="max-width:350px;">${memberDrillDownHtml}</td>
+              <td>
+                <button class="btn btn-gray" style="font-size:0.72rem; padding:4px 8px; margin-bottom:4px;" onclick="adminToggleFamilyStatus('${fId}', '${fData.status}')">
+                  ${isActive ? '🛑 Suspend' : '▶️ Resume'}
+                </button>
+                <button class="btn btn-red" style="font-size:0.72rem; padding:4px 8px;" onclick="adminCascadeDeleteFamily('${fId}')">
+                  🗑️ Delete Workspace
+                </button>
+              </td>
+            </tr>
+          `;
         }
 
-        // Delete subscription document
-        await db.collection('platform_subscriptions').doc(subDocId).delete();
+        tbody.innerHTML = htmlRows;
+        document.getElementById('statPlatformStorage').innerText = `${(totalPlatformBytes / 1024).toFixed(1)} KB (~${(totalPlatformBytes / (1024 * 1024)).toFixed(2)} MB)`;
 
-        alert(`Family "${familyName}" and all related data have been completely deleted.`);
       } catch (err) {
-        console.error("Deletion error:", err);
-        alert("Failed to delete family: " + err.message);
+        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger); padding:16px;">Audit error: ${err.message}</td></tr>`;
       }
+    }
+
+    function roughDocSize(obj) {
+      if (!obj) return 128;
+      return (new TextEncoder().encode(JSON.stringify(obj))).length + 128;
+    }
+
+    // Platform Super Admin Actions
+    async function adminToggleFamilyStatus(famId, currentStatus) {
+      const nextStatus = (currentStatus === 'active') ? 'suspended' : 'active';
+      if (!confirm(`Set family status to ${nextStatus.toUpperCase()}?`)) return;
+
+      const batch = db.batch();
+      batch.update(db.collection('families').doc(famId), { status: nextStatus });
+
+      // Update all pointers
+      const subs = await db.collection('platform_subscriptions').where('familyId', '==', famId).get();
+      subs.forEach(d => batch.update(d.ref, { status: nextStatus }));
+
+      await batch.commit();
+      auditPlatformStorage();
+    }
+
+    async function adminCascadeDeleteFamily(famId) {
+      if (!confirm(`DANGER: Delete entire family ${famId} and revoke all member access permanently?`)) return;
+
+      const batch = db.batch();
+
+      // Delete family document
+      batch.delete(db.collection('families').doc(famId));
+
+      // Remove all linked subscription pointers
+      const subs = await db.collection('platform_subscriptions').where('familyId', '==', famId).get();
+      subs.forEach(d => batch.delete(d.ref));
+
+      await batch.commit();
+      alert("Family workspace and all linked member pointers deleted.");
+      auditPlatformStorage();
+    }
+
+    async function adminDeleteFamilyMember(famId, userId, memberEmail) {
+      if (!confirm(`Remove member ${memberEmail} from family ${famId}?`)) return;
+
+      const batch = db.batch();
+      batch.delete(db.collection('families').doc(famId).collection('users').doc(userId));
+      batch.delete(db.collection('platform_subscriptions').doc(memberEmail.toLowerCase()));
+
+      await batch.commit();
+      alert(`Member ${memberEmail} removed.`);
+      auditPlatformStorage();
     }
   </script>
 </body>
