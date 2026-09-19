@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family Allowance Hub - Parent Admin</title>
+  <title>Family Allowance Hub - Parent Console</title>
   <style>
     :root {
       --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
@@ -57,8 +57,6 @@
     .badge-transfer { background: rgba(6,182,212,0.2); color: #67e8f9; }
     .badge-owner { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .badge-linked { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-    .progress-bar-bg { background: rgba(255,255,255,0.08); border-radius: 9999px; height: 8px; width: 100%; overflow: hidden; margin-top: 6px; }
-    .progress-bar-fill { background: linear-gradient(90deg, #6366f1, #06b6d4); height: 100%; border-radius: 9999px; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
@@ -70,7 +68,7 @@
     <div class="header-bar">
       <div>
         <h1 id="familyHeaderTitle">Family Allowance Hub</h1>
-        <span style="font-size:0.82rem; color:var(--text-muted);">Parent Administration Portal</span>
+        <span id="subHeaderBadge" style="font-size:0.82rem; color:var(--text-muted);">Family Parent Console</span>
       </div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
         <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
@@ -79,10 +77,10 @@
       </div>
     </div>
 
-    <!-- ONBOARDING & GATEWAY STATES -->
+    <!-- ONBOARDING / PENDING SCREENS -->
     <div id="onboardSection" class="card" style="display:none; text-align:center; padding:36px 20px;"></div>
 
-    <!-- MAIN ADMIN INTERFACE -->
+    <!-- MAIN PARENT CONSOLE -->
     <div id="adminMain" style="display:none;">
       <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-overview', this)">📊 Overview</button>
@@ -90,7 +88,7 @@
         <button class="tab-btn" onclick="switchTab('tab-behavior', this)">⭐ Rules & Actions</button>
         <button class="tab-btn" onclick="switchTab('tab-schedules', this)">📅 Schedules</button>
         <button class="tab-btn" onclick="switchTab('tab-members', this)">👨‍👩‍👧‍👦 Members</button>
-        <button class="tab-btn" onclick="switchTab('tab-settings', this)">⚙️ Settings & Closing</button>
+        <button class="tab-btn" id="tabSettingsBtn" onclick="switchTab('tab-settings', this)">⚙️ Settings & Closing</button>
       </div>
 
       <!-- TAB 1: OVERVIEW -->
@@ -199,7 +197,7 @@
           </table>
         </div>
 
-        <div class="card">
+        <div id="ownerAddScheduleCard" class="card" style="display:none;">
           <h3>+ Add Schedule</h3>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="e.g. Weekly Allowance, Birthday Bonus"></div>
@@ -273,79 +271,42 @@
         </div>
       </div>
 
-      <!-- TAB 6: SETTINGS & SUPER ADMIN CONTROLS -->
+      <!-- TAB 6: SETTINGS & CLOSING (OWNER ONLY) -->
       <div id="tab-settings" class="tab-pane">
-        <div class="card">
-          <h3>⚙️ General Currency</h3>
-          <div class="form-group"><label>Currency Symbol</label><input type="text" id="setCurrency" style="max-width:140px;"></div>
-          <button class="btn btn-blue" onclick="saveCurrency()">Save Currency</button>
+        <div id="nonOwnerWarning" class="card" style="display:none; border-left:4px solid var(--warning);">
+          <strong style="color:#fbbf24;">🔒 Owner Restricted</strong>
+          <p style="margin:4px 0 0; font-size:0.85rem; color:var(--text-muted);">
+            Only the family workspace owner can edit the currency, update the secret Gemini Key, and execute period closings.
+          </p>
         </div>
 
-        <div class="card" style="border-left:4px solid var(--primary);">
-          <h3>🤖 AI PiggyCoach Settings (Secret Vault)</h3>
-          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
-            Your Gemini API Key is stored in an encrypted private subcollection accessible only by authenticated family members.
-          </p>
-          <div class="form-group" style="display:flex; align-items:center; gap:10px;">
-            <input type="checkbox" id="setAiEnabled" style="width:20px; height:20px;">
-            <label for="setAiEnabled" style="margin:0; font-weight:700;">Enable AI Financial Coaching</label>
+        <div id="ownerSettingsControls">
+          <div class="card">
+            <h3>⚙️ General Currency</h3>
+            <div class="form-group"><label>Currency Symbol</label><input type="text" id="setCurrency" style="max-width:140px;"></div>
+            <button class="btn btn-blue" onclick="saveCurrency()">Save Currency</button>
           </div>
-          <div class="form-group"><label>Gemini API Key</label><input type="password" id="setGeminiKey" placeholder="AIzaSy..."></div>
-          <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Secrets</button>
-        </div>
 
-        <!-- SUPER ADMIN GLOBAL LIMITS & DRILL-DOWN STORAGE INSPECTOR -->
-        <div id="superAdminLimitsCard" class="card" style="display:none; border-left:4px solid var(--warning);">
-          <h3 style="color:#fbbf24;">🛡️ Super Admin: Platform Storage & Family Inspector</h3>
-          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
-            Audit complete space utilization across all families, inspect per-member usage, and configure global quotas.
-          </p>
-          
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
-            <div class="form-group">
-              <label>Global Max Parents</label>
-              <input type="number" id="globalMaxParents" min="1" max="10" placeholder="2">
+          <div class="card" style="border-left:4px solid var(--primary);">
+            <h3>🤖 AI PiggyCoach Settings (Secret Vault)</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
+              Your Gemini API Key is stored in an encrypted private vault accessible only by your active family members.
+            </p>
+            <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+              <input type="checkbox" id="setAiEnabled" style="width:20px; height:20px;">
+              <label for="setAiEnabled" style="margin:0; font-weight:700;">Enable AI Financial Coaching</label>
             </div>
-            <div class="form-group">
-              <label>Global Max Children</label>
-              <input type="number" id="globalMaxChildren" min="1" max="20" placeholder="6">
-            </div>
+            <div class="form-group"><label>Gemini API Key</label><input type="password" id="setGeminiKey" placeholder="AIzaSy..."></div>
+            <button class="btn btn-blue" onclick="saveAiSettings()">Save AI Secrets</button>
           </div>
-          <button class="btn btn-blue" style="margin-bottom:20px;" onclick="saveGlobalLimits()">💾 Save Global Quotas</button>
 
-          <!-- Storage Drill-Down Tool -->
-          <div style="background:rgba(15,23,42,0.6); border:1px solid var(--card-border); border-radius:14px; padding:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-              <strong style="font-size:0.9rem; color:#fff;">📊 Family Space Utilization Inspector</strong>
-              <button class="btn btn-gray" style="font-size:0.75rem; padding:4px 10px;" onclick="runStorageAudit()">⚡ Calculate Space Usage</button>
-            </div>
-            
-            <div id="storageAuditSummary" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
-              Click "Calculate Space Usage" to inspect total database storage across family subcollections.
-            </div>
-
-            <div id="storageAuditResults" style="display:none;">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Family Workspace</th>
-                    <th>Total Records</th>
-                    <th>Total Space</th>
-                    <th>Drill-Down Breakdown</th>
-                  </tr>
-                </thead>
-                <tbody id="storageAuditTable"></tbody>
-              </table>
-            </div>
+          <div class="card" style="border-left:4px solid var(--danger);">
+            <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
+              Archives all past transactions to a timestamped archive collection, wipes the active ledger, and carries forward each child's closing balance as an opening balance.
+            </p>
+            <button class="btn btn-red" onclick="runPeriodClosing()">📦 Close Period & Carry Balances</button>
           </div>
-        </div>
-
-        <div class="card" style="border-left:4px solid var(--danger);">
-          <h3 style="color:#fca5a5;">📦 Period Closing & Ledger Reset</h3>
-          <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">
-            Archives all past transactions to a timestamped Firestore archive collection, wipes the active ledger, and carries forward each child's closing balance as an opening balance.
-          </p>
-          <button class="btn btn-red" onclick="runPeriodClosing()">📦 Close Period & Carry Balances</button>
         </div>
       </div>
     </div>
@@ -379,7 +340,6 @@
     let linkedSubscriptionsSet = new Set();
     let currentUser = null;
     let unsubscribers = [];
-
     let globalLimits = { maxParents: 2, maxChildren: 6 };
 
     auth.onAuthStateChanged(user => {
@@ -391,14 +351,10 @@
         authBtn.innerText = "Sign Out";
         authBtn.className = "btn btn-gray";
         badge.innerText = user.displayName || user.email;
-        if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
-          document.getElementById('superAdminLimitsCard').style.display = 'block';
-        }
       } else {
         authBtn.innerText = "Sign in with Google";
         authBtn.className = "btn btn-google";
         badge.innerText = "";
-        document.getElementById('superAdminLimitsCard').style.display = 'none';
       }
     });
 
@@ -460,11 +416,7 @@
         try {
           try {
             const limDoc = await db.collection('platform_config').doc('limits').get();
-            if (limDoc.exists) {
-              globalLimits = limDoc.data();
-            }
-            document.getElementById('globalMaxParents').value = globalLimits.maxParents || 2;
-            document.getElementById('globalMaxChildren').value = globalLimits.maxChildren || 6;
+            if (limDoc.exists) globalLimits = limDoc.data();
           } catch (e) {}
 
           const subDoc = await db.collection('platform_subscriptions').doc(userEmail).get();
@@ -604,9 +556,18 @@
         const myEmail = String(currentUser?.email || '').toLowerCase().trim();
         isCurrentUserManagerOwner = (myEmail === activeOwnerEmail || myEmail === SUPER_ADMIN_EMAIL);
 
-        // Control Owner Privileges in the UI
+        // Control Owner Privileges
         document.getElementById('addMemberCard').style.display = isCurrentUserManagerOwner ? 'block' : 'none';
         document.getElementById('btnSyncAllMembers').style.display = isCurrentUserManagerOwner ? 'inline-flex' : 'none';
+        document.getElementById('ownerAddScheduleCard').style.display = isCurrentUserManagerOwner ? 'block' : 'none';
+
+        if (isCurrentUserManagerOwner) {
+          document.getElementById('ownerSettingsControls').style.display = 'block';
+          document.getElementById('nonOwnerWarning').style.display = 'none';
+        } else {
+          document.getElementById('ownerSettingsControls').style.display = 'none';
+          document.getElementById('nonOwnerWarning').style.display = 'block';
+        }
 
         document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} Allowance Hub`;
         document.getElementById('setCurrency').value = activeCurrency;
@@ -678,7 +639,7 @@
               <td style="color:${isPos?'var(--success)':'var(--danger)'}; font-weight:800;">${isPos?'+':''}${activeCurrency}${Number(tx.amount).toLocaleString()}</td>
               <td>${tx.desc}</td>
               <td>
-                ${isCurrentUserManagerOwner ? `<button class="btn btn-red" style="padding:3px 8px; font-size:0.72rem;" onclick="deleteTransaction('${doc.id}')">🗑️</button>` : ''}
+                ${isCurrentUserManagerOwner ? `<button class="btn btn-red" style="padding:3px 8px; font-size:0.72rem;" onclick="deleteTransaction('${doc.id}')">🗑️</button>` : '<span style="color:var(--text-muted); font-size:0.75rem;">-</span>'}
               </td>
             </tr>
           `;
@@ -742,7 +703,7 @@
           if (s.frequency === 'WEEKLY' && dayNames[Number(s.scheduleDay)] !== undefined) {
             displayDay = dayNames[Number(s.scheduleDay)];
           }
-          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button></td></tr>`;
+          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td>${isCurrentUserManagerOwner ? `<button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button>` : '-'}</td></tr>`;
         });
       });
       unsubscribers.push(u8);
@@ -804,14 +765,9 @@
       }
     }
 
-    // FIX 1 & 3: Owner-only deletion with atomic batch removal from platform_subscriptions
     async function deleteMember(userId, memberEmail) {
-      if (!isCurrentUserManagerOwner) {
-        return alert("Only the family owner can delete members.");
-      }
-      if (memberEmail === activeOwnerEmail) {
-        return alert("The family owner cannot be deleted.");
-      }
+      if (!isCurrentUserManagerOwner) return alert("Only the family owner can delete members.");
+      if (memberEmail === activeOwnerEmail) return alert("The family owner cannot be deleted.");
       if (!confirm(`Are you sure you want to remove ${memberEmail}? This will revoke their platform access immediately.`)) return;
 
       try {
@@ -823,9 +779,8 @@
         batch.delete(subDocRef);
 
         await batch.commit();
-
         linkedSubscriptionsSet.delete(memberEmail);
-        alert(`Member ${memberEmail} removed and portal access revoked successfully.`);
+        alert(`Member ${memberEmail} removed successfully.`);
       } catch (err) {
         alert("Error removing member: " + err.message);
       }
@@ -851,7 +806,7 @@
 
         linkedSubscriptionsSet.add(cleanEmail);
         refreshMembersTable();
-        alert(`Access granted! ${cleanEmail} can now log into this Family Hub.`);
+        alert(`Access granted! ${cleanEmail} can now log in.`);
       } catch (err) {
         alert("Error linking member: " + err.message);
         if (btnElement) {
@@ -892,9 +847,7 @@
     }
 
     async function addMember() {
-      if (!isCurrentUserManagerOwner) {
-        return alert("Only the family owner can add new members.");
-      }
+      if (!isCurrentUserManagerOwner) return alert("Only the family owner can add new members.");
 
       const name = document.getElementById('memName').value.trim();
       const email = document.getElementById('memEmail').value.trim().toLowerCase();
@@ -956,157 +909,6 @@
       }
     }
 
-    async function saveGlobalLimits() {
-      if (!currentUser || currentUser.email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
-        return alert("Super Admin privileges required.");
-      }
-      const maxParents = Number(document.getElementById('globalMaxParents').value) || 2;
-      const maxChildren = Number(document.getElementById('globalMaxChildren').value) || 6;
-
-      try {
-        await db.collection('platform_config').doc('limits').set({
-          maxParents,
-          maxChildren,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        globalLimits = { maxParents, maxChildren };
-        refreshMembersTable();
-        alert(`Quotas saved: Max ${maxParents} Parents, Max ${maxChildren} Children.`);
-      } catch (err) {
-        alert("Error saving limits: " + err.message);
-      }
-    }
-
-    // ========================================================================
-    // FIX 2: SUPER ADMIN DRILL-DOWN STORAGE CALCULATION ENGINE
-    // ========================================================================
-    async function runStorageAudit() {
-      if (!currentUser || currentUser.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return;
-
-      const summaryDiv = document.getElementById('storageAuditSummary');
-      const tableBody = document.getElementById('storageAuditTable');
-      const resultsDiv = document.getElementById('storageAuditResults');
-
-      summaryDiv.innerHTML = "⏳ Calculating complete space utilization across families and subcollections...";
-      resultsDiv.style.display = 'block';
-      tableBody.innerHTML = '';
-
-      try {
-        const familiesSnap = await db.collection('families').get();
-        let platformTotalBytes = 0;
-        let platformTotalDocs = 0;
-
-        for (const famDoc of familiesSnap.docs) {
-          const fData = famDoc.data();
-          const fId = famDoc.id;
-
-          let familyDocBytes = roughDocSize(fData);
-          let familyDocCount = 1;
-
-          // Member and Subcollection Storage Buckets
-          const memberStorageMap = {}; // email -> { docs, bytes }
-
-          // 1. Fetch Users
-          const usersSnap = await famDoc.ref.collection('users').get();
-          usersSnap.forEach(d => {
-            const u = d.data();
-            const sz = roughDocSize(u);
-            familyDocBytes += sz;
-            familyDocCount++;
-            const uEmail = String(u.email || d.id).toLowerCase();
-            memberStorageMap[uEmail] = { name: u.name || 'Member', role: u.role || 'User', docs: 1, bytes: sz };
-          });
-
-          // 2. Fetch Transactions (Mapped per child)
-          const txSnap = await famDoc.ref.collection('transactions').get();
-          txSnap.forEach(d => {
-            const tx = d.data();
-            const sz = roughDocSize(tx);
-            familyDocBytes += sz;
-            familyDocCount++;
-            const txEmail = String(tx.email || 'system').toLowerCase();
-            if (!memberStorageMap[txEmail]) {
-              memberStorageMap[txEmail] = { name: txEmail, role: 'Ledger', docs: 0, bytes: 0 };
-            }
-            memberStorageMap[txEmail].docs++;
-            memberStorageMap[txEmail].bytes += sz;
-          });
-
-          // 3. Fetch ChoreLogs (Mapped per child)
-          const choreLogSnap = await famDoc.ref.collection('choreLog').get();
-          choreLogSnap.forEach(d => {
-            const cl = d.data();
-            const sz = roughDocSize(cl);
-            familyDocBytes += sz;
-            familyDocCount++;
-            const clEmail = String(cl.childEmail || 'system').toLowerCase();
-            if (!memberStorageMap[clEmail]) {
-              memberStorageMap[clEmail] = { name: clEmail, role: 'Chores', docs: 0, bytes: 0 };
-            }
-            memberStorageMap[clEmail].docs++;
-            memberStorageMap[clEmail].bytes += sz;
-          });
-
-          // 4. Fetch Goals (Mapped per child)
-          const goalsSnap = await famDoc.ref.collection('goals').get();
-          goalsSnap.forEach(d => {
-            const g = d.data();
-            const sz = roughDocSize(g);
-            familyDocBytes += sz;
-            familyDocCount++;
-            const gEmail = String(g.email || 'system').toLowerCase();
-            if (!memberStorageMap[gEmail]) {
-              memberStorageMap[gEmail] = { name: gEmail, role: 'Goals', docs: 0, bytes: 0 };
-            }
-            memberStorageMap[gEmail].docs++;
-            memberStorageMap[gEmail].bytes += sz;
-          });
-
-          // 5. Shared Subcollections (Chores catalog, Schedules, Settings)
-          const choresSnap = await famDoc.ref.collection('chores').get();
-          choresSnap.forEach(d => { familyDocBytes += roughDocSize(d.data()); familyDocCount++; });
-
-          const schedSnap = await famDoc.ref.collection('schedules').get();
-          schedSnap.forEach(d => { familyDocBytes += roughDocSize(d.data()); familyDocCount++; });
-
-          platformTotalBytes += familyDocBytes;
-          platformTotalDocs += familyDocCount;
-
-          // Format Drill-Down HTML for this family
-          let drillDownHtml = '<div style="font-size:0.75rem; line-height:1.5;">';
-          Object.keys(memberStorageMap).forEach(mEmail => {
-            const m = memberStorageMap[mEmail];
-            drillDownHtml += `<div>• <strong>${m.name}</strong> (${m.role}): ${m.docs} docs ~ ${(m.bytes / 1024).toFixed(2)} KB</div>`;
-          });
-          drillDownHtml += '</div>';
-
-          tableBody.innerHTML += `
-            <tr>
-              <td>
-                <strong>${fData.familyName || 'Family'}</strong>
-                <div style="font-size:0.72rem; color:var(--text-muted);">${fData.ownerEmail}</div>
-              </td>
-              <td>${familyDocCount} docs</td>
-              <td><strong>${(familyDocBytes / 1024).toFixed(2)} KB</strong></td>
-              <td>${drillDownHtml}</td>
-            </tr>
-          `;
-        }
-
-        summaryDiv.innerHTML = `✅ Platform Audit Complete: <strong>${familiesSnap.size}</strong> Families, <strong>${platformTotalDocs}</strong> Total Documents, consuming <strong>${(platformTotalBytes / 1024).toFixed(2)} KB</strong> (~${(platformTotalBytes / (1024 * 1024)).toFixed(3)} MB).`;
-      } catch (err) {
-        summaryDiv.innerHTML = `<span style="color:#f87171;">Audit error: ${err.message}</span>`;
-      }
-    }
-
-    // Calculates approximate document payload size + index overhead in bytes
-    function roughDocSize(obj) {
-      if (!obj) return 128;
-      const str = JSON.stringify(obj);
-      // UTF-8 payload length + 32-byte BSON/Firestore document & collection indexing overhead
-      return (new TextEncoder().encode(str)).length + 128;
-    }
-
     async function calculateBalances() {
       if (!familyId) return;
       const snap = await db.collection('families').doc(familyId).collection('transactions').get();
@@ -1128,6 +930,7 @@
     }
 
     async function deleteTransaction(txId) {
+      if (!isCurrentUserManagerOwner) return alert("Only the family owner can delete transactions.");
       if (!confirm("Are you sure you want to delete this transaction? The child balance will update automatically.")) return;
       try {
         await db.collection('families').doc(familyId).collection('transactions').doc(txId).delete();
@@ -1208,6 +1011,8 @@
     }
 
     async function addSchedule() {
+      if (!isCurrentUserManagerOwner) return alert("Only the family owner can add recurring payout schedules.");
+
       const title = document.getElementById('schedTitle').value.trim();
       const targetEmail = document.getElementById('schedTargetSelect').value;
       const frequency = document.getElementById('schedFrequency').value;
@@ -1240,12 +1045,7 @@
       const schedRef = db.collection('families').doc(familyId).collection('schedules').doc();
 
       batch.set(schedRef, {
-        title,
-        targetEmail,
-        frequency,
-        scheduleDay,
-        amount,
-        status: 'Active',
+        title, targetEmail, frequency, scheduleDay, amount, status: 'Active',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastRunDate: todayStr
       });
@@ -1258,9 +1058,7 @@
         recipients.forEach(email => {
           const txRef = db.collection('families').doc(familyId).collection('transactions').doc();
           batch.set(txRef, {
-            email,
-            type: 'Allowance',
-            amount: amount,
+            email, type: 'Allowance', amount,
             desc: `Scheduled Payout: ${title}`,
             date: todayStr,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -1274,11 +1072,8 @@
       document.getElementById('schedAmount').value = '';
       if (document.getElementById('schedDayText')) document.getElementById('schedDayText').value = '';
       
-      if (matchesToday) {
-        alert(`Schedule "${title}" saved! Today's first payout of ${activeCurrency}${amount} has been disbursed.`);
-      } else {
-        alert(`Schedule "${title}" saved! Payouts will start on the next due date.`);
-      }
+      if (matchesToday) alert(`Schedule "${title}" saved! Today's first payout disbursed.`);
+      else alert(`Schedule "${title}" saved! Payouts start on due date.`);
     }
 
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
@@ -1339,13 +1134,9 @@
             const ddmm = `${pDay}/${pMonth}`;
 
             let matched = false;
-            if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dOfWeek) {
-              matched = true;
-            } else if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dOfMonth) {
-              matched = true;
-            } else if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) {
-              matched = true;
-            }
+            if (s.frequency === 'WEEKLY' && Number(s.scheduleDay) === dOfWeek) matched = true;
+            else if (s.frequency === 'MONTHLY' && Number(s.scheduleDay) === dOfMonth) matched = true;
+            else if (s.frequency === 'ANNUAL_DATE' && String(s.scheduleDay).trim() === ddmm) matched = true;
 
             if (matched) missedDates.push(curDateStr);
             pointer.setDate(pointer.getDate() + 1);
@@ -1361,9 +1152,7 @@
               recipients.forEach(email => {
                 const txRef = famRef.collection('transactions').doc();
                 batch.set(txRef, {
-                  email: email,
-                  type: 'Allowance',
-                  amount: amount,
+                  email: email, type: 'Allowance', amount,
                   desc: `Scheduled Payout: ${s.title}${dStr !== todayStr ? ' (Catch-up)' : ''}`,
                   date: dStr,
                   timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -1379,15 +1168,14 @@
           }
         }
 
-        if (isManualAlert) {
-          alert(`Catch-up complete! Added ${totalCatchUpGenerated} missed payout transactions.`);
-        }
+        if (isManualAlert) alert(`Catch-up complete! Generated ${totalCatchUpGenerated} missed payouts.`);
       } catch (err) {
         console.error("Catch-up execution error:", err);
       }
     }
 
     async function runPeriodClosing() {
+      if (!isCurrentUserManagerOwner) return alert("Only the family owner can close periods.");
       if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?")) return;
 
       const famRef = db.collection('families').doc(familyId);
@@ -1428,12 +1216,14 @@
     }
 
     async function saveCurrency() {
+      if (!isCurrentUserManagerOwner) return alert("Only the family owner can change the currency.");
       const currency = document.getElementById('setCurrency').value.trim();
       await db.collection('families').doc(familyId).update({ currency });
       alert("Currency saved!");
     }
 
     async function saveAiSettings() {
+      if (!isCurrentUserManagerOwner) return alert("Only the family owner can change AI secrets.");
       const geminiApiKey = document.getElementById('setGeminiKey').value.trim();
       const aiEnabled = document.getElementById('setAiEnabled').checked;
 
