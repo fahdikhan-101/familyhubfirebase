@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "family-allowance-staging",
+    "stage": "family-allowance-staging",
+    "Prod": "family-allowance-hub"
+  },
+  "targets": {},
+  "etags": {}
+}
