@@ -300,23 +300,38 @@
   };
 
   // In-Page Alert Modal
-  window.showModalAlert = function (message, title = 'Notice', type = 'info') {
+  window.showModalAlert = function (messageOrConfig, title = 'Notice', type = 'info') {
     ensureContainers();
+    let message = '';
+    let btnText = 'OK';
+    let icon = null;
+
+    if (typeof messageOrConfig === 'object' && messageOrConfig !== null) {
+      message = messageOrConfig.message || '';
+      title = messageOrConfig.title || 'Notice';
+      type = messageOrConfig.type || 'info';
+      btnText = messageOrConfig.btnText || messageOrConfig.confirmText || 'OK';
+      icon = messageOrConfig.icon || null;
+    } else {
+      message = String(messageOrConfig || '');
+    }
+
+    const iconMap = {
+      info: 'ℹ️',
+      success: '🎉',
+      error: '⚠️',
+      warning: '⚠️'
+    };
+
     return new Promise(resolve => {
-      const iconMap = {
-        info: 'ℹ️',
-        success: '🎉',
-        error: '⚠️',
-        warning: '⚠️'
-      };
-      document.getElementById('appGlobalModalIcon').innerText = iconMap[type] || 'ℹ️';
+      document.getElementById('appGlobalModalIcon').innerText = icon || iconMap[type] || 'ℹ️';
       document.getElementById('appGlobalModalTitle').innerText = title;
       document.getElementById('appGlobalModalMsg').innerText = message;
       document.getElementById('appGlobalModalInputContainer').style.display = 'none';
 
       const actions = document.getElementById('appGlobalModalActions');
       actions.innerHTML = `
-        <button type="button" class="app-modal-btn app-modal-btn-primary" id="appModalAlertOk">OK</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" id="appModalAlertOk">${btnText}</button>
       `;
 
       function closeAlert() {
@@ -340,12 +355,31 @@
   };
 
   // In-Page Confirm Modal
-  window.showModalConfirm = function (message, title = 'Confirm Action', options = {}) {
+  window.showModalConfirm = function (messageOrConfig, title = 'Confirm Action', options = {}) {
     ensureContainers();
-    const isDanger = options.isDanger || false;
-    const confirmText = options.confirmText || (isDanger ? 'Delete' : 'Confirm');
-    const cancelText = options.cancelText || 'Cancel';
-    const icon = options.icon || (isDanger ? '⚠️' : '❓');
+    let message = '';
+    let isDanger = false;
+    let confirmText = '';
+    let cancelText = 'Cancel';
+    let icon = '';
+    let confirmColor = null;
+
+    if (typeof messageOrConfig === 'object' && messageOrConfig !== null) {
+      message = messageOrConfig.message || '';
+      title = messageOrConfig.title || 'Confirm Action';
+      isDanger = Boolean(messageOrConfig.isDanger || messageOrConfig.confirmColor === '#ef4444');
+      confirmText = messageOrConfig.confirmText || (isDanger ? 'Delete' : 'Confirm');
+      cancelText = messageOrConfig.cancelText || 'Cancel';
+      confirmColor = messageOrConfig.confirmColor || null;
+      icon = messageOrConfig.icon || (isDanger ? '⚠️' : '❓');
+    } else {
+      message = String(messageOrConfig || '');
+      isDanger = Boolean(options.isDanger || options.confirmColor === '#ef4444');
+      confirmText = options.confirmText || (isDanger ? 'Delete' : 'Confirm');
+      cancelText = options.cancelText || 'Cancel';
+      confirmColor = options.confirmColor || null;
+      icon = options.icon || (isDanger ? '⚠️' : '❓');
+    }
 
     return new Promise(resolve => {
       document.getElementById('appGlobalModalIcon').innerText = icon;
@@ -354,9 +388,12 @@
       document.getElementById('appGlobalModalInputContainer').style.display = 'none';
 
       const actions = document.getElementById('appGlobalModalActions');
+      const btnClass = isDanger ? 'app-modal-btn-danger' : 'app-modal-btn-primary';
+      const customStyle = confirmColor ? `style="background: ${confirmColor};"` : '';
+
       actions.innerHTML = `
         <button type="button" class="app-modal-btn app-modal-btn-cancel" id="appModalConfirmCancel">${cancelText}</button>
-        <button type="button" class="app-modal-btn ${isDanger ? 'app-modal-btn-danger' : 'app-modal-btn-primary'}" id="appModalConfirmOk">${confirmText}</button>
+        <button type="button" class="app-modal-btn ${btnClass}" ${customStyle} id="appModalConfirmOk">${confirmText}</button>
       `;
 
       function cleanup(result) {
@@ -385,13 +422,32 @@
   };
 
   // In-Page Prompt Modal
-  window.showModalPrompt = function (message, defaultValue = '', title = 'Input Required', options = {}) {
+  window.showModalPrompt = function (messageOrConfig, defaultValue = '', title = 'Input Required', options = {}) {
     ensureContainers();
-    const placeholder = options.placeholder || '';
-    const inputType = options.inputType || 'text';
-    const confirmText = options.confirmText || 'Submit';
-    const cancelText = options.cancelText || 'Cancel';
-    const icon = options.icon || '✏️';
+    let message = '';
+    let placeholder = '';
+    let inputType = 'text';
+    let confirmText = 'Submit';
+    let cancelText = 'Cancel';
+    let icon = '✏️';
+
+    if (typeof messageOrConfig === 'object' && messageOrConfig !== null) {
+      message = messageOrConfig.message || '';
+      defaultValue = messageOrConfig.defaultValue || messageOrConfig.value || '';
+      title = messageOrConfig.title || 'Input Required';
+      placeholder = messageOrConfig.placeholder || '';
+      inputType = messageOrConfig.inputType || 'text';
+      confirmText = messageOrConfig.confirmText || 'Submit';
+      cancelText = messageOrConfig.cancelText || 'Cancel';
+      icon = messageOrConfig.icon || '✏️';
+    } else {
+      message = String(messageOrConfig || '');
+      placeholder = options.placeholder || '';
+      inputType = options.inputType || 'text';
+      confirmText = options.confirmText || 'Submit';
+      cancelText = options.cancelText || 'Cancel';
+      icon = options.icon || '✏️';
+    }
 
     return new Promise(resolve => {
       document.getElementById('appGlobalModalIcon').innerText = icon;
