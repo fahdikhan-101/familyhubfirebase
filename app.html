@@ -3,31 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0f172a" id="metaThemeColor">
   <title>Kindo — Turn chores into savings and goals into reality</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
     (function() {
       const savedTheme = localStorage.getItem('app_theme') || 'dark';
       document.documentElement.setAttribute('data-theme', savedTheme);
+      const meta = document.getElementById('metaThemeColor');
+      if (meta) meta.setAttribute('content', savedTheme === 'light' ? '#ffffff' : '#0f172a');
     })();
   </script>
   <style>
     :root {
+      color-scheme: dark;
       --primary: #6366f1; --primary-dark: #4f46e5; --accent: #ec4899; --success: #10b981;
       --warning: #f59e0b; --danger: #ef4444; --cyan: #06b6d4; --bg: #0f172a;
       --card-bg: rgba(30, 41, 59, 0.7); --card-border: rgba(255, 255, 255, 0.1);
       --text: #f8fafc; --text-muted: #94a3b8;
     }
+    html[data-theme="light"],
     [data-theme="light"] {
-      --bg: #f8fafc;
-      --card-bg: rgba(255, 255, 255, 0.95);
+      color-scheme: light !important;
+      --bg: #ffffff;
+      --card-bg: #ffffff;
       --card-border: #e2e8f0;
       --text: #0f172a;
       --text-muted: #64748b;
     }
     [data-theme="light"] body {
-      background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, var(--bg) 75%);
+      background: #ffffff !important;
+      background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 320px) !important;
       color: var(--text);
+      color-scheme: light !important;
     }
     [data-theme="light"] .top-bar {
       background: rgba(255, 255, 255, 0.92);
@@ -583,6 +592,8 @@
 
     function updateThemeToggleButtons(theme) {
       const isLight = theme === 'light';
+      const meta = document.getElementById('metaThemeColor');
+      if (meta) meta.setAttribute('content', isLight ? '#ffffff' : '#0f172a');
       document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
         btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
         btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
