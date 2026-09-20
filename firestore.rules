@@ -146,9 +146,26 @@ service cloud.firestore {
               isMember(familyId) &&
               request.resource.data.amount is number &&
               (
-                (request.resource.data.type == "Expense" && request.resource.data.amount < 0) ||
-                (request.resource.data.type == "Transfer") ||
-                (request.resource.data.type == "Allowance" && request.resource.data.amount > 0)
+                (
+                  request.resource.data.type == "Expense" && 
+                  request.resource.data.amount < 0 &&
+                  (
+                    (request.resource.data.email != null && request.resource.data.email.lower() == request.auth.token.email.lower()) ||
+                    (request.resource.data.childEmail != null && request.resource.data.childEmail.lower() == request.auth.token.email.lower())
+                  )
+                ) ||
+                (
+                  request.resource.data.type == "Transfer" &&
+                  (
+                    (request.resource.data.senderEmail != null && request.resource.data.senderEmail.lower() == request.auth.token.email.lower()) ||
+                    (request.resource.data.email != null && request.resource.data.email.lower() == request.auth.token.email.lower())
+                  )
+                ) ||
+                (
+                  request.resource.data.type == "Allowance" && 
+                  request.resource.data.amount > 0 &&
+                  request.resource.data.desc.matches('^Scheduled Payout:.*')
+                )
               )
             )
           )
@@ -195,7 +212,18 @@ service cloud.firestore {
       // --- SUBCOLLECTION 7: GOALS ---
       match /goals/{goalId} {
         allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
-        allow create: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow create: if isSuperAdmin() || (
+          isFamilyActive(familyId) && 
+          (
+            isParent(familyId) ||
+            (
+              isMember(familyId) && (
+                (request.resource.data.email != null && request.resource.data.email.lower() == request.auth.token.email.lower()) ||
+                (request.resource.data.childEmail != null && request.resource.data.childEmail.lower() == request.auth.token.email.lower())
+              )
+            )
+          )
+        );
         allow update, delete: if isSuperAdmin() || 
           (isParent(familyId) && isFamilyActive(familyId)) ||
           (
@@ -209,6 +237,27 @@ service cloud.firestore {
       // --- SUBCOLLECTION 8: ARCHIVES ---
       match /archives/{archiveId}/{allSubcollections=**} {
         allow read, write: if isSuperAdmin() || (isFamilyOwner(familyId) && isFamilyActive(familyId));
+      }
+
+      // --- SUBCOLLECTION 9: PLANNER TEMPLATES ---
+      match /planner_templates/{templateId} {
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow write: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+      }
+
+      // --- SUBCOLLECTION 10: PLANNER TASKS ---
+      match /planner_tasks/{taskId} {
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow create: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow update: if isSuperAdmin() || 
+          (isParent(familyId) && isFamilyActive(familyId)) ||
+          (
+            isMember(familyId) && isFamilyActive(familyId) && 
+            resource.data.childEmail.lower() == request.auth.token.email.lower() &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimedAt', 'childNote']) &&
+            request.resource.data.status in ['todo', 'pending']
+          );
+        allow delete: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
       }
     }
   }

@@ -3,14 +3,176 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>My PiggyBank Hub</title>
+  <title>Kindo — Turn chores into savings and goals into reality</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('app_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <style>
     :root {
       --primary: #6366f1; --primary-dark: #4f46e5; --accent: #ec4899; --success: #10b981;
       --warning: #f59e0b; --danger: #ef4444; --cyan: #06b6d4; --bg: #0f172a;
       --card-bg: rgba(30, 41, 59, 0.7); --card-border: rgba(255, 255, 255, 0.1);
       --text: #f8fafc; --text-muted: #94a3b8;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+    [data-theme="light"] body {
+      background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, var(--bg) 75%);
+      color: var(--text);
+    }
+    [data-theme="light"] .top-bar {
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid #e2e8f0;
+    }
+    [data-theme="light"] .btn-lock {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      font-weight: 800;
+    }
+    [data-theme="light"] #topHomeBtn,
+    [data-theme="light"] #loginCardHomeBtn {
+      background: #e2e8f0 !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+      font-weight: 800;
+    }
+    [data-theme="light"] #topParentConsoleBtn,
+    [data-theme="light"] #loginCardParentBtn {
+      background: #e0e7ff !important;
+      border-color: #a5b4fc !important;
+      color: #4338ca !important;
+      font-weight: 800;
+    }
+    [data-theme="light"] #siblingSwitcher {
+      background: #ffffff !important;
+      color: #0284c7 !important;
+      border-color: #0284c7 !important;
+    }
+    [data-theme="light"] #parentPreviewBadge {
+      background: #e0f2fe !important;
+      color: #0284c7 !important;
+      border-color: #7dd3fc !important;
+    }
+    [data-theme="light"] .card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .balance-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%);
+      border-color: #cbd5e1;
+    }
+    [data-theme="light"] .balance-val {
+      color: #1e1b4b;
+      text-shadow: none;
+    }
+    [data-theme="light"] h3 {
+      color: #0f172a;
+    }
+    [data-theme="light"] input,
+    [data-theme="light"] select {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    [data-theme="light"] .bottom-nav {
+      background: rgba(255, 255, 255, 0.95);
+      border-top: 1px solid #e2e8f0;
+    }
+    [data-theme="light"] .goal-card,
+    [data-theme="light"] .kid-stat-box,
+    [data-theme="light"] .planner-task-item {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .task-title,
+    [data-theme="light"] .goal-title {
+      color: #0f172a;
+    }
+    [data-theme="light"] .chip,
+    [data-theme="light"] .slicer {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    [data-theme="light"] .chip.active,
+    [data-theme="light"] .slicer.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+    [data-theme="light"] .tx-item {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    [data-theme="light"] .theme-toggle-btn {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    [data-theme="light"] .ai-response-box {
+      background: #f1f5f9;
+      color: #1e293b;
+      border-color: #cbd5e1;
+    }
+    [data-theme="light"] .ai-coach-card {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .theme-toggle-btn:hover { transform: scale(1.04); }
+    .theme-toggle-btn:active { transform: scale(0.96); }
+
+    .child-preview-chip {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+      border: 1.5px solid rgba(6, 182, 212, 0.4);
+      color: #38bdf8;
+      padding: 8px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      transition: all 0.18s ease;
+      user-select: none;
+    }
+    .child-preview-chip:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.3) 0%, rgba(99, 102, 241, 0.3) 100%);
+      border-color: #38bdf8;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+    }
+    [data-theme="light"] .child-preview-chip {
+      background: #f0f9ff;
+      border-color: #0284c7;
+      color: #0369a1;
+    }
+    [data-theme="light"] .child-preview-chip:hover {
+      background: #e0f2fe;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 75%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
@@ -86,8 +248,44 @@
     .type-allowance { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
     .type-expense { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
     .type-transfer { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.35); }
+
+    .planner-task-item {
+      background: rgba(15, 23, 42, 0.55); border: 1px solid var(--card-border); border-radius: 14px;
+      padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between;
+      align-items: center; gap: 12px; transition: all 0.2s ease;
+    }
+    .planner-task-item.status-approved { border-left: 4px solid var(--success); background: rgba(16, 185, 129, 0.06); }
+    .planner-task-item.status-pending { border-left: 4px solid var(--warning); background: rgba(245, 158, 11, 0.06); }
+    .planner-task-item.status-penalized { border-left: 4px solid var(--danger); background: rgba(239, 68, 68, 0.06); }
+    .planner-task-item.status-todo { border-left: 4px solid var(--cyan); }
+    .task-time-pill {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 700;
+      color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 8px; border-radius: 6px; margin-bottom: 4px;
+    }
+    .task-title { font-weight: 800; font-size: 0.95rem; color: #fff; }
+    .task-reward-tag { font-size: 0.76rem; font-weight: 800; color: var(--success); }
+    .task-penalty-tag { font-size: 0.72rem; font-weight: 700; color: var(--danger); margin-left: 6px; }
+    .btn-mark-done {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white;
+      font-weight: 800; font-size: 0.8rem; padding: 8px 14px; border-radius: 10px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px; transition: transform 0.15s ease;
+    }
+    .btn-mark-done:active { transform: scale(0.95); }
+    .btn-waiting-review {
+      background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24;
+      font-weight: 800; font-size: 0.75rem; padding: 6px 10px; border-radius: 10px;
+    }
+    .btn-task-approved {
+      background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399;
+      font-weight: 800; font-size: 0.75rem; padding: 6px 10px; border-radius: 10px;
+    }
+    .btn-task-penalized {
+      background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5;
+      font-weight: 800; font-size: 0.75rem; padding: 6px 10px; border-radius: 10px;
+    }
   </style>
   <script src="config.js"></script>
+  <script src="ui-dialogs.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -99,39 +297,72 @@
     <div class="user-profile">
       <div class="user-avatar" id="avatarInitial">H</div>
       <div class="user-details">
-        <span class="user-name" id="childHeaderName">Hero</span>
-        <span class="user-rank" id="childHeaderRank">Novice</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="user-name" id="childHeaderName">Hero</span>
+          <span id="parentPreviewBadge" style="display:none; font-size:0.68rem; background:rgba(6,182,212,0.2); color:#38bdf8; border:1px solid rgba(6,182,212,0.4); padding:1px 6px; border-radius:6px; font-weight:800;">👁️ Parent Preview</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="user-rank" id="childHeaderRank">Novice</span>
+          <select id="siblingSwitcher" onchange="switchSiblingPreview(this.value)" style="display:none; width:auto; padding:2px 8px; font-size:0.72rem; height:24px; border-radius:6px; background:rgba(15,23,42,0.7); border:1px solid var(--cyan); color:#38bdf8; font-weight:700;">
+          </select>
+        </div>
       </div>
     </div>
-    <button class="btn-lock" onclick="logout()">🔒 Lock</button>
+    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
+      <a id="topParentConsoleBtn" href="parent.html" class="btn-lock" style="display: none; text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); font-weight:700;" title="Return to Parent Console">👨‍👧 Parent Console</a>
+      <a id="topHomeBtn" href="index.html" class="btn-lock" style="display: none; text-decoration: none; color: #cbd5e1; font-weight:700;" title="Go to Home">🏠 Home</a>
+      <button class="btn-lock" onclick="logout()" title="Lock session and return to Home">🔒 Lock</button>
+    </div>
   </div>
 
   <div class="container">
 
     <!-- LOGIN SCREEN -->
     <div class="card" id="loginCard" style="text-align: center; padding: 36px 20px; margin-top: 30px;">
-      <div style="font-size: 3.5rem; margin-bottom: 8px;">🐷</div>
-      <h2 style="margin: 0 0 6px; font-weight: 900; font-size: 1.5rem;">Family PiggyBank</h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Sign in with Google to enable AI Coaching, or use your PIN</p>
+      <div style="font-size: 3.5rem; margin-bottom: 8px;">✨</div>
+      <h2 style="margin: 0 0 4px; font-weight: 900; font-size: 1.6rem; letter-spacing: -0.5px;">Kindo</h2>
+      <p style="color: #a5b4fc; font-size: 0.88rem; font-weight: 700; margin: 0 0 6px;">Turn chores into savings and goals into reality.</p>
+      <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0 20px;">Sign in with Google to enable AI Coaching, or use your PIN</p>
       
       <!-- Primary Child Sign-in (Google OAuth with Option 1 Auto-Discovery) -->
       <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
       
+      <!-- Dedicated Parent Quick Preview Section (shown when in parent preview mode) -->
+      <div id="parentQuickPreviewSection" style="display:none; margin: 18px 0; padding: 14px; background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 14px; text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <strong style="font-size: 0.85rem; color: #38bdf8;">👁️ Parent Preview Mode</strong>
+          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">No PIN needed</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 10px;">Select any kid to open and inspect their live balance and routine:</p>
+        <div id="parentChildChipsContainer" style="display:flex; gap: 8px; flex-wrap: wrap;"></div>
+      </div>
+
       <div id="pinLoginContainer" style="display:none;">
         <div style="margin: 18px 0 14px; font-size: 0.8rem; color: var(--text-muted);">— or use 4-Digit PIN —</div>
         <div class="form-group">
           <label for="childNameSelect">Hero Name</label>
-          <select id="childNameSelect"><option value="">Loading heroes...</option></select>
+          <select id="childNameSelect" onchange="checkParentAutoPreview()"><option value="">Loading heroes...</option></select>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="pinInputGroup">
           <label for="pinInput">4-Digit Secret PIN</label>
           <input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;">
         </div>
-        <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
+        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
+          <button id="parentDirectPreviewBtn" class="btn" style="display: none; background: linear-gradient(135deg, #06b6d4, #6366f1); border: none; color: #fff; font-weight: 800; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);" onclick="loginAsParentPreview()">👁️ Preview Selected Child ↗</button>
+        </div>
       </div>
 
       <div id="noFamilyNotice" style="margin-top:16px; font-size:0.78rem; color:var(--text-muted);">
         Signing in with Google will automatically locate your family vault!
+      </div>
+
+      <!-- Quick Navigation on Login Screen -->
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
+        <a id="loginCardHomeBtn" href="index.html" class="btn-lock" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight:700;">🏠 Back to Home</a>
+        <a id="loginCardParentBtn" href="parent.html" class="btn-lock" style="text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; gap: 4px; font-weight:700;">👨‍👧 Parent Console</a>
       </div>
     </div>
 
@@ -143,10 +374,20 @@
         <div class="balance-val" id="balanceDisplay">Rs. 0</div>
       </div>
 
+      <!-- TODAY'S ROUTINE SPOTLIGHT -->
+      <div class="card" id="homePlannerSpotlight" style="border-left: 4px solid var(--cyan); display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <h3 style="margin: 0; font-size: 0.95rem;">📋 Today's Routine & Tasks</h3>
+          <button onclick="switchNavTab('tab-planner', document.querySelectorAll('.nav-item')[1])" style="background: none; border: none; color: #38bdf8; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Full Plan →</button>
+        </div>
+        <div id="homePlannerSummary" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;"></div>
+        <div id="homePlannerNextTask"></div>
+      </div>
+
       <div class="card" id="homeGoalSpotlight" style="border-left: 4px solid var(--accent); display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <h3 style="margin: 0; font-size: 0.95rem;">🎯 Top Wishlist Target</h3>
-          <button onclick="switchNavTab('tab-goals', document.querySelectorAll('.nav-item')[1])" style="background: none; border: none; color: #a5b4fc; font-size: 0.75rem; font-weight: 700; cursor: pointer;">View All →</button>
+          <button onclick="switchNavTab('tab-goals', document.querySelectorAll('.nav-item')[2])" style="background: none; border: none; color: #a5b4fc; font-size: 0.75rem; font-weight: 700; cursor: pointer;">View All →</button>
         </div>
         <div id="homeGoalContent"></div>
       </div>
@@ -196,6 +437,32 @@
             No sibling transfers in this period.
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- TAB: PLANNER & TO-DO TIMELINE -->
+    <div id="tab-planner" class="tab-content">
+      <div class="card" style="border-left: 4px solid var(--cyan);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <h3 style="margin:0;">📋 Today's Routine Plan</h3>
+          <span id="plannerDateBadge" style="font-size:0.75rem; color:var(--text-muted); font-weight:700;"></span>
+        </div>
+        
+        <div style="margin-top:10px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-bottom:4px;">
+            <span id="plannerProgressText">0 of 0 tasks done</span>
+            <span id="plannerPotentialReward" style="color:var(--success); font-weight:800;">+Rs. 0 potential</span>
+          </div>
+          <div class="goal-progress-bg" style="margin:0 0 12px;">
+            <div id="plannerProgressBar" class="goal-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div id="plannerBonusNotice" style="display:none; background:rgba(16, 185, 129, 0.12); border:1px solid rgba(16, 185, 129, 0.3); border-radius:12px; padding:10px; margin-bottom:12px; font-size:0.82rem; color:#6ee7b7;">
+          🌟 <strong>Daily Completion Bonus:</strong> Finish all tasks today to unlock a special bonus!
+        </div>
+
+        <div id="plannerTimelineContainer">Loading today's schedule...</div>
       </div>
     </div>
 
@@ -268,6 +535,7 @@
 
   <div class="bottom-nav" id="bottomNav" style="display: none;">
     <button class="nav-item active" onclick="switchNavTab('tab-home', this)"><span class="icon">🏠</span><span>Home</span></button>
+    <button class="nav-item" onclick="switchNavTab('tab-planner', this)"><span class="icon">📋</span><span>Plan</span></button>
     <button class="nav-item" onclick="switchNavTab('tab-goals', this)"><span class="icon">🎯</span><span>Goals</span></button>
     <button class="nav-item" onclick="switchNavTab('tab-missions', this)"><span class="icon">⚡</span><span>Actions</span></button>
     <button class="nav-item" onclick="switchNavTab('tab-activity', this)"><span class="icon">📜</span><span>Ledger</span></button>
@@ -281,6 +549,13 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
+    const fromParent = urlParams.get('from') === 'parent' || urlParams.get('parentPreview') === 'true';
+    const requestedChildEmail = urlParams.get('childEmail');
+
+    let isParentViewer = Boolean(fromParent || sessionStorage.getItem('is_parent_preview') === 'true');
+    if (fromParent) {
+      sessionStorage.setItem('is_parent_preview', 'true');
+    }
 
     let activeCurrency = "Rs. ";
     let activeFamilyDoc = null;
@@ -294,6 +569,110 @@
     let availableSiblings = [];
     let currentFilter = 'ALL';
     let currentChildTimeframe = 'ALL';
+    let todayPlannerTasks = [];
+    let uPlannerUnsub = null;
+    let cachedFamilyChildren = [];
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('app_theme', next);
+      updateThemeToggleButtons(next);
+    }
+
+    function updateThemeToggleButtons(theme) {
+      const isLight = theme === 'light';
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
+        btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
+      });
+    }
+
+    function renderParentQuickPreviewChips() {
+      const previewSec = document.getElementById('parentQuickPreviewSection');
+      const chipsCont = document.getElementById('parentChildChipsContainer');
+      if (!previewSec || !chipsCont) return;
+      if (isParentViewer && cachedFamilyChildren && cachedFamilyChildren.length > 0) {
+        previewSec.style.display = 'block';
+        chipsCont.innerHTML = cachedFamilyChildren.map(c => `
+          <button type="button" class="child-preview-chip" onclick="previewChildDirect('${c.id}', '${c.name.replace(/'/g, "\\'")}', '${c.email}')">
+            <span style="font-size:1.1rem;">🧒</span>
+            <span><strong>${c.name}</strong></span>
+            <span style="font-size:0.72rem; opacity:0.85;">👁️ Preview →</span>
+          </button>
+        `).join('');
+      } else {
+        previewSec.style.display = 'none';
+      }
+    }
+
+    function previewChildDirect(id, name, email) {
+      currentChild = { id, name, email };
+      authMethod = "PARENT_PREVIEW";
+      sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+      sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+      unlockApp();
+    }
+
+    function switchSiblingPreview(childEmail) {
+      if (!isParentViewer || !cachedFamilyChildren) return;
+      const target = cachedFamilyChildren.find(c => (c.email || '').toLowerCase() === childEmail.toLowerCase());
+      if (target) {
+        currentChild = { id: target.id, name: target.name, email: target.email };
+        authMethod = "PARENT_PREVIEW";
+        sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+        sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+        unlockApp();
+      }
+    }
+
+    function updateNavigationButtons() {
+      const topParentBtn = document.getElementById('topParentConsoleBtn');
+      const topHomeBtn = document.getElementById('topHomeBtn');
+      const loginCardHomeBtn = document.getElementById('loginCardHomeBtn');
+      const loginCardParentBtn = document.getElementById('loginCardParentBtn');
+      const parentDirectPreviewBtn = document.getElementById('parentDirectPreviewBtn');
+
+      const targetFamId = familyId || localStorage.getItem('family_id');
+      const parentUrl = targetFamId ? `parent.html?familyId=${targetFamId}` : 'parent.html';
+      const homeUrl = targetFamId ? `index.html?familyId=${targetFamId}` : 'index.html';
+
+      if (loginCardHomeBtn) loginCardHomeBtn.href = homeUrl;
+      if (loginCardParentBtn) loginCardParentBtn.href = parentUrl;
+      if (topHomeBtn) topHomeBtn.href = homeUrl;
+      if (topParentBtn) topParentBtn.href = parentUrl;
+
+      if (isParentViewer) {
+        if (topParentBtn) topParentBtn.style.display = 'inline-flex';
+        if (topHomeBtn) topHomeBtn.style.display = 'inline-flex';
+        if (loginCardParentBtn) loginCardParentBtn.style.display = 'inline-flex';
+        if (parentDirectPreviewBtn) {
+          const sel = document.getElementById('childNameSelect');
+          parentDirectPreviewBtn.style.display = (sel && sel.value) ? 'inline-flex' : 'none';
+        }
+      }
+    }
+
+    function checkParentAutoPreview() {
+      const sel = document.getElementById('childNameSelect');
+      const previewBtn = document.getElementById('parentDirectPreviewBtn');
+      if (previewBtn && isParentViewer) {
+        previewBtn.style.display = (sel && sel.value) ? 'inline-flex' : 'none';
+      }
+    }
+
+    function loginAsParentPreview() {
+      const sel = document.getElementById('childNameSelect');
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return showToast("Please choose a hero name first.", "warning");
+
+      currentChild = { id: opt.value, name: opt.getAttribute('data-name'), email: opt.getAttribute('data-email') };
+      authMethod = "PARENT_PREVIEW";
+      sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+      sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+      unlockApp();
+    }
 
     function playChimeSound() {
       try {
@@ -332,7 +711,7 @@
       localStorage.setItem('family_id', familyId);
 
       const famDoc = await db.collection('families').doc(familyId).get();
-      if (!famDoc.exists) return alert("Family workspace not found.");
+      if (!famDoc.exists) return showToast("Family workspace not found.", "error");
       activeFamilyDoc = famDoc.data();
 
       if (activeFamilyDoc.status && activeFamilyDoc.status !== 'active') {
@@ -349,20 +728,42 @@
       activeCurrency = activeFamilyDoc.currency || "Rs. ";
       document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
 
-      // Populate PIN Hero Select
+      // Populate PIN Hero Select and cached children
+      cachedFamilyChildren = [];
       const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
       const sel = document.getElementById('childNameSelect');
       sel.innerHTML = '<option value="">-- Choose Name --</option>';
       usersSnap.forEach(d => {
+        const cObj = { id: d.id, name: d.data().name, email: d.data().email, pinHash: d.data().pinHash };
+        cachedFamilyChildren.push(cObj);
         sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
       });
       document.getElementById('pinLoginContainer').style.display = 'block';
       document.getElementById('noFamilyNotice').style.display = 'none';
 
+      renderParentQuickPreviewChips();
+      updateNavigationButtons();
+
+      // If parent navigated to preview a specific child directly
+      if (isParentViewer && requestedChildEmail) {
+        const matchingDoc = usersSnap.docs.find(d => (d.data().email || '').toLowerCase() === requestedChildEmail.toLowerCase());
+        if (matchingDoc) {
+          currentChild = { id: matchingDoc.id, name: matchingDoc.data().name, email: matchingDoc.data().email };
+          authMethod = "PARENT_PREVIEW";
+          sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+          sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+          unlockApp();
+          return;
+        }
+      }
+
       runCatchUpScheduledPayouts(db, familyId, false);
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
+      updateThemeToggleButtons(localStorage.getItem('app_theme') || 'dark');
+      updateNavigationButtons();
+
       if (familyId) {
         await loadFamilyData(familyId);
       }
@@ -379,10 +780,28 @@
     // Automatically detect authenticated Google session (e.g. redirected from index.html)
     auth.onAuthStateChanged(async (user) => {
       if (!user) return;
-      if (currentChild) return; // Already logged in
+      updateNavigationButtons();
 
       const email = String(user.email || '').toLowerCase().trim();
       let famId = familyId || localStorage.getItem('family_id');
+
+      // Check if logged-in user is a Parent or Owner
+      try {
+        const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+        if (subDoc.exists) {
+          const subData = subDoc.data();
+          if (subData.role === 'Parent' || (activeFamilyDoc && activeFamilyDoc.ownerEmail && activeFamilyDoc.ownerEmail.toLowerCase() === email)) {
+            isParentViewer = true;
+            sessionStorage.setItem('is_parent_preview', 'true');
+            renderParentQuickPreviewChips();
+            updateNavigationButtons();
+          }
+        }
+      } catch (subErr) {
+        console.warn("Parent role check note:", subErr);
+      }
+
+      if (currentChild) return; // Already logged in
 
       if (!famId) {
         try {
@@ -424,7 +843,7 @@
       const sel = document.getElementById('childNameSelect');
       const opt = sel.options[sel.selectedIndex];
       const pin = document.getElementById('pinInput').value.trim();
-      if (!opt.value || !pin) return alert("Select name & PIN");
+      if (!opt.value || !pin) return showToast("Select name & PIN", "warning");
 
       const enteredHash = await hashPin(pin);
       if (enteredHash === opt.getAttribute('data-hash')) {
@@ -436,7 +855,7 @@
         confetti({ particleCount: 80, spread: 70 });
         unlockApp();
       } else {
-        alert("Incorrect PIN");
+        showToast("Incorrect PIN. Please try again.", "error");
         document.getElementById('pinInput').value = '';
       }
     }
@@ -458,7 +877,11 @@
             await loadFamilyData(famId);
           } else {
             auth.signOut();
-            return alert(`No family linked for ${email}. Please ask your parent to add your email in their Parent Admin Console!`);
+            return showModalAlert({
+              title: "No Family Linked",
+              message: `No family linked for ${email}. Please ask your parent to add your email in their Parent Admin Console!`,
+              btnText: "Understood"
+            });
           }
         }
 
@@ -470,7 +893,11 @@
 
         if (userSnap.empty) {
           auth.signOut();
-          return alert(`Child account not found for ${email}. Please ask your parent to add you under Members.`);
+          return showModalAlert({
+            title: "Child Account Not Found",
+            message: `Child account not found for ${email}. Please ask your parent to add you under Members.`,
+            btnText: "Understood"
+          });
         }
 
         const childDoc = userSnap.docs[0];
@@ -482,7 +909,7 @@
         confetti({ particleCount: 80, spread: 70 });
         unlockApp();
       } catch (err) {
-        alert("Google Login Error: " + err.message);
+        showToast("Google Login Error: " + err.message, "error");
       }
     }
 
@@ -492,6 +919,22 @@
       document.getElementById('bottomNav').style.display = 'flex';
       document.getElementById('avatarInitial').innerText = currentChild.name.charAt(0).toUpperCase();
       document.getElementById('childHeaderName').innerText = currentChild.name;
+
+      const pBadge = document.getElementById('parentPreviewBadge');
+      const sSwitcher = document.getElementById('siblingSwitcher');
+      if (pBadge) pBadge.style.display = isParentViewer ? 'inline-block' : 'none';
+      if (sSwitcher) {
+        if (isParentViewer && cachedFamilyChildren && cachedFamilyChildren.length > 1) {
+          sSwitcher.style.display = 'inline-block';
+          sSwitcher.innerHTML = cachedFamilyChildren.map(c => 
+            `<option value="${c.email}" ${(currentChild.email && c.email.toLowerCase() === currentChild.email.toLowerCase()) ? 'selected' : ''}>Switch: ${c.name}</option>`
+          ).join('');
+        } else {
+          sSwitcher.style.display = 'none';
+        }
+      }
+
+      updateNavigationButtons();
       switchNavTab('tab-home', document.querySelectorAll('.nav-item')[0]);
       bindChildData();
     }
@@ -595,7 +1038,7 @@
         }
 
         if (isManualAlert) {
-          alert(`Catch-up complete! Added ${totalCatchUpGenerated} missed payout transactions.`);
+          showToast(`Catch-up complete! Added ${totalCatchUpGenerated} missed payout transactions.`, "success");
         }
       } catch (err) {
         console.error("Catch-up execution error:", err);
@@ -680,21 +1123,54 @@
           }
         });
       });
+
+      // Planner routines & today's tasks
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      const todayObj = new Date();
+      const dateBadge = document.getElementById('plannerDateBadge');
+      if (dateBadge) {
+        dateBadge.innerText = todayObj.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+      }
+
+      // Ensure daily tasks for today are populated from active recurring routines
+      ensureDailyPlannerTasks(db, familyId, todayDateStr, [currentChild]);
+
+      if (uPlannerUnsub) {
+        uPlannerUnsub();
+        uPlannerUnsub = null;
+      }
+
+      uPlannerUnsub = famRef.collection('planner_tasks')
+        .where('childEmail', '==', currentChild.email.toLowerCase())
+        .where('date', '==', todayDateStr)
+        .onSnapshot(snap => {
+          todayPlannerTasks = [];
+          snap.forEach(d => todayPlannerTasks.push({ id: d.id, ...d.data() }));
+          renderChildPlanner(todayPlannerTasks);
+        }, err => {
+          console.error("Planner tasks listener error:", err);
+        });
     }
 
     async function sendSiblingTransfer() {
       const sel = document.getElementById('siblingSelect');
       const opt = sel.options[sel.selectedIndex];
       const recipientEmail = sel.value;
-      const recipientName = opt.getAttribute('data-name');
+      const recipientName = opt ? opt.getAttribute('data-name') : '';
       const amount = Number(document.getElementById('transferAmt').value) || 0;
       const note = document.getElementById('transferNote').value.trim();
 
-      if (!recipientEmail) return alert("Select a sibling.");
-      if (!amount || amount <= 0) return alert("Enter an amount greater than zero.");
-      if (currentChildBalance < amount) return alert("You do not have enough savings to share this amount.");
+      if (!recipientEmail) return showToast("Select a sibling.", "warning");
+      if (!amount || amount <= 0) return showToast("Enter an amount greater than zero.", "warning");
+      if (currentChildBalance < amount) return showToast("You do not have enough savings to share this amount.", "warning");
 
-      if (!confirm(`Are you sure you want to send ${activeCurrency}${amount} to ${recipientName}?`)) return;
+      const confirmed = await showModalConfirm({
+        title: "Send to Sibling?",
+        message: `Are you sure you want to send ${activeCurrency}${amount} to ${recipientName}?`,
+        confirmText: "Send Gift",
+        confirmColor: "#06b6d4"
+      });
+      if (!confirmed) return;
 
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
@@ -728,7 +1204,7 @@
       confetti({ particleCount: 80, spread: 70 });
       document.getElementById('transferAmt').value = '';
       document.getElementById('transferNote').value = '';
-      alert(`🎁 Success! ${activeCurrency}${amount} was sent to ${recipientName}.`);
+      showToast(`🎁 Success! ${activeCurrency}${amount} was sent to ${recipientName}.`, "success");
     }
 
     function setChildTimeframe(btn, tf) {
@@ -943,7 +1419,7 @@
           aiBlock = `
             <div class="ai-coach-card">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
+                <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask Kindo Coach (AI Mentor)</strong>
                 <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 6px; border-radius:6px; font-weight:800;">LIVE</span>
               </div>
               <div class="chip-row">
@@ -960,7 +1436,7 @@
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:1.1rem;">🔒</span>
                 <div>
-                  <strong style="font-size:0.78rem; color:#cbd5e1;">PiggyCoach is locked in PIN mode</strong>
+                  <strong style="font-size:0.78rem; color:#cbd5e1;">Kindo Coach is locked in PIN mode</strong>
                   <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
                     To protect your parent's secret AI Key, sign in with your Google account on the lock screen to unlock live AI coaching.
                   </div>
@@ -976,7 +1452,7 @@
 
     async function askGemini(btnElement, goalId, title, target, question) {
       if (authMethod !== "GOOGLE") {
-        return alert("AI Coach is available when logged in with Google to protect your family's key.");
+        return showToast("AI Coach is available when logged in with Google to protect your family's key.", "info");
       }
 
       const row = btnElement ? btnElement.closest('.chip-row') : null;
@@ -993,14 +1469,14 @@
       const targetBoxes = document.querySelectorAll(`.ai-box-${goalId}`);
       targetBoxes.forEach(b => {
         b.style.display = 'block';
-        b.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is calculating your complete savings strategy...</span>`;
+        b.innerHTML = `<span style="color:#38bdf8;">🧠 Kindo Coach is calculating your complete savings strategy...</span>`;
       });
 
       try {
         const secretDoc = await db.collection('families').doc(familyId).collection('settings').doc('secrets').get();
         if (!secretDoc.exists || !secretDoc.data().geminiApiKey) {
           targetBoxes.forEach(b => {
-            b.innerHTML = `<span style="color:#f87171;">PiggyCoach requires an active API key in Parent Settings.</span>`;
+            b.innerHTML = `<span style="color:#f87171;">Kindo Coach requires an active API key in Parent Settings.</span>`;
           });
           return;
         }
@@ -1025,7 +1501,7 @@
         const todayDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         const prompt = `
-You are "PiggyCoach", an enthusiastic, smart, and encouraging financial mentor for kids and teens.
+You are "Kindo Coach", an enthusiastic, smart, and encouraging financial mentor for kids and teens helping them turn chores into savings and goals into reality.
 Today's Date: ${todayDate}
 
 Student Profile:
@@ -1072,19 +1548,19 @@ Instructions:
 
         if (reply) {
           targetBoxes.forEach(b => {
-            b.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:6px; line-height:1.5;">${reply}</div>`;
+            b.innerHTML = `<strong>🤖 Kindo Coach:</strong><div style="margin-top:6px; line-height:1.5;">${reply}</div>`;
           });
           playChimeSound();
         } else {
           targetBoxes.forEach(b => {
-            b.innerHTML = `<span style="color:#f87171;">PiggyCoach couldn't calculate advice right now. Please try again!</span>`;
+            b.innerHTML = `<span style="color:#f87171;">Kindo Coach couldn't calculate advice right now. Please try again!</span>`;
           });
         }
 
       } catch (err) {
-        console.error("PiggyCoach Error:", err);
+        console.error("Kindo Coach Error:", err);
         targetBoxes.forEach(b => {
-          b.innerHTML = `<span style="color:#f87171;">PiggyCoach Error: ${err.message}</span>`;
+          b.innerHTML = `<span style="color:#f87171;">Kindo Coach Error: ${err.message}</span>`;
         });
       } finally {
         if (row) {
@@ -1101,7 +1577,7 @@ Instructions:
     async function addGoal() {
       const title = document.getElementById('goalTitleInput').value.trim();
       const targetAmount = Number(document.getElementById('goalAmountInput').value) || 0;
-      if (!title || !targetAmount) return alert("Fill in goal details");
+      if (!title || !targetAmount) return showToast("Fill in goal details", "warning");
 
       await db.collection('families').doc(familyId).collection('goals').add({
         email: currentChild.email, title, targetAmount, status: 'Active'
@@ -1110,18 +1586,26 @@ Instructions:
       document.getElementById('goalAmountInput').value = '';
       playChimeSound();
       confetti({ particleCount: 80, spread: 70 });
+      showToast("🎯 Goal created!", "success");
     }
 
     async function deleteGoal(goalId) {
-      if (confirm("Delete this goal?")) {
+      const confirmed = await showModalConfirm({
+        title: "Delete Goal?",
+        message: "Are you sure you want to delete this goal?",
+        confirmText: "Delete",
+        confirmColor: "#ef4444"
+      });
+      if (confirmed) {
         await db.collection('families').doc(familyId).collection('goals').doc(goalId).delete();
+        showToast("Goal removed", "info");
       }
     }
 
     async function claimChore() {
       const sel = document.getElementById('choreSelect');
       const opt = sel.options[sel.selectedIndex];
-      if (!opt.value) return alert("Select a chore");
+      if (!opt.value) return showToast("Select a chore", "warning");
 
       await db.collection('families').doc(familyId).collection('choreLog').add({
         choreTitle: opt.getAttribute('data-title'),
@@ -1134,13 +1618,13 @@ Instructions:
       });
       playChimeSound();
       confetti({ particleCount: 50, spread: 50 });
-      alert("🎉 Chore submitted for parent check!");
+      showToast("🎉 Chore submitted for parent check!", "success");
     }
 
     async function logSpending() {
       const amount = Number(document.getElementById('spendAmt').value) || 0;
       const desc = document.getElementById('spendDesc').value.trim();
-      if (!amount || !desc) return alert("Fill in expense details");
+      if (!amount || !desc) return showToast("Fill in expense details", "warning");
 
       await db.collection('families').doc(familyId).collection('transactions').add({
         email: currentChild.email, type: "Expense", amount: -amount, desc,
@@ -1149,7 +1633,7 @@ Instructions:
       });
       document.getElementById('spendAmt').value = '';
       document.getElementById('spendDesc').value = '';
-      alert("Expense logged.");
+      showToast("Expense logged.", "success");
     }
 
     function switchNavTab(tabId, el) {
@@ -1160,11 +1644,310 @@ Instructions:
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[m]));
+    }
+
+    function formatTime12Hour(timeStr) {
+      if (!timeStr) return '';
+      const parts = timeStr.split(':');
+      let hour = parseInt(parts[0], 10);
+      const min = parts[1] || '00';
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12 || 12;
+      return `${hour}:${min} ${ampm}`;
+    }
+
+    function formatTimeRange(start, end) {
+      if (!start) return '';
+      if (!end) return formatTime12Hour(start);
+      return `${formatTime12Hour(start)} – ${formatTime12Hour(end)}`;
+    }
+
+    async function ensureDailyPlannerTasks(db, familyId, dateStr, childList) {
+      if (!familyId || !dateStr || !childList || childList.length === 0) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const parts = dateStr.split('-');
+        const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const currentDay = dayNames[dt.getDay()];
+
+        const templatesSnap = await famRef.collection('planner_templates').get();
+        if (templatesSnap.empty) return;
+
+        const existingSnap = await famRef.collection('planner_tasks').where('date', '==', dateStr).get();
+        const existingKeySet = new Set();
+        existingSnap.forEach(d => {
+          const t = d.data();
+          existingKeySet.add(`${t.templateId}_${t.itemKey}_${(t.childEmail || '').toLowerCase()}`);
+        });
+
+        const batch = db.batch();
+        let count = 0;
+
+        templatesSnap.forEach(tDoc => {
+          const tmpl = tDoc.data();
+          if (tmpl.status === 'paused') return;
+          const days = tmpl.days || [];
+          if (!days.includes(currentDay) && !days.includes('daily')) return;
+
+          const targetKids = (tmpl.assignedTo === 'all') 
+            ? childList 
+            : childList.filter(c => c.email.toLowerCase() === tmpl.assignedTo.toLowerCase());
+
+          const items = tmpl.items || [];
+          targetKids.forEach(kid => {
+            items.forEach((item, idx) => {
+              const itemKey = item.id || `item_${idx}`;
+              const key = `${tDoc.id}_${itemKey}_${kid.email.toLowerCase()}`;
+              if (!existingKeySet.has(key)) {
+                const taskRef = famRef.collection('planner_tasks').doc();
+                batch.set(taskRef, {
+                  templateId: tDoc.id,
+                  templateTitle: tmpl.title || 'Daily Routine',
+                  itemKey: itemKey,
+                  date: dateStr,
+                  childEmail: kid.email.toLowerCase(),
+                  childName: kid.name,
+                  title: item.title,
+                  startTime: item.startTime || '09:00',
+                  endTime: item.endTime || '10:00',
+                  timeRange: formatTimeRange(item.startTime, item.endTime),
+                  reward: Number(item.reward) || 0,
+                  penalty: Number(item.penalty) || 0,
+                  dailyBonus: Number(tmpl.dailyBonus) || 0,
+                  status: 'todo',
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                existingKeySet.add(key);
+                count++;
+              }
+            });
+          });
+        });
+
+        if (count > 0) {
+          await batch.commit();
+        }
+      } catch (err) {
+        console.error("ensureDailyPlannerTasks error:", err);
+      }
+    }
+
+    function renderChildPlanner(tasks) {
+      const container = document.getElementById('plannerTimelineContainer');
+      const progressText = document.getElementById('plannerProgressText');
+      const progressBar = document.getElementById('plannerProgressBar');
+      const potentialRewardSpan = document.getElementById('plannerPotentialReward');
+      const bonusNotice = document.getElementById('plannerBonusNotice');
+      const homeSpotlight = document.getElementById('homePlannerSpotlight');
+      const homeSummary = document.getElementById('homePlannerSummary');
+      const homeNextTask = document.getElementById('homePlannerNextTask');
+
+      if (!container) return;
+
+      // Chronological sort by startTime
+      tasks.sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
+
+      const totalCount = tasks.length;
+      const approvedCount = tasks.filter(t => t.status === 'approved').length;
+      const pendingCount = tasks.filter(t => t.status === 'pending').length;
+      const todoCount = tasks.filter(t => t.status === 'todo').length;
+      const penalizedCount = tasks.filter(t => t.status === 'penalized').length;
+
+      const pct = totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
+      if (progressBar) progressBar.style.width = `${pct}%`;
+
+      if (progressText) {
+        if (totalCount === 0) {
+          progressText.innerText = "No tasks today";
+        } else if (pendingCount > 0) {
+          progressText.innerText = `${approvedCount} of ${totalCount} completed (${pendingCount} under review)`;
+        } else {
+          progressText.innerText = `${approvedCount} of ${totalCount} tasks completed (${pct}%)`;
+        }
+      }
+
+      const totalPotential = tasks.reduce((sum, t) => sum + (Number(t.reward) || 0), 0);
+      const earnedReward = tasks.filter(t => t.status === 'approved').reduce((sum, t) => sum + (Number(t.reward) || 0), 0);
+      if (potentialRewardSpan) {
+        if (totalPotential > 0) {
+          potentialRewardSpan.innerText = `Earned: +${activeCurrency}${earnedReward} / +${activeCurrency}${totalPotential}`;
+        } else {
+          potentialRewardSpan.innerText = `All habits on track`;
+        }
+      }
+
+      // Daily Bonus notice
+      if (bonusNotice) {
+        const bonusTask = tasks.find(t => Number(t.dailyBonus) > 0);
+        if (bonusTask && Number(bonusTask.dailyBonus) > 0) {
+          bonusNotice.style.display = 'block';
+          if (approvedCount === totalCount && totalCount > 0) {
+            bonusNotice.innerHTML = `🌟 <strong>100% Complete!</strong> Daily bonus of ${activeCurrency}${bonusTask.dailyBonus} earned or ready for parent award! 🎉`;
+          } else {
+            bonusNotice.innerHTML = `🌟 <strong>Daily Completion Bonus:</strong> Finish all ${totalCount} tasks today to unlock a +${activeCurrency}${bonusTask.dailyBonus} bonus!`;
+          }
+        } else {
+          bonusNotice.style.display = 'none';
+        }
+      }
+
+      // Home Dashboard Spotlight
+      if (homeSpotlight) {
+        if (totalCount === 0) {
+          homeSpotlight.style.display = 'none';
+        } else {
+          homeSpotlight.style.display = 'block';
+          if (homeSummary) {
+            homeSummary.innerText = `${approvedCount} of ${totalCount} tasks done (${pct}%)`;
+          }
+          if (homeNextTask) {
+            const nextTodo = tasks.find(t => t.status === 'todo');
+            const nextPending = tasks.find(t => t.status === 'pending');
+            if (nextTodo) {
+              homeNextTask.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(6,182,212,0.08); padding:8px 10px; border-radius:10px; margin-top:4px;">
+                  <div>
+                    <div style="font-size:0.72rem; color:#38bdf8; font-weight:700;">⏰ ${formatTimeRange(nextTodo.startTime, nextTodo.endTime)}</div>
+                    <div style="font-weight:800; font-size:0.88rem; color:#fff;">${escapeHtml(nextTodo.title)}</div>
+                  </div>
+                  <button class="btn-mark-done" style="padding:6px 10px; font-size:0.75rem;" onclick="markPlannerTaskDone('${nextTodo.id}', '${escapeHtml(nextTodo.title)}')">✓ Done</button>
+                </div>
+              `;
+            } else if (nextPending) {
+              homeNextTask.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(245,158,11,0.08); padding:8px 10px; border-radius:10px; margin-top:4px;">
+                  <div>
+                    <div style="font-size:0.72rem; color:#fbbf24; font-weight:700;">⏳ In Review</div>
+                    <div style="font-weight:800; font-size:0.88rem; color:#fff;">${escapeHtml(nextPending.title)}</div>
+                  </div>
+                  <span class="btn-waiting-review" style="font-size:0.72rem; padding:4px 8px;">Waiting</span>
+                </div>
+              `;
+            } else {
+              homeNextTask.innerHTML = `
+                <div style="background:rgba(16,185,129,0.1); border-radius:10px; padding:8px 10px; font-size:0.82rem; color:#34d399; font-weight:700;">
+                  🎉 All ${totalCount} routine tasks completed for today! Awesome job!
+                </div>
+              `;
+            }
+          }
+        }
+      }
+
+      // Render timeline list
+      if (totalCount === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:35px 20px; color:var(--text-muted); background:rgba(15,23,42,0.4); border-radius:14px; border:1px dashed var(--card-border);">
+            <div style="font-size:2.2rem; margin-bottom:6px;">🌴</div>
+            <strong style="color:var(--text-main); font-size:0.95rem;">No tasks scheduled for today!</strong>
+            <p style="margin:6px 0 0; font-size:0.82rem;">Enjoy your day or head to the Actions tab to claim extra chores!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = tasks.map(task => {
+        const timeBadge = formatTimeRange(task.startTime, task.endTime);
+        const rewardText = Number(task.reward) > 0 ? `<span class="task-reward-tag">+${activeCurrency}${task.reward}</span>` : '';
+        const penaltyText = Number(task.penalty) > 0 ? `<span class="task-penalty-tag">-${activeCurrency}${task.penalty} if missed</span>` : '';
+
+        let actionHtml = '';
+        if (task.status === 'todo') {
+          actionHtml = `<button class="btn-mark-done" onclick="markPlannerTaskDone('${task.id}', '${escapeHtml(task.title)}')">✓ Mark Done</button>`;
+        } else if (task.status === 'pending') {
+          actionHtml = `
+            <div style="text-align:right;">
+              <span class="btn-waiting-review">⏳ In Review</span>
+              <button onclick="unmarkPlannerTask('${task.id}')" style="display:block; background:none; border:none; color:var(--text-muted); font-size:0.68rem; margin-top:4px; text-decoration:underline; cursor:pointer; text-align:right; width:100%;">Undo</button>
+            </div>
+          `;
+        } else if (task.status === 'approved') {
+          actionHtml = `<span class="btn-task-approved">✅ Approved (+${activeCurrency}${task.reward || 0})</span>`;
+        } else if (task.status === 'penalized') {
+          actionHtml = `<span class="btn-task-penalized">⚠️ Penalized (-${activeCurrency}${task.penalty || 0})</span>`;
+        }
+
+        const noteHtml = task.childNote ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; font-style:italic;">Your note: "${escapeHtml(task.childNote)}"</div>` : '';
+        const parentNoteHtml = task.parentNote ? `<div style="font-size:0.75rem; color:#f87171; margin-top:4px;">Parent note: "${escapeHtml(task.parentNote)}"</div>` : '';
+
+        return `
+          <div class="planner-task-item status-${task.status}">
+            <div style="flex:1; min-width:0;">
+              <div class="task-time-pill">⏰ ${timeBadge}</div>
+              <div class="task-title">${escapeHtml(task.title)}</div>
+              <div style="margin-top:2px;">
+                ${rewardText}
+                ${penaltyText}
+              </div>
+              ${noteHtml}
+              ${parentNoteHtml}
+            </div>
+            <div style="margin-left:8px; flex-shrink:0;">
+              ${actionHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function markPlannerTaskDone(taskId, taskTitle) {
+      if (!taskId) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('planner_tasks').doc(taskId).update({
+          status: 'pending',
+          claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          childNote: ''
+        });
+        playChimeSound();
+        confetti({ particleCount: 60, spread: 60 });
+        showToast("✓ Great job! Marked for parent check", "success");
+      } catch (err) {
+        showToast("Could not mark task done: " + err.message, "error");
+      }
+    }
+
+    async function unmarkPlannerTask(taskId) {
+      if (!taskId) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('planner_tasks').doc(taskId).update({
+          status: 'todo',
+          childNote: ''
+        });
+        showToast("Task returned to to-do", "info");
+      } catch (err) {
+        showToast("Could not update task: " + err.message, "error");
+      }
+    }
+
     function logout() {
+      if (uPlannerUnsub) {
+        uPlannerUnsub();
+        uPlannerUnsub = null;
+      }
+      const wasParentViewer = (authMethod === "PARENT_PREVIEW" || isParentViewer);
       sessionStorage.removeItem('child_session');
       sessionStorage.removeItem('child_auth_method');
-      auth.signOut();
-      window.location.reload();
+      sessionStorage.removeItem('is_parent_preview');
+
+      // Only sign out of Firebase Auth if this was a child's Google account session
+      if (!wasParentViewer) {
+        auth.signOut();
+      }
+
+      const targetFamilyId = familyId || localStorage.getItem('family_id');
+      window.location.href = targetFamilyId ? `index.html?familyId=${targetFamilyId}` : 'index.html';
     }
   </script>
 </body>

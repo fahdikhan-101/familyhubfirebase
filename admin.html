@@ -3,12 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Platform Master Admin — Family Allowance Hub</title>
+  <title>Platform Master Admin — Kindo</title>
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('app_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <style>
     :root {
       --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
       --danger: #ef4444; --cyan: #06b6d4; --bg: #0b0f19; --card-bg: rgba(30, 41, 59, 0.7);
       --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+    [data-theme="light"] body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    [data-theme="light"] .card,
+    [data-theme="light"] .stat-card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+    [data-theme="light"] input {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    [data-theme="light"] td {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    [data-theme="light"] .btn-gray {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    [data-theme="light"] .theme-toggle-btn {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 7px 13px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .theme-toggle-btn:hover { transform: scale(1.04); }
+    .theme-toggle-btn:active { transform: scale(0.96); }
+
+    .btn-header-nav {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #cbd5e1;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .btn-header-nav:hover { transform: scale(1.03); }
+    [data-theme="light"] .btn-header-nav {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    .user-account-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px 4px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+    }
+    [data-theme="light"] .user-account-group {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #0f172a;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; min-height: 100vh; }
@@ -41,6 +136,7 @@
     .status-suspended { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
   </style>
   <script src="config.js"></script>
+  <script src="ui-dialogs.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -54,11 +150,15 @@
           <h1>Platform Super Admin</h1>
           <span class="badge-admin">Root Authority</span>
         </div>
-        <span style="font-size:0.85rem; color:var(--text-muted);">Family Allowance Hub Infrastructure</span>
+        <span style="font-size:0.85rem; color:var(--text-muted);">Kindo Infrastructure · Turn chores into savings and goals into reality</span>
       </div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span id="adminEmailBadge" style="font-size:0.85rem; color:var(--text-muted);"></span>
-        <button id="authBtn" class="btn btn-gray" onclick="handleAuth()">Sign In</button>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
+        <a href="index.html" class="btn btn-header-nav">🏠 Home</a>
+        <div class="user-account-group">
+          <span id="adminEmailBadge" style="font-size:0.82rem; font-weight:700; display:none;"></span>
+          <button id="authBtn" class="btn btn-gray" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 9999px;" onclick="handleAuth()">Sign In</button>
+        </div>
       </div>
     </div>
 
@@ -154,17 +254,23 @@
 
       if (user && user.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
         authBtn.innerText = "Sign Out";
-        badge.innerText = user.email;
+        badge.innerText = "🛡️ " + user.email;
+        badge.style.display = 'inline-block';
         lockCard.style.display = 'none';
         adminPanel.style.display = 'block';
         loadAdminData();
       } else {
         if (user) {
-          alert(`Access denied for ${user.email}. Super Admin privileges required.`);
+          showModalAlert({
+            title: "Access Denied",
+            message: `Access denied for ${user.email}. Super Admin privileges required.`,
+            btnText: "Understood"
+          });
           auth.signOut();
         }
         authBtn.innerText = "Sign In";
         badge.innerText = "";
+        badge.style.display = 'none';
         lockCard.style.display = 'block';
         adminPanel.style.display = 'none';
       }
@@ -176,7 +282,7 @@
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
+        auth.signInWithPopup(provider).catch(err => showToast("Auth Error: " + err.message, "error"));
       }
     }
 
@@ -228,7 +334,13 @@
 
     // Provision new family tenant workspace
     async function approveFamilyRequest(subDocId, email, familyName) {
-      if (!confirm(`Provision new family workspace for ${email}?`)) return;
+      const confirmed = await showModalConfirm({
+        title: "Provision Family Workspace?",
+        message: `Provision new family workspace for ${email} (${familyName})?`,
+        confirmText: "Provision Workspace",
+        confirmColor: "#10b981"
+      });
+      if (!confirmed) return;
 
       const cleanEmail = email.toLowerCase().trim();
       const newFamilyRef = db.collection('families').doc();
@@ -268,14 +380,20 @@
       }, { merge: true });
 
       await batch.commit();
-      alert(`Family workspace created! ID: ${familyId}`);
+      showToast(`Family workspace created! ID: ${familyId}`, "success");
       auditPlatformStorage();
     }
 
     async function rejectFamilyRequest(subDocId) {
-      if (!confirm("Reject and delete this registration request?")) return;
+      const confirmed = await showModalConfirm({
+        title: "Reject Request?",
+        message: "Reject and delete this registration request?",
+        confirmText: "Reject & Delete",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
       await db.collection('platform_subscriptions').doc(subDocId).delete();
-      alert("Request removed.");
+      showToast("Request removed.", "info");
     }
 
     async function saveGlobalLimits() {
@@ -288,7 +406,7 @@
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
-      alert("Global quotas updated successfully!");
+      showToast("Global quotas updated successfully!", "success");
     }
 
     // Comprehensive Drill-Down Storage & Metric Calculator
@@ -403,7 +521,13 @@
     // Platform Super Admin Actions
     async function adminToggleFamilyStatus(famId, currentStatus) {
       const nextStatus = (currentStatus === 'active') ? 'suspended' : 'active';
-      if (!confirm(`Set family status to ${nextStatus.toUpperCase()}?`)) return;
+      const confirmed = await showModalConfirm({
+        title: `Set Status to ${nextStatus.toUpperCase()}?`,
+        message: `Are you sure you want to change the status of this family to ${nextStatus.toUpperCase()}?`,
+        confirmText: "Confirm",
+        confirmColor: nextStatus === 'active' ? '#10b981' : '#f59e0b'
+      });
+      if (!confirmed) return;
 
       const batch = db.batch();
       batch.update(db.collection('families').doc(famId), { status: nextStatus });
@@ -413,11 +537,18 @@
       subs.forEach(d => batch.update(d.ref, { status: nextStatus }));
 
       await batch.commit();
+      showToast(`Family status set to ${nextStatus.toUpperCase()}`, "success");
       auditPlatformStorage();
     }
 
     async function adminCascadeDeleteFamily(famId) {
-      if (!confirm(`DANGER: Delete entire family ${famId} and revoke all member access permanently?`)) return;
+      const confirmed = await showModalConfirm({
+        title: "DANGER: Delete Family Workspace?",
+        message: `Permanently delete entire family ${famId} and revoke all member access? This action cannot be undone.`,
+        confirmText: "Permanently Delete",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
 
       const batch = db.batch();
 
@@ -429,21 +560,47 @@
       subs.forEach(d => batch.delete(d.ref));
 
       await batch.commit();
-      alert("Family workspace and all linked member pointers deleted.");
+      showToast("Family workspace and all linked member pointers deleted.", "info");
       auditPlatformStorage();
     }
 
     async function adminDeleteFamilyMember(famId, userId, memberEmail) {
-      if (!confirm(`Remove member ${memberEmail} from family ${famId}?`)) return;
+      const confirmed = await showModalConfirm({
+        title: "Remove Member?",
+        message: `Remove member ${memberEmail} from family ${famId}?`,
+        confirmText: "Remove Member",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
 
       const batch = db.batch();
       batch.delete(db.collection('families').doc(famId).collection('users').doc(userId));
       batch.delete(db.collection('platform_subscriptions').doc(memberEmail.toLowerCase()));
 
       await batch.commit();
-      alert(`Member ${memberEmail} removed.`);
+      showToast(`Member ${memberEmail} removed.`, "info");
       auditPlatformStorage();
     }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('app_theme', next);
+      updateThemeToggleButtons(next);
+    }
+
+    function updateThemeToggleButtons(theme) {
+      const isLight = theme === 'light';
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
+        btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateThemeToggleButtons(localStorage.getItem('app_theme') || 'dark');
+    });
   </script>
 </body>
 </html>

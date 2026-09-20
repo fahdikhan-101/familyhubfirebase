@@ -3,12 +3,225 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family Allowance Hub - Parent Console</title>
+  <title>Kindo — Parent Console</title>
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('app_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <style>
     :root {
       --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
       --danger: #ef4444; --cyan: #06b6d4; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.75);
       --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+    [data-theme="light"] body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    [data-theme="light"] .header-bar {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .child-report-card {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 4px 16px -2px rgba(0,0,0,0.06) !important;
+    }
+    [data-theme="light"] .progress-bar-track {
+      background: #e2e8f0 !important;
+    }
+    [data-theme="light"] .empty-state-box {
+      background: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+      color: #64748b !important;
+    }
+    [data-theme="light"] .action-text-approved {
+      background: #dcfce7 !important;
+      color: #15803d !important;
+      border-color: #86efac !important;
+    }
+    [data-theme="light"] .action-text-penalized {
+      background: #fee2e2 !important;
+      color: #b91c1c !important;
+      border-color: #fca5a5 !important;
+    }
+    [data-theme="light"] th {
+      background: #f8fafc;
+      color: #334155;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] td {
+      color: #1e293b;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    [data-theme="light"] .tab-btn {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+    [data-theme="light"] .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+    [data-theme="light"] .btn-gray {
+      background: #e2e8f0;
+      color: #1e293b;
+      border: 1px solid #cbd5e1;
+    }
+    [data-theme="light"] .time-slot-pill {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+    [data-theme="light"] .badge-todo { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    [data-theme="light"] .badge-pending { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+    [data-theme="light"] .badge-approved { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+    [data-theme="light"] .badge-penalized { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    [data-theme="light"] .badge-reward { background: #d1fae5; color: #047857; }
+    [data-theme="light"] .badge-penalty { background: #fee2e2; color: #b91c1c; }
+    [data-theme="light"] .badge-transfer { background: #e0f2fe; color: #0284c7; }
+    [data-theme="light"] .theme-toggle-btn {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .theme-toggle-btn:hover { transform: scale(1.04); }
+    .theme-toggle-btn:active { transform: scale(0.96); }
+
+    .btn-header-nav {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #cbd5e1;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .btn-header-nav:hover { transform: scale(1.03); }
+    [data-theme="light"] .btn-header-nav {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    .user-account-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px 4px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+    }
+    [data-theme="light"] .user-account-group {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+
+    .child-report-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+    }
+    [data-theme="light"] .child-report-card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .progress-bar-track {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    [data-theme="light"] .progress-bar-track {
+      background: #e2e8f0;
+    }
+
+    .empty-state-box {
+      text-align: center;
+      padding: 30px 20px;
+      color: var(--text-muted);
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 14px;
+      border: 1px dashed var(--card-border);
+    }
+    [data-theme="light"] .empty-state-box {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+
+    .btn-preview-pill {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+      border: 1.5px solid rgba(6, 182, 212, 0.5);
+      color: #38bdf8;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 8px rgba(6, 182, 212, 0.15);
+      white-space: nowrap;
+    }
+    .btn-preview-pill:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.3) 0%, rgba(99, 102, 241, 0.3) 100%);
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+    [data-theme="light"] .btn-preview-pill {
+      background: #e0f2fe;
+      border-color: #0284c7;
+      color: #0284c7;
+      font-weight: 800;
+    }
+    [data-theme="light"] .btn-preview-pill:hover {
+      background: #0284c7;
+      color: #ffffff;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 80%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; }
@@ -48,17 +261,162 @@
     .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .btn-gray { background: rgba(255,255,255,0.1); color: #cbd5e1; }
     button.btn-google, .btn-google { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1; font-weight: 800; }
+    /* Responsive Table Styles */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+    }
+    .table-responsive table {
+      width: 100%;
+      min-width: 540px;
+      border-collapse: collapse;
+      margin-top: 0;
+    }
+    .table-responsive.tight table {
+      min-width: 320px;
+    }
+
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); }
+    th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); white-space: nowrap; }
     td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; }
-    .badge { font-size: 0.72rem; font-weight: 800; padding: 4px 9px; border-radius: 6px; text-transform: uppercase; display: inline-block; }
+    .badge { font-size: 0.72rem; font-weight: 800; padding: 4px 9px; border-radius: 6px; text-transform: uppercase; display: inline-block; white-space: nowrap; }
     .badge-reward { background: rgba(16,185,129,0.2); color: #34d399; }
     .badge-penalty { background: rgba(239,68,68,0.2); color: #fca5a5; }
     .badge-transfer { background: rgba(6,182,212,0.2); color: #67e8f9; }
     .badge-owner { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .badge-linked { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-todo { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+    .badge-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-approved { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-penalized { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .time-slot-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(99, 102, 241, 0.15); color: #a5b4fc; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    
+    .mobile-only-label { display: none; }
+    .routine-row { display: grid; grid-template-columns: 105px 105px 1.5fr 90px 90px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+
+    @media (max-width: 768px) {
+      .container { padding: 14px 12px 70px; }
+      .card { padding: 16px 14px; border-radius: 14px; margin-bottom: 12px; }
+      .header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 0 16px;
+      }
+      .header-bar > div:last-child {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .user-account-group {
+        max-width: 100%;
+        overflow: hidden;
+      }
+      #userAuthBadge {
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .stat-box { padding: 12px; }
+      .stat-value { font-size: 1.5rem; }
+
+      /* Mobile Form Stack Overrides */
+      .mobile-stack-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .form-grid-chore {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+      }
+      .form-grid-chore button {
+        width: 100%;
+        padding: 12px;
+      }
+      .form-grid-rule {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+      }
+      .form-grid-rule button {
+        width: 100%;
+        padding: 12px;
+      }
+      .form-grid-sched {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .form-grid-sched button {
+        width: 100%;
+        padding: 12px;
+      }
+      .form-grid-member {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .form-grid-member button {
+        width: 100%;
+        padding: 12px;
+      }
+      .desktop-routine-headers {
+        display: none !important;
+      }
+
+      /* Routine slot builder on mobile */
+      .routine-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid var(--card-border);
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+      }
+      [data-theme="light"] .routine-row {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+      .routine-row .slot-title-wrap {
+        grid-column: 1 / -1;
+      }
+      .routine-row .slot-action-wrap {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 4px;
+      }
+      .routine-row .slot-action-wrap button {
+        width: 100%;
+      }
+      .mobile-only-label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 3px;
+        text-transform: uppercase;
+      }
+
+      /* Modals on mobile */
+      .app-modal-box {
+        max-width: calc(100vw - 24px) !important;
+        width: 100% !important;
+        padding: 18px 14px !important;
+        border-radius: 16px !important;
+      }
+    }
   </style>
   <script src="config.js"></script>
+  <script src="ui-dialogs.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -68,13 +426,17 @@
   <div class="container">
     <div class="header-bar">
       <div>
-        <h1 id="familyHeaderTitle">Family Allowance Hub</h1>
-        <span id="subHeaderBadge" style="font-size:0.82rem; color:var(--text-muted);">Family Parent Console</span>
+        <h1 id="familyHeaderTitle"><a id="familyBrandLink" href="index.html" style="color:inherit; text-decoration:none;">Kindo</a></h1>
+        <span id="subHeaderBadge" style="font-size:0.82rem; color:var(--text-muted);">Parent Console · Turn chores into savings and goals into reality</span>
       </div>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
-        <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
-        <a id="childAppLinkBtn" href="app.html" target="_blank" class="btn btn-blue" style="text-decoration:none; display:none;">Preview Child View ↗</a>
-        <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
+        <a id="parentHomeLink" href="index.html" class="btn-header-nav">🏠 Home</a>
+        <a id="childAppLinkBtn" href="app.html" class="btn" style="background: linear-gradient(135deg, #06b6d4, #6366f1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: 800; text-decoration: none; display: none; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35); padding: 8px 14px; border-radius: 9999px; font-size: 0.82rem;">👁️ Preview Child App ↗</a>
+        <div class="user-account-group">
+          <span id="userAuthBadge" style="font-size:0.82rem; font-weight:700; display:none;"></span>
+          <button id="authBtn" class="btn btn-google" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 9999px;" onclick="handleAuthAction()">Sign in with Google</button>
+        </div>
       </div>
     </div>
 
@@ -85,6 +447,7 @@
     <div id="adminMain" style="display:none;">
       <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-overview', this)">📊 Overview</button>
+        <button class="tab-btn" onclick="switchTab('tab-planner', this)">📋 Planner & Routines</button>
         <button class="tab-btn" onclick="switchTab('tab-chores', this)">🧹 Chores & Approvals</button>
         <button class="tab-btn" onclick="switchTab('tab-behavior', this)">⭐ Rules & Actions</button>
         <button class="tab-btn" onclick="switchTab('tab-schedules', this)">📅 Schedules</button>
@@ -99,6 +462,10 @@
             <div class="stat-title">Total Owed to Children</div>
             <div class="stat-value" id="statTotalOwed" style="color:#818cf8;">Rs. 0</div>
           </div>
+          <div class="stat-box" style="border-top: 3px solid var(--cyan);">
+            <div class="stat-title">Pending Plan Tasks</div>
+            <div class="stat-value" id="statPlannerPendingCount" style="color:#38bdf8;">0</div>
+          </div>
           <div class="stat-box" style="border-top: 3px solid var(--warning);">
             <div class="stat-title">Pending Chores</div>
             <div class="stat-value" id="statPendingCount" style="color:#fbbf24;">0</div>
@@ -107,18 +474,166 @@
 
         <div class="card">
           <h3>🧒 Children Balances</h3>
-          <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Balance</th></tr></thead>
-            <tbody id="childrenBalancesTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Balance</th><th style="width:150px;">Child View</th></tr></thead>
+              <tbody id="childrenBalancesTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card">
           <h3>📜 Live Activity Feed</h3>
-          <table>
-            <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th><th>Action</th></tr></thead>
-            <tbody id="transactionsTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th><th>Action</th></tr></thead>
+              <tbody id="transactionsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: PLANNER & ROUTINES -->
+      <div id="tab-planner" class="tab-pane">
+        <!-- 1. PENDING APPROVALS QUEUE -->
+        <div class="card" style="border-left: 4px solid var(--cyan);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <h3 style="margin:0;">⏳ Pending Planner Approvals</h3>
+            <span id="pendingPlannerBadge" class="badge badge-todo">0 Pending</span>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Kids have marked these daily routine tasks as done. Review and approve rewards or apply penalties.</p>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Date & Time</th><th>Child</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Actions</th></tr></thead>
+              <tbody id="pendingPlannerTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. DAILY COMPLIANCE & PROGRESS REPORT -->
+        <div class="card" style="border-left: 4px solid var(--primary);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <div>
+              <h3 style="margin:0;">📊 Daily Compliance Report</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin:2px 0 0;">Check which tasks were completed by each kid on any given day.</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <button class="btn btn-gray" type="button" style="padding:6px 10px; font-size:0.75rem;" onclick="shiftReportDate(-1)">◀ Yesterday</button>
+              <input type="date" id="reportDatePicker" style="padding:6px 10px; width:auto; font-size:0.82rem;" onchange="changeReportDate(this.value)">
+              <button class="btn btn-gray" type="button" style="padding:6px 10px; font-size:0.75rem;" onclick="setReportDateToday()">Today</button>
+              <button class="btn btn-gray" type="button" style="padding:6px 10px; font-size:0.75rem;" onclick="shiftReportDate(1)">Tomorrow ▶</button>
+            </div>
+          </div>
+
+          <div id="dailyReportSummaryCards" class="stats-grid" style="margin-bottom:16px;"></div>
+          <div id="dailyReportChildrenContainer"></div>
+        </div>
+
+        <!-- 3. QUICK DISPATCH ONE-OFF TASK FOR TODAY -->
+        <div class="card">
+          <h3>⚡ Quick Add Task for Selected Date</h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Need to add a one-time chore or appointment for today? Add it directly here.</p>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+            <div class="form-group">
+              <label>Assign To</label>
+              <select id="quickTaskChildSelect"></select>
+            </div>
+            <div class="form-group">
+              <label>Task Title</label>
+              <input type="text" id="quickTaskTitle" placeholder="e.g. Clean room / Quran class">
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="quickTaskStart" value="16:00">
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="quickTaskEnd" value="17:00">
+            </div>
+            <div class="form-group">
+              <label>Reward (<span class="currencySymbol">Rs. </span>)</label>
+              <input type="number" id="quickTaskReward" value="20" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label>Penalty (<span class="currencySymbol">Rs. </span>)</label>
+              <input type="number" id="quickTaskPenalty" value="0" placeholder="0">
+            </div>
+          </div>
+          <button class="btn btn-blue" onclick="dispatchQuickPlannerTask()">+ Add Task to Date</button>
+        </div>
+
+        <!-- 4. RECURRING ROUTINE BUILDER -->
+        <div class="card" id="routineScheduleBuilder">
+          <div id="routineEditBanner" style="display:none; background:rgba(99,102,241,0.18); border:1.5px solid rgba(99,102,241,0.5); padding:10px 16px; border-radius:12px; margin-bottom:14px; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="color:#a5b4fc;">✏️ Editing Routine:</strong> <span id="editingRoutineTitleName" style="font-weight:800; color:var(--text);"></span>
+            </div>
+            <button class="btn btn-gray" type="button" style="padding:4px 10px; font-size:0.75rem;" onclick="cancelPlannerRoutineEdit()">✕ Cancel Edit</button>
+          </div>
+          <h3 id="routineBuilderHeading">🛠️ Create Recurring Routine Schedule</h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Build repeating weekly plans (e.g. Quran class, dishes, homework, bedtime) that auto-generate every day.</p>
+          
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+            <div class="form-group">
+              <label>Routine Title</label>
+              <input type="text" id="routineTitle" placeholder="e.g. Weekday School Schedule">
+            </div>
+            <div class="form-group">
+              <label>Target Kid(s)</label>
+              <select id="routineTargetChild">
+                <option value="all">🌟 All Children</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>100% Daily Completion Bonus (<span class="currencySymbol">Rs. </span>)</label>
+              <input type="number" id="routineDailyBonus" placeholder="0 (Optional bonus if all tasks done)" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Active Days of Week</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;" id="routineDaysContainer">
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Mon" checked style="width:auto;"> Mon</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Tue" checked style="width:auto;"> Tue</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Wed" checked style="width:auto;"> Wed</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Thu" checked style="width:auto;"> Thu</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Fri" checked style="width:auto;"> Fri</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Sat" style="width:auto;"> Sat</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Sun" style="width:auto;"> Sun</label>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong style="font-size:0.9rem;">Time Slots & Tasks in Routine</strong>
+              <button class="btn btn-gray" type="button" style="padding:4px 10px; font-size:0.75rem;" onclick="addRoutineItemRow()">+ Add Task Slot</button>
+            </div>
+            <div class="desktop-routine-headers" style="display:grid; grid-template-columns: 105px 105px 1.5fr 90px 90px 36px; gap:8px; margin-bottom:4px; font-size:0.72rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">
+              <span>Start Time</span>
+              <span>End Time</span>
+              <span>Task Title</span>
+              <span>Reward</span>
+              <span>Penalty</span>
+              <span></span>
+            </div>
+            <div id="routineItemsTable"></div>
+          </div>
+
+          <div style="margin-top:16px; display:flex; align-items:center; gap:10px;">
+            <button id="btnSavePlannerRoutine" class="btn btn-green" onclick="savePlannerRoutine()">💾 Save Routine Schedule</button>
+            <button id="btnCancelPlannerRoutine" class="btn btn-gray" type="button" style="display:none;" onclick="cancelPlannerRoutineEdit()">Cancel Edit</button>
+          </div>
+        </div>
+
+        <!-- 5. ACTIVE ROUTINE SCHEDULES LIST -->
+        <div class="card">
+          <h3>📑 Active Routine Templates</h3>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Title</th><th>Target</th><th>Days</th><th>Tasks</th><th>Bonus</th><th>Actions</th></tr></thead>
+              <tbody id="routineTemplatesTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -126,23 +641,27 @@
       <div id="tab-chores" class="tab-pane">
         <div class="card" style="border-left: 4px solid var(--warning);">
           <h3>⏳ Pending Chore Submissions</h3>
-          <table>
-            <thead><tr><th>Date</th><th>Child</th><th>Chore</th><th>Reward</th><th>Actions</th></tr></thead>
-            <tbody id="pendingChoresTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Date</th><th>Child</th><th>Chore</th><th>Reward</th><th>Actions</th></tr></thead>
+              <tbody id="pendingChoresTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card">
           <h3>🧹 Chores Catalog</h3>
-          <table>
-            <thead><tr><th>Title</th><th>Reward</th><th>Actions</th></tr></thead>
-            <tbody id="choresCatalogTable"></tbody>
-          </table>
+          <div class="table-responsive tight">
+            <table>
+              <thead><tr><th>Title</th><th>Reward</th><th>Actions</th></tr></thead>
+              <tbody id="choresCatalogTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card">
           <h3>+ Add Chore</h3>
-          <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; align-items:flex-end;">
+          <div class="form-grid-chore" style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; align-items:flex-end;">
             <div class="form-group" style="margin:0;"><label>Chore Title</label><input type="text" id="newChoreTitle" placeholder="e.g. Wash Dishes"></div>
             <div class="form-group" style="margin:0;"><label>Reward Amount</label><input type="number" id="newChoreReward" placeholder="50"></div>
             <button class="btn btn-green" onclick="addChore()">Add</button>
@@ -154,12 +673,12 @@
       <div id="tab-behavior" class="tab-pane">
         <div class="card">
           <h3>⚡ Quick Action</h3>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="mobile-stack-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Child</label><select id="actionChildSelect"></select></div>
             <div class="form-group"><label>Action Type</label><select id="actionTypeSelect" onchange="filterPresetRules()"><option value="Reward">🎁 Reward</option><option value="Penalty">🛑 Penalty</option></select></div>
           </div>
           <div class="form-group"><label>Preset Rule</label><select id="actionPresetSelect" onchange="applyPresetRule()"><option value="">-- Custom Action --</option></select></div>
-          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+          <div class="mobile-stack-grid" style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
             <div class="form-group"><label>Reason / Title</label><input type="text" id="actionTitle"></div>
             <div class="form-group"><label>Amount</label><input type="number" id="actionAmount"></div>
           </div>
@@ -168,15 +687,17 @@
 
         <div class="card">
           <h3>📜 Behavior Rules Preset Catalog</h3>
-          <table>
-            <thead><tr><th>Type</th><th>Title</th><th>Amount</th><th>Actions</th></tr></thead>
-            <tbody id="rulesCatalogTable"></tbody>
-          </table>
+          <div class="table-responsive tight">
+            <table>
+              <thead><tr><th>Type</th><th>Title</th><th>Amount</th><th>Actions</th></tr></thead>
+              <tbody id="rulesCatalogTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card" style="border-left: 4px solid var(--accent);">
           <h3>+ Add Preset Rule</h3>
-          <div style="display:grid; grid-template-columns: 1.2fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
+          <div class="form-grid-rule" style="display:grid; grid-template-columns: 1.2fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
             <div class="form-group" style="margin:0;"><label>Type</label><select id="newRuleType"><option value="Reward">Reward</option><option value="Penalty">Penalty</option></select></div>
             <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newRuleTitle" placeholder="e.g. Clean Room Fast"></div>
             <div class="form-group" style="margin:0;"><label>Default Amount</label><input type="number" id="newRuleAmount" placeholder="100"></div>
@@ -188,23 +709,25 @@
       <!-- TAB 4: SCHEDULES -->
       <div id="tab-schedules" class="tab-pane">
         <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
             <h3 style="margin:0;">📅 Active Payout Schedules</h3>
             <button class="btn btn-gray" onclick="runCatchUpScheduledPayouts(db, familyId, true)">⚡ Force Catch-Up Schedules</button>
           </div>
-          <table>
-            <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Schedule Day/Date</th><th>Amount</th><th>Actions</th></tr></thead>
-            <tbody id="schedulesTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Schedule Day/Date</th><th>Amount</th><th>Actions</th></tr></thead>
+              <tbody id="schedulesTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div id="ownerAddScheduleCard" class="card" style="display:none;">
           <h3>+ Add Schedule</h3>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="form-grid-sched" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="e.g. Weekly Allowance, Birthday Bonus"></div>
             <div class="form-group"><label>Target Recipient</label><select id="schedTargetSelect"><option value="all">All Children</option></select></div>
           </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+          <div class="form-grid-sched" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
             <div class="form-group">
               <label>Frequency</label>
               <select id="schedFrequency" onchange="updateScheduleDayInput(this.value)">
@@ -235,27 +758,29 @@
       <!-- TAB 5: MEMBERS -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
             <div>
               <h3 style="margin:0;">👨‍👩‍👧‍👦 Family Members</h3>
               <span id="quotaDisplay" style="font-size:0.75rem; color:var(--text-muted);"></span>
             </div>
             <button id="btnSyncAllMembers" class="btn btn-gray" style="font-size:0.75rem; padding:6px 12px; display:none;" onclick="syncAllMembersSubscriptions()">🔄 Sync Member Access</button>
           </div>
-          <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Portal Access</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
+          <div class="table-responsive">
+            <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Portal Access</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
+          </div>
         </div>
 
         <div id="addMemberCard" class="card" style="border-left:4px solid var(--cyan); display:none;">
           <h3>+ Add Family Member & Opening Balance</h3>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="form-grid-member" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Full Name</label><input type="text" id="memName" placeholder="e.g. Sabeen, Abdullah"></div>
             <div class="form-group"><label>Email Address</label><input type="email" id="memEmail" placeholder="member@gmail.com"></div>
           </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+          <div class="form-grid-member" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
             <div class="form-group">
               <label>Role</label>
               <select id="memRole" onchange="toggleMemberRoleFields(this.value)">
-                <option value="Child">Child (PiggyBank App)</option>
+                <option value="Child">Child (Kindo App)</option>
                 <option value="Parent">Parent (Admin Access)</option>
               </select>
             </div>
@@ -289,7 +814,7 @@
           </div>
 
           <div class="card" style="border-left:4px solid var(--primary);">
-            <h3>🤖 AI PiggyCoach Settings (Secret Vault)</h3>
+            <h3>🤖 AI Kindo Coach Settings (Secret Vault)</h3>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
               Your Gemini API Key is stored in an encrypted private vault accessible only by your active family members.
             </p>
@@ -313,6 +838,149 @@
     </div>
   </div>
 
+  <!-- IN-PAGE MODALS FOR EDITING -->
+
+  <!-- 1. Edit Chore Modal -->
+  <div class="app-modal-backdrop" id="editChoreModal">
+    <div class="app-modal-box" style="max-width:420px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Chore</h3>
+      </div>
+      <input type="hidden" id="editChoreId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Chore Title</label>
+        <input type="text" class="app-modal-input" id="editChoreTitle" placeholder="e.g. Wash Dishes">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Reward (<span class="currencySymbol">Rs. </span>)</label>
+        <input type="number" class="app-modal-input" id="editChoreReward" placeholder="50">
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditChoreModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditChore()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Edit Rule Modal -->
+  <div class="app-modal-backdrop" id="editRuleModal">
+    <div class="app-modal-box" style="max-width:420px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Behavior Rule</h3>
+      </div>
+      <input type="hidden" id="editRuleId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Type</label>
+        <select class="app-modal-input" id="editRuleType">
+          <option value="Reward">Reward</option>
+          <option value="Penalty">Penalty</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Rule Title</label>
+        <input type="text" class="app-modal-input" id="editRuleTitle" placeholder="e.g. Clean Bedroom">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Amount (<span class="currencySymbol">Rs. </span>)</label>
+        <input type="number" class="app-modal-input" id="editRuleAmount" placeholder="50">
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditRuleModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditRule()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Edit Schedule Modal -->
+  <div class="app-modal-backdrop" id="editScheduleModal">
+    <div class="app-modal-box" style="max-width:460px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Recurring Schedule</h3>
+      </div>
+      <input type="hidden" id="editScheduleId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Schedule Title</label>
+        <input type="text" class="app-modal-input" id="editScheduleTitle" placeholder="e.g. Friday Pocket Money">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Target Child</label>
+        <select class="app-modal-input" id="editScheduleTargetChild"></select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Frequency</label>
+        <select class="app-modal-input" id="editScheduleFreq" onchange="onEditScheduleFreqChange()">
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="ANNUAL">Annual (Birthday)</option>
+          <option value="INTEREST_MONTHLY">Monthly Savings Bonus (%)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label id="editScheduleDayLabel" style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Payout Day</label>
+        <select class="app-modal-input" id="editScheduleDaySelect">
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+        </select>
+        <input type="text" class="app-modal-input" id="editScheduleDayText" placeholder="Day (1-31) or MM-DD" style="display:none;">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label id="editScheduleAmountLabel" style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Amount (<span class="currencySymbol">Rs. </span>)</label>
+        <input type="number" class="app-modal-input" id="editScheduleAmount" placeholder="1000">
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditScheduleModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditSchedule()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Edit Scheduled Task Modal -->
+  <div class="app-modal-backdrop" id="editTaskModal">
+    <div class="app-modal-box" style="max-width:440px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Scheduled Task</h3>
+      </div>
+      <input type="hidden" id="editTaskId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Task Title</label>
+        <input type="text" class="app-modal-input" id="editTaskTitle" placeholder="e.g. Quran class">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Start Time</label>
+          <input type="time" class="app-modal-input" id="editTaskStartTime">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">End Time</label>
+          <input type="time" class="app-modal-input" id="editTaskEndTime">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Reward (<span class="currencySymbol">Rs. </span>)</label>
+          <input type="number" class="app-modal-input" id="editTaskReward" value="0">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Penalty (<span class="currencySymbol">Rs. </span>)</label>
+          <input type="number" class="app-modal-input" id="editTaskPenalty" value="0">
+        </div>
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditTaskModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditTask()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 
 
@@ -331,6 +999,11 @@
     let isCurrentUserManagerOwner = false;
     let cachedChildren = [];
     let cachedRules = [];
+    let cachedChores = [];
+    let cachedSchedules = [];
+    let cachedRoutineTemplates = [];
+    let cachedDailyTasks = [];
+    let editingRoutineId = null;
     let linkedSubscriptionsSet = new Set();
     let currentUser = null;
     let unsubscribers = [];
@@ -344,11 +1017,13 @@
       if (user) {
         authBtn.innerText = "Sign Out";
         authBtn.className = "btn btn-gray";
-        badge.innerText = user.displayName || user.email;
+        badge.innerText = "👤 " + (user.displayName || user.email);
+        badge.style.display = "inline-block";
       } else {
         authBtn.innerText = "Sign in with Google";
         authBtn.className = "btn btn-google";
         badge.innerText = "";
+        badge.style.display = "none";
       }
     });
 
@@ -362,7 +1037,7 @@
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
+        auth.signInWithPopup(provider).catch(err => showToast("Auth Error: " + err.message, "error"));
       }
     }
 
@@ -372,9 +1047,10 @@
       adminMain.style.display = 'none';
       onboardSec.style.display = 'block';
       onboardSec.innerHTML = `
-        <div style="font-size:3rem; margin-bottom:10px;">👋</div>
-        <h2>Welcome to Family Allowance Hub!</h2>
-        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+        <div style="font-size:3rem; margin-bottom:10px;">✨</div>
+        <h2>Welcome to Kindo!</h2>
+        <p style="color:#a5b4fc; font-weight:700; font-size:0.95rem; margin-top:2px;">Turn chores into savings and goals into reality.</p>
+        <p style="color:var(--text-muted); font-size:0.88rem; margin:10px 0 20px;">
           Signed in as <strong>${email}</strong>.<br>
           Please enter your family name below to request access.
         </p>
@@ -386,6 +1062,15 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialFamId = urlParams.get('familyId') || localStorage.getItem('family_id');
+      const homeLink = document.getElementById('parentHomeLink');
+      const brandLink = document.getElementById('familyBrandLink');
+      if (initialFamId) {
+        if (homeLink) homeLink.href = `index.html?familyId=${initialFamId}`;
+        if (brandLink) brandLink.href = `index.html?familyId=${initialFamId}`;
+      }
+
       auth.onAuthStateChanged(async (user) => {
         currentUser = user;
         const onboardSec = document.getElementById('onboardSection');
@@ -453,8 +1138,10 @@
             const childBtn = document.getElementById('childAppLinkBtn');
             if (childBtn) {
               childBtn.style.display = 'inline-flex';
-              childBtn.href = `app.html?familyId=${familyId}`;
+              childBtn.href = `app.html?familyId=${familyId}&from=parent`;
             }
+            if (homeLink) homeLink.href = `index.html?familyId=${familyId}`;
+            if (brandLink) brandLink.href = `index.html?familyId=${familyId}`;
 
             initRealtimeListeners();
             runCatchUpScheduledPayouts(db, familyId, false);
@@ -472,7 +1159,7 @@
 
     async function submitAccessRequest(email) {
       const famName = document.getElementById('reqFamName').value.trim();
-      if (!famName) return alert("Please enter your family name.");
+      if (!famName) return showToast("Please enter your family name.", "warning");
 
       const cleanEmail = email.toLowerCase().trim();
       await db.collection('platform_subscriptions').doc(cleanEmail).set({
@@ -563,7 +1250,13 @@
           document.getElementById('nonOwnerWarning').style.display = 'block';
         }
 
-        document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} Allowance Hub`;
+        const bLink = document.getElementById('familyBrandLink');
+        if (bLink) {
+          bLink.innerText = `${activeFamilyName} · Kindo`;
+          bLink.href = `index.html?familyId=${familyId}`;
+        } else {
+          document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} · Kindo`;
+        }
         document.getElementById('setCurrency').value = activeCurrency;
         document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
@@ -597,8 +1290,13 @@
         cachedMembersSnap = [];
         const actSelect = document.getElementById('actionChildSelect');
         const schedSelect = document.getElementById('schedTargetSelect');
+        const quickChildSelect = document.getElementById('quickTaskChildSelect');
+        const routineChildSelect = document.getElementById('routineTargetChild');
+
         actSelect.innerHTML = '';
         schedSelect.innerHTML = '<option value="all">All Children</option>';
+        if (quickChildSelect) quickChildSelect.innerHTML = '<option value="all">🌟 All Children</option>';
+        if (routineChildSelect) routineChildSelect.innerHTML = '<option value="all">🌟 All Children</option>';
 
         snap.forEach(doc => {
           const u = doc.data();
@@ -607,11 +1305,14 @@
             cachedChildren.push({ id: doc.id, ...u });
             actSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
             schedSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+            if (quickChildSelect) quickChildSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+            if (routineChildSelect) routineChildSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
           }
         });
         window._cachedMembers = cachedMembersSnap;
         refreshMembersTable();
         calculateBalances();
+        initDailyPlannerReport();
       });
       unsubscribers.push(u3);
 
@@ -665,11 +1366,13 @@
       unsubscribers.push(u5);
 
       const u6 = famRef.collection('chores').onSnapshot(snap => {
+        cachedChores = [];
         const cBody = document.getElementById('choresCatalogTable');
         cBody.innerHTML = '';
         snap.forEach(doc => {
           const c = doc.data();
-          cBody.innerHTML += `<tr><td><strong>${c.title}</strong></td><td>${activeCurrency}${c.reward}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('chores', '${doc.id}')">✕</button></td></tr>`;
+          cachedChores.push({ id: doc.id, ...c });
+          cBody.innerHTML += `<tr><td><strong>${c.title}</strong></td><td>${activeCurrency}${c.reward}</td><td><button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditChoreModal('${doc.id}')" title="Edit Chore">✏️</button><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('chores', '${doc.id}')">✕</button></td></tr>`;
         });
       });
       unsubscribers.push(u6);
@@ -681,26 +1384,113 @@
         snap.forEach(doc => {
           const r = doc.data();
           cachedRules.push({ id: doc.id, ...r });
-          rBody.innerHTML += `<tr><td><span class="badge ${r.type==='Reward'?'badge-reward':'badge-penalty'}">${r.type}</span></td><td>${r.title}</td><td>${activeCurrency}${r.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('rules', '${doc.id}')">✕</button></td></tr>`;
+          cBody = document.getElementById('rulesCatalogTable');
+          rBody.innerHTML += `<tr><td><span class="badge ${r.type==='Reward'?'badge-reward':'badge-penalty'}">${r.type}</span></td><td>${r.title}</td><td>${activeCurrency}${r.amount}</td><td><button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditRuleModal('${doc.id}')" title="Edit Rule">✏️</button><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('rules', '${doc.id}')">✕</button></td></tr>`;
         });
         filterPresetRules();
       });
       unsubscribers.push(u7);
 
       const u8 = famRef.collection('schedules').onSnapshot(snap => {
+        cachedSchedules = [];
         const sBody = document.getElementById('schedulesTable');
         sBody.innerHTML = '';
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         snap.forEach(doc => {
           const s = doc.data();
+          cachedSchedules.push({ id: doc.id, ...s });
           let displayDay = s.scheduleDay;
           if (s.frequency === 'WEEKLY' && dayNames[Number(s.scheduleDay)] !== undefined) {
             displayDay = dayNames[Number(s.scheduleDay)];
           }
-          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td>${isCurrentUserManagerOwner ? `<button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button>` : '-'}</td></tr>`;
+          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td>${isCurrentUserManagerOwner ? `<button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditScheduleModal('${doc.id}')" title="Edit Schedule">✏️</button><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button>` : '-'}</td></tr>`;
         });
       });
       unsubscribers.push(u8);
+
+      const uPlannerPending = famRef.collection('planner_tasks')
+        .where('status', '==', 'pending')
+        .onSnapshot(snap => {
+          const pTable = document.getElementById('pendingPlannerTable');
+          const pBadge = document.getElementById('pendingPlannerBadge');
+          const pStat = document.getElementById('statPlannerPendingCount');
+          if (pBadge) pBadge.innerText = `${snap.size} Pending`;
+          if (pStat) pStat.innerText = snap.size;
+          if (pTable) {
+            pTable.innerHTML = '';
+            if (snap.empty) {
+              pTable.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted); text-align:center; padding:16px;">No pending planner approvals. All clear!</td></tr>';
+            } else {
+              snap.forEach(doc => {
+                const t = doc.data();
+                const safeTitle = (t.title || '').replace(/'/g, "\\'");
+                const safeName = (t.childName || t.childEmail || '').replace(/'/g, "\\'");
+                pTable.innerHTML += `
+                  <tr>
+                    <td>
+                      <div>${t.date || ''}</div>
+                      <span class="time-slot-pill">⏰ ${t.timeRange || (t.startTime + ' - ' + t.endTime)}</span>
+                    </td>
+                    <td><strong>${t.childName || t.childEmail}</strong></td>
+                    <td>
+                      <strong>${t.title}</strong>
+                      ${t.childNote ? `<div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Note: "${t.childNote}"</div>` : ''}
+                    </td>
+                    <td style="color:var(--success); font-weight:800;">+${activeCurrency}${t.reward || 0}</td>
+                    <td style="color:var(--danger); font-weight:800;">-${activeCurrency}${t.penalty || 0}</td>
+                    <td>
+                      <button class="btn btn-green" style="padding:4px 8px; font-size:0.75rem;" onclick="approvePlannerTask('${doc.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.reward || 0})">✓ Approve</button>
+                      <button class="btn btn-gray" style="padding:4px 8px; font-size:0.75rem;" onclick="rejectPlannerTask('${doc.id}')">✕ Redo</button>
+                      <button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="penalizePlannerTask('${doc.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.penalty || 0})">🛑 Penalize</button>
+                    </td>
+                  </tr>
+                `;
+              });
+            }
+          }
+        });
+      unsubscribers.push(uPlannerPending);
+
+      const uPlannerTemplates = famRef.collection('planner_templates')
+        .onSnapshot(snap => {
+          cachedRoutineTemplates = [];
+          const tTable = document.getElementById('routineTemplatesTable');
+          if (tTable) {
+            tTable.innerHTML = '';
+            if (snap.empty) {
+              tTable.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted); text-align:center; padding:16px;">No recurring routines created yet. Use the builder above to set one up!</td></tr>';
+            } else {
+              snap.forEach(doc => {
+                const tmpl = doc.data();
+                cachedRoutineTemplates.push({ id: doc.id, ...tmpl });
+                const daysStr = (tmpl.days || []).join(', ');
+                const bonusStr = tmpl.dailyBonus ? `+${activeCurrency}${tmpl.dailyBonus}` : '—';
+                const targetStr = tmpl.assignedTo === 'all' ? 'All Kids' : (cachedChildren.find(c => c.email === tmpl.assignedTo)?.name || tmpl.assignedTo);
+                
+                let itemsSummary = '<div style="font-size:0.75rem; line-height:1.5;">';
+                (tmpl.items || []).forEach(it => {
+                  itemsSummary += `• <strong>${formatTimeRange(it.startTime, it.endTime)}</strong>: ${it.title} (+${activeCurrency}${it.reward || 0})<br>`;
+                });
+                itemsSummary += '</div>';
+
+                tTable.innerHTML += `
+                  <tr>
+                    <td><strong>${tmpl.title}</strong></td>
+                    <td><span class="badge badge-linked">${targetStr}</span></td>
+                    <td><span style="font-size:0.8rem;">${daysStr}</span></td>
+                    <td style="max-width:320px;">${itemsSummary}</td>
+                    <td style="color:var(--success); font-weight:800;">${bonusStr}</td>
+                    <td>
+                      <button class="btn btn-gray" style="padding:2px 6px; font-size:0.75rem; margin-right:4px;" onclick="editPlannerRoutine('${doc.id}')" title="Edit Routine Template">✏️ Edit</button>
+                      <button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteDoc('planner_templates', '${doc.id}')">✕</button>
+                    </td>
+                  </tr>
+                `;
+              });
+            }
+          }
+        });
+      unsubscribers.push(uPlannerTemplates);
     }
 
     function refreshMembersTable() {
@@ -720,8 +1510,10 @@
         if (isParent) parentCount++;
         else childCount++;
 
-        let accessColumnHtml = '';
-        let actionsColumnHtml = '';
+        let previewBtnHtml = '';
+        if (!isParent && cleanEmail) {
+          previewBtnHtml = `<a href="app.html?familyId=${familyId}&childEmail=${encodeURIComponent(cleanEmail)}&from=parent" class="btn-preview-pill" title="Preview ${u.name}'s child view">👁️ Preview ↗</a>`;
+        }
 
         if (isOwner) {
           accessColumnHtml = `<span class="badge badge-owner">👑 Owner</span>`;
@@ -737,9 +1529,9 @@
 
           // ONLY Owner or Super Admin sees the Delete button
           if (isCurrentUserManagerOwner) {
-            actionsColumnHtml = `<button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteMember('${u.id}', '${cleanEmail}')">✕</button>`;
+            actionsColumnHtml = `<div style="display:inline-flex; align-items:center; gap:6px;">${previewBtnHtml}<button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteMember('${u.id}', '${cleanEmail}')">✕</button></div>`;
           } else {
-            actionsColumnHtml = `<span style="color:var(--text-muted); font-size:0.72rem;">Read-only</span>`;
+            actionsColumnHtml = `<div style="display:inline-flex; align-items:center; gap:6px;">${previewBtnHtml}<span style="color:var(--text-muted); font-size:0.72rem;">Read-only</span></div>`;
           }
         }
 
@@ -760,9 +1552,16 @@
     }
 
     async function deleteMember(userId, memberEmail) {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can delete members.");
-      if (memberEmail === activeOwnerEmail) return alert("The family owner cannot be deleted.");
-      if (!confirm(`Are you sure you want to remove ${memberEmail}? This will revoke their platform access immediately.`)) return;
+      if (!isCurrentUserManagerOwner) return showToast("Only the family owner can delete members.", "warning");
+      if (memberEmail === activeOwnerEmail) return showToast("The family owner cannot be deleted.", "warning");
+
+      const confirmed = await showModalConfirm({
+        title: "Remove Member?",
+        message: `Are you sure you want to remove ${memberEmail}? This will revoke their platform access immediately.`,
+        confirmText: "Remove Member",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
 
       try {
         const batch = db.batch();
@@ -774,14 +1573,14 @@
 
         await batch.commit();
         linkedSubscriptionsSet.delete(memberEmail);
-        alert(`Member ${memberEmail} removed successfully.`);
+        showToast(`Member ${memberEmail} removed successfully.`, "info");
       } catch (err) {
-        alert("Error removing member: " + err.message);
+        showToast("Error removing member: " + err.message, "error");
       }
     }
 
     async function linkMemberSubscription(memberEmail, role, btnElement) {
-      if (!familyId) return alert("Family ID missing");
+      if (!familyId) return showToast("Family ID missing", "error");
       const cleanEmail = memberEmail.toLowerCase().trim();
       if (btnElement) {
         btnElement.disabled = true;
@@ -800,9 +1599,9 @@
 
         linkedSubscriptionsSet.add(cleanEmail);
         refreshMembersTable();
-        alert(`Access granted! ${cleanEmail} can now log in.`);
+        showToast(`Access granted! ${cleanEmail} can now log in.`, "success");
       } catch (err) {
-        alert("Error linking member: " + err.message);
+        showModalAlert("Error linking member: " + err.message, "Error", "error");
         if (btnElement) {
           btnElement.disabled = false;
           btnElement.innerText = "🔗 Link Access";
@@ -811,7 +1610,7 @@
     }
 
     async function syncAllMembersSubscriptions() {
-      if (!familyId) return alert("No active family found.");
+      if (!familyId) return showToast("No active family found.", "warning");
       try {
         const snap = await db.collection('families').doc(familyId).collection('users').get();
         let count = 0;
@@ -834,14 +1633,14 @@
         }
 
         refreshMembersTable();
-        alert(`Synced ${count} member account(s)!`);
+        showToast(`Synced ${count} member account(s)!`, "success");
       } catch (err) {
-        alert("Sync error: " + err.message);
+        showModalAlert("Sync error: " + err.message, "Sync Error", "error");
       }
     }
 
     async function addMember() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can add new members.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can add new members.", "Owner Restricted", "warning");
 
       const name = document.getElementById('memName').value.trim();
       const email = document.getElementById('memEmail').value.trim().toLowerCase();
@@ -849,17 +1648,17 @@
       const pin = document.getElementById('memPin').value.trim();
       const openingBal = Number(document.getElementById('memOpeningBalance').value) || 0;
 
-      if (!name || !email) return alert("Please fill in name and email address.");
-      if (role === 'Child' && !pin) return alert("Please provide a 4-digit PIN for the child.");
+      if (!name || !email) return showToast("Please fill in name and email address.", "warning");
+      if (role === 'Child' && !pin) return showToast("Please provide a 4-digit PIN for the child.", "warning");
 
       const currentParents = (window._cachedMembers || []).filter(m => m.role === 'Parent').length;
       const currentChildren = (window._cachedMembers || []).filter(m => m.role === 'Child').length;
 
       if (role === 'Parent' && currentParents >= (globalLimits.maxParents || 2)) {
-        return alert(`Cannot add parent: Reached quota of ${globalLimits.maxParents || 2} parents.`);
+        return showModalAlert(`Cannot add parent: Reached quota of ${globalLimits.maxParents || 2} parents.`, "Quota Reached", "warning");
       }
       if (role === 'Child' && currentChildren >= (globalLimits.maxChildren || 6)) {
-        return alert(`Cannot add child: Reached quota of ${globalLimits.maxChildren || 6} children.`);
+        return showModalAlert(`Cannot add child: Reached quota of ${globalLimits.maxChildren || 6} children.`, "Quota Reached", "warning");
       }
 
       const famRef = db.collection('families').doc(familyId);
@@ -897,9 +1696,9 @@
         document.getElementById('memEmail').value = '';
         document.getElementById('memPin').value = '';
         document.getElementById('memOpeningBalance').value = '0';
-        alert(`Member ${name} added successfully!`);
+        showToast(`Member ${name} added successfully!`, "success");
       } catch (err) {
-        alert("Error adding member: " + err.message);
+        showModalAlert("Error adding member: " + err.message, "Error", "error");
       }
     }
 
@@ -918,38 +1717,50 @@
       cachedChildren.forEach(c => {
         const b = balMap[c.email] || 0;
         total += b;
-        bTable.innerHTML += `<tr><td><strong>${c.name}</strong></td><td>${c.email}</td><td style="color:#34d399; font-weight:800;">${activeCurrency}${b.toLocaleString()}</td></tr>`;
+        bTable.innerHTML += `
+          <tr>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.email}</td>
+            <td style="color:#34d399; font-weight:800;">${activeCurrency}${b.toLocaleString()}</td>
+            <td>
+              <a href="app.html?familyId=${familyId}&childEmail=${encodeURIComponent(c.email)}&from=parent" class="btn-preview-pill" title="Preview ${c.name}'s Kindo app">👁️ Preview ${c.name} ↗</a>
+            </td>
+          </tr>`;
       });
       document.getElementById('statTotalOwed').innerText = activeCurrency + total.toLocaleString();
     }
 
     async function deleteTransaction(txId) {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can delete transactions.");
-      if (!confirm("Are you sure you want to delete this transaction? The child balance will update automatically.")) return;
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can delete transactions.", "Permission Denied", "warning");
+      const ok = await showModalConfirm("Are you sure you want to delete this transaction? The child balance will update automatically.", "Delete Transaction", { isDanger: true });
+      if (!ok) return;
       try {
         await db.collection('families').doc(familyId).collection('transactions').doc(txId).delete();
+        showToast("Transaction deleted", "info");
       } catch (err) {
-        alert("Failed to delete transaction: " + err.message);
+        showModalAlert("Failed to delete transaction: " + err.message, "Error", "error");
       }
     }
 
     async function addChore() {
       const title = document.getElementById('newChoreTitle').value.trim();
       const reward = Number(document.getElementById('newChoreReward').value) || 0;
-      if (!title || !reward) return alert("Fill chore details");
+      if (!title || !reward) return showToast("Please fill in chore title and reward.", "warning");
       await db.collection('families').doc(familyId).collection('chores').add({ title, reward });
       document.getElementById('newChoreTitle').value = '';
       document.getElementById('newChoreReward').value = '';
+      showToast(`Chore "${title}" added!`, "success");
     }
 
     async function addBehaviorRule() {
       const type = document.getElementById('newRuleType').value;
       const title = document.getElementById('newRuleTitle').value.trim();
       const amount = Number(document.getElementById('newRuleAmount').value) || 0;
-      if (!title || !amount) return alert("Fill rule details");
+      if (!title || !amount) return showToast("Please fill in rule title and amount.", "warning");
       await db.collection('families').doc(familyId).collection('rules').add({ type, title, amount });
       document.getElementById('newRuleTitle').value = '';
       document.getElementById('newRuleAmount').value = '';
+      showToast(`Rule "${title}" added!`, "success");
     }
 
     function filterPresetRules() {
@@ -975,7 +1786,7 @@
       const type = document.getElementById('actionTypeSelect').value;
       const title = document.getElementById('actionTitle').value.trim();
       const amt = Number(document.getElementById('actionAmount').value) || 0;
-      if (!email || !title || !amt) return alert("Enter action details");
+      if (!email || !title || !amt) return showToast("Please fill in all action details.", "warning");
 
       const finalAmt = (type === 'Reward') ? amt : -amt;
       const now = new Date();
@@ -986,6 +1797,7 @@
       });
       document.getElementById('actionTitle').value = '';
       document.getElementById('actionAmount').value = '';
+      showToast(`Action "${title}" recorded!`, "success");
     }
 
     async function approveChore(logId, email, title, reward) {
@@ -996,16 +1808,18 @@
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
       await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'approved' });
+      showToast(`Chore "${title}" approved (+${activeCurrency}${reward})`, "success");
     }
 
     async function rejectChore(logId) {
-      const reason = prompt("Enter reason:", "Incomplete");
+      const reason = await showModalPrompt("Enter reason for rejection / redo:", "Incomplete", "Chore Redo");
       if (reason === null) return;
       await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'denied', reason });
+      showToast("Chore sent back for redo", "info");
     }
 
     async function addSchedule() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can add recurring payout schedules.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can add recurring payout schedules.", "Owner Restricted", "warning");
 
       const title = document.getElementById('schedTitle').value.trim();
       const targetEmail = document.getElementById('schedTargetSelect').value;
@@ -1019,7 +1833,7 @@
         scheduleDay = document.getElementById('schedDayText').value.trim();
       }
 
-      if (!title || scheduleDay === '' || !amount) return alert("Please complete all schedule fields.");
+      if (!title || scheduleDay === '' || !amount) return showToast("Please complete all schedule fields.", "warning");
 
       const now = new Date();
       const year = now.getFullYear();
@@ -1066,8 +1880,8 @@
       document.getElementById('schedAmount').value = '';
       if (document.getElementById('schedDayText')) document.getElementById('schedDayText').value = '';
       
-      if (matchesToday) alert(`Schedule "${title}" saved! Today's first payout disbursed.`);
-      else alert(`Schedule "${title}" saved! Payouts start on due date.`);
+      if (matchesToday) showToast(`Schedule "${title}" saved! Today's payout disbursed.`, "success");
+      else showToast(`Schedule "${title}" saved! Payouts start on due date.`, "success");
     }
 
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
@@ -1162,19 +1976,20 @@
           }
         }
 
-        if (isManualAlert) alert(`Catch-up complete! Generated ${totalCatchUpGenerated} missed payouts.`);
+        if (isManualAlert) showToast(`Catch-up complete! Generated ${totalCatchUpGenerated} missed payouts.`, "success");
       } catch (err) {
         console.error("Catch-up execution error:", err);
       }
     }
 
     async function runPeriodClosing() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can close periods.");
-      if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?")) return;
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can close periods.", "Owner Restricted", "warning");
+      const ok = await showModalConfirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?", "Close Financial Period", { isDanger: true, confirmText: "Close Period" });
+      if (!ok) return;
 
       const famRef = db.collection('families').doc(familyId);
       const txSnap = await famRef.collection('transactions').get();
-      if (txSnap.empty) return alert("No transactions to archive.");
+      if (txSnap.empty) return showToast("No transactions to archive.", "info");
 
       const balMap = {};
       const archiveBatch = db.batch();
@@ -1206,18 +2021,18 @@
       });
 
       await forwardBatch.commit();
-      alert(`Period successfully closed! Archived ${txSnap.size} transactions.`);
+      showModalAlert(`Period successfully closed! Archived ${txSnap.size} transactions and forwarded balances.`, "Period Closed", "success");
     }
 
     async function saveCurrency() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can change the currency.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can change the currency.", "Owner Restricted", "warning");
       const currency = document.getElementById('setCurrency').value.trim();
       await db.collection('families').doc(familyId).update({ currency });
-      alert("Currency saved!");
+      showToast("Currency saved!", "success");
     }
 
     async function saveAiSettings() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can change AI secrets.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can change AI secrets.", "Owner Restricted", "warning");
       const geminiApiKey = document.getElementById('setGeminiKey').value.trim();
       const aiEnabled = document.getElementById('setAiEnabled').checked;
 
@@ -1228,12 +2043,859 @@
       batch.set(famRef.collection('settings').doc('secrets'), { geminiApiKey }, { merge: true });
 
       await batch.commit();
-      alert("AI Settings securely updated in private vault!");
+      showToast("AI Settings securely updated in private vault!", "success");
     }
 
+    // =========================================================================
+    // PLANNER & ROUTINES SYSTEM
+    // =========================================================================
+    let currentReportDate = new Date().toISOString().split('T')[0];
+    let uDailyReportUnsub = null;
+    let routineSlotCounter = 0;
+
+    function formatTime12Hour(timeStr) {
+      if (!timeStr) return '';
+      const parts = timeStr.split(':');
+      let hour = parseInt(parts[0], 10);
+      const min = parts[1] || '00';
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12 || 12;
+      return `${hour}:${min} ${ampm}`;
+    }
+
+    function formatTimeRange(start, end) {
+      if (!start) return '';
+      if (!end) return formatTime12Hour(start);
+      return `${formatTime12Hour(start)} – ${formatTime12Hour(end)}`;
+    }
+
+    function initDailyPlannerReport() {
+      const picker = document.getElementById('reportDatePicker');
+      if (picker && !picker.value) picker.value = currentReportDate;
+      if (familyId && cachedChildren && cachedChildren.length > 0) {
+        ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren).then(() => {
+          loadDailyPlannerReport(currentReportDate);
+        });
+      } else {
+        loadDailyPlannerReport(currentReportDate);
+      }
+    }
+
+    function changeReportDate(newDate) {
+      if (!newDate) return;
+      currentReportDate = newDate;
+      if (familyId && cachedChildren && cachedChildren.length > 0) {
+        ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren).then(() => {
+          loadDailyPlannerReport(currentReportDate);
+        });
+      } else {
+        loadDailyPlannerReport(currentReportDate);
+      }
+    }
+
+    function shiftReportDate(days) {
+      const parts = currentReportDate.split('-');
+      const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      dt.setDate(dt.getDate() + days);
+      const yr = dt.getFullYear();
+      const mo = String(dt.getMonth() + 1).padStart(2, '0');
+      const da = String(dt.getDate()).padStart(2, '0');
+      currentReportDate = `${yr}-${mo}-${da}`;
+      const picker = document.getElementById('reportDatePicker');
+      if (picker) picker.value = currentReportDate;
+      changeReportDate(currentReportDate);
+    }
+
+    function setReportDateToday() {
+      currentReportDate = new Date().toISOString().split('T')[0];
+      const picker = document.getElementById('reportDatePicker');
+      if (picker) picker.value = currentReportDate;
+      changeReportDate(currentReportDate);
+    }
+
+    function loadDailyPlannerReport(dateStr) {
+      if (!familyId || !dateStr) return;
+      if (uDailyReportUnsub) {
+        uDailyReportUnsub();
+        uDailyReportUnsub = null;
+      }
+      const famRef = db.collection('families').doc(familyId);
+      uDailyReportUnsub = famRef.collection('planner_tasks')
+        .where('date', '==', dateStr)
+        .onSnapshot(snap => {
+          renderDailyReport(snap);
+        });
+    }
+
+    function renderDailyReport(snap) {
+      const summaryCards = document.getElementById('dailyReportSummaryCards');
+      const childrenContainer = document.getElementById('dailyReportChildrenContainer');
+      if (!summaryCards || !childrenContainer) return;
+
+      const allTasks = [];
+      snap.forEach(d => allTasks.push({ id: d.id, ...d.data() }));
+
+      // Sort tasks by startTime
+      allTasks.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+      const totalTasks = allTasks.length;
+      const approvedTasks = allTasks.filter(t => t.status === 'approved').length;
+      const pendingTasks = allTasks.filter(t => t.status === 'pending').length;
+      const penalizedTasks = allTasks.filter(t => t.status === 'penalized').length;
+      const todoTasks = allTasks.filter(t => t.status === 'todo').length;
+
+      const completionPct = totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 0;
+
+      summaryCards.innerHTML = `
+        <div class="stat-box" style="border-top: 3px solid var(--primary);">
+          <div class="stat-title">Overall Compliance</div>
+          <div class="stat-value" style="color:#818cf8;">${completionPct}%</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">${approvedTasks} of ${totalTasks} tasks done</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--cyan);">
+          <div class="stat-title">Pending Review</div>
+          <div class="stat-value" style="color:#38bdf8;">${pendingTasks}</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--warning);">
+          <div class="stat-title">To-Do Remaining</div>
+          <div class="stat-value" style="color:#fbbf24;">${todoTasks}</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--danger);">
+          <div class="stat-title">Penalized / Missed</div>
+          <div class="stat-value" style="color:#f87171;">${penalizedTasks}</div>
+        </div>
+      `;
+
+      if (totalTasks === 0) {
+        childrenContainer.innerHTML = `
+          <div class="empty-state-box">
+            <div style="font-size:2.2rem; margin-bottom:6px;">📅</div>
+            <strong>No tasks scheduled for ${currentReportDate}</strong>
+            <p style="margin:4px 0 14px; font-size:0.85rem;">You can generate tasks from active routines or use the Quick Add form above.</p>
+            <button class="btn btn-blue" type="button" onclick="ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren).then(() => loadDailyPlannerReport(currentReportDate))">⚡ Generate from Routines</button>
+          </div>
+        `;
+        return;
+      }
+
+      cachedDailyTasks = allTasks;
+
+      let childHtml = '';
+
+      cachedChildren.forEach(child => {
+        const cEmail = child.email.toLowerCase();
+        const cTasks = allTasks.filter(t => t.childEmail === cEmail);
+        const cTotal = cTasks.length;
+        if (cTotal === 0) return;
+
+        const cDone = cTasks.filter(t => t.status === 'approved').length;
+        const cPending = cTasks.filter(t => t.status === 'pending').length;
+        const cPenalized = cTasks.filter(t => t.status === 'penalized').length;
+        const cPct = Math.round((cDone / cTotal) * 100);
+
+        let earnedToday = 0;
+        let penalizedToday = 0;
+        cTasks.forEach(t => {
+          if (t.status === 'approved') earnedToday += Number(t.rewardApplied || t.reward || 0);
+          if (t.status === 'penalized') penalizedToday += Number(t.penaltyApplied || 0);
+        });
+
+        const is100Done = (cDone === cTotal && cTotal > 0);
+
+        let taskRows = '';
+        cTasks.forEach(t => {
+          let badgeHtml = '';
+          if (t.status === 'approved') badgeHtml = `<span class="badge badge-approved">✓ Approved (+${activeCurrency}${t.rewardApplied || t.reward || 0})</span>`;
+          else if (t.status === 'pending') badgeHtml = `<span class="badge badge-pending">⏳ Needs Approval</span>`;
+          else if (t.status === 'penalized') badgeHtml = `<span class="badge badge-penalized">🛑 Penalized (-${activeCurrency}${t.penaltyApplied || 0})</span>`;
+          else badgeHtml = `<span class="badge badge-todo">⚪ To-Do</span>`;
+
+          const safeTitle = (t.title || '').replace(/'/g, "\\'");
+          const safeName = (child.name || '').replace(/'/g, "\\'");
+
+          let actionButtons = '';
+          if (t.status === 'pending') {
+            actionButtons = `
+              <button class="btn btn-green" style="padding:3px 7px; font-size:0.72rem;" onclick="approvePlannerTask('${t.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.reward || 0})">✓ Approve</button>
+              <button class="btn btn-gray" style="padding:3px 7px; font-size:0.72rem;" onclick="rejectPlannerTask('${t.id}')">✕ Redo</button>
+              <button class="btn btn-red" style="padding:3px 7px; font-size:0.72rem;" onclick="penalizePlannerTask('${t.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.penalty || 0})">🛑 Penalize</button>
+            `;
+          } else if (t.status === 'todo') {
+            actionButtons = `
+              <button class="btn btn-red" style="padding:3px 7px; font-size:0.72rem;" onclick="penalizePlannerTask('${t.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.penalty || 0})">🛑 Penalize</button>
+            `;
+          } else if (t.status === 'approved') {
+            actionButtons = `<span class="action-text-approved" style="color:var(--success); font-size:0.78rem; font-weight:800;">✓ Credited</span>`;
+          } else if (t.status === 'penalized') {
+            actionButtons = `<span class="action-text-penalized" style="color:var(--danger); font-size:0.78rem; font-weight:800;">🛑 Deducted</span>`;
+          }
+
+          const editButton = `<button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditTaskModal('${t.id}')" title="Edit Task Details">✏️</button>`;
+          const deleteButton = `<button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem; margin-left:4px;" onclick="deleteDoc('planner_tasks', '${t.id}')" title="Delete Task">✕</button>`;
+
+          taskRows += `
+            <tr>
+              <td><span class="time-slot-pill">⏰ ${t.timeRange || (t.startTime + ' - ' + t.endTime)}</span></td>
+              <td>
+                <strong>${t.title}</strong>
+                ${t.childNote ? `<div style="font-size:0.72rem; color:var(--text-muted); font-style:italic;">"${t.childNote}"</div>` : ''}
+              </td>
+              <td>${t.reward ? `<span style="color:var(--success); font-weight:700;">+${activeCurrency}${t.reward}</span>` : '—'}</td>
+              <td>${t.penalty ? `<span style="color:var(--danger); font-weight:700;">-${activeCurrency}${t.penalty}</span>` : '—'}</td>
+              <td>${badgeHtml}</td>
+              <td style="white-space:nowrap;">
+                ${editButton}
+                ${actionButtons}
+                ${deleteButton}
+              </td>
+            </tr>
+          `;
+        });
+
+        childHtml += `
+          <div class="card child-report-card" style="margin-bottom:14px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+              <div>
+                <strong style="font-size:1.1rem; color:var(--text);">${child.name}</strong>
+                <span style="font-size:0.78rem; color:var(--text-muted); margin-left:8px;">${cDone} of ${cTotal} completed</span>
+                ${is100Done ? `<span class="badge badge-reward" style="margin-left:8px;">🏆 100% Day Completed!</span>` : ''}
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <a href="app.html?familyId=${familyId}&childEmail=${encodeURIComponent(child.email)}&from=parent" class="btn-preview-pill" style="text-decoration:none;" title="Preview ${child.name}'s daily view">👁️ View Child Plan ↗</a>
+                <span style="font-size:0.8rem; color:var(--success); font-weight:800;">Earned: +${activeCurrency}${earnedToday}</span>
+                ${penalizedToday > 0 ? `<span style="font-size:0.8rem; color:var(--danger); font-weight:800;">Penalties: -${activeCurrency}${penalizedToday}</span>` : ''}
+                ${is100Done ? `<button class="btn btn-green" style="padding:4px 10px; font-size:0.75rem;" onclick="awardDailyBonus('${child.email}', '${child.name.replace(/'/g, "\\'")}', 50, '${currentReportDate}')">🎁 Award Day Bonus</button>` : ''}
+              </div>
+            </div>
+
+            <div class="progress-bar-track">
+              <div style="background:linear-gradient(90deg, #10b981 0%, #06b6d4 100%); height:100%; width:${cPct}%; border-radius:9999px; transition:width 0.3s ease;"></div>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>Time</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>${taskRows}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+
+      childrenContainer.innerHTML = childHtml || `<div style="color:var(--text-muted); padding:16px;">No children tasks for this date.</div>`;
+    }
+
+    function addRoutineItemRow(defaultData = null) {
+      const container = document.getElementById('routineItemsTable');
+      if (!container) return;
+      const id = 'slot_' + (++routineSlotCounter);
+      const startTime = defaultData?.startTime || '16:00';
+      const endTime = defaultData?.endTime || '16:30';
+      const title = defaultData?.title || '';
+      const reward = defaultData?.reward !== undefined ? defaultData.reward : 20;
+      const penalty = defaultData?.penalty !== undefined ? defaultData.penalty : 0;
+
+      const row = document.createElement('div');
+      row.className = 'routine-row';
+      row.id = id;
+      row.innerHTML = `
+        <div class="slot-time-start"><label class="mobile-only-label">Start</label><input type="time" class="slot-start" value="${startTime}" title="Start Time"></div>
+        <div class="slot-time-end"><label class="mobile-only-label">End</label><input type="time" class="slot-end" value="${endTime}" title="End Time"></div>
+        <div class="slot-title-wrap"><label class="mobile-only-label">Task Name</label><input type="text" class="slot-title" value="${title}" placeholder="e.g. Quran class / Dishes"></div>
+        <div class="slot-reward-wrap"><label class="mobile-only-label">Reward</label><input type="number" class="slot-reward" value="${reward}" placeholder="Reward"></div>
+        <div class="slot-penalty-wrap"><label class="mobile-only-label">Penalty</label><input type="number" class="slot-penalty" value="${penalty}" placeholder="Penalty"></div>
+        <div class="slot-action-wrap"><button type="button" class="btn btn-red" style="padding:6px 12px; font-size:0.75rem;" onclick="document.getElementById('${id}').remove()">✕ Remove</button></div>
+      `;
+      container.appendChild(row);
+    }
+
+    async function savePlannerRoutine() {
+      if (!familyId) return showToast("Family ID missing", "error");
+      const title = document.getElementById('routineTitle').value.trim();
+      if (!title) return showToast("Please enter a routine title (e.g. Weekday School Schedule).", "warning");
+
+      const assignedTo = document.getElementById('routineTargetChild').value;
+      const dailyBonus = Number(document.getElementById('routineDailyBonus').value) || 0;
+
+      const dayCheckboxes = document.querySelectorAll('input[name="routineDay"]:checked');
+      const days = Array.from(dayCheckboxes).map(cb => cb.value);
+      if (days.length === 0) return showToast("Please select at least one active day of the week.", "warning");
+
+      const rows = document.querySelectorAll('#routineItemsTable .routine-row');
+      if (rows.length === 0) return showToast("Please add at least one task slot to the routine.", "warning");
+
+      const items = [];
+      let hasError = false;
+      rows.forEach((row, idx) => {
+        const sTime = row.querySelector('.slot-start').value;
+        const eTime = row.querySelector('.slot-end').value;
+        const tTitle = row.querySelector('.slot-title').value.trim();
+        const rReward = Number(row.querySelector('.slot-reward').value) || 0;
+        const pPenalty = Number(row.querySelector('.slot-penalty').value) || 0;
+
+        if (!tTitle) {
+          hasError = true;
+          return;
+        }
+        items.push({
+          id: `task_${Date.now()}_${idx}`,
+          startTime: sTime || '16:00',
+          endTime: eTime || '17:00',
+          title: tTitle,
+          reward: rReward,
+          penalty: pPenalty
+        });
+      });
+
+      if (hasError || items.length === 0) {
+        return showToast("Please enter a title for every task slot row.", "warning");
+      }
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        if (editingRoutineId) {
+          await famRef.collection('planner_templates').doc(editingRoutineId).update({
+            title,
+            assignedTo,
+            days,
+            dailyBonus,
+            items,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast(`Routine "${title}" updated successfully!`, "success");
+          cancelPlannerRoutineEdit();
+        } else {
+          await famRef.collection('planner_templates').add({
+            title,
+            assignedTo,
+            days,
+            dailyBonus,
+            items,
+            status: 'active',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast(`Routine "${title}" created successfully!`, "success");
+          document.getElementById('routineTitle').value = '';
+        }
+        await ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren);
+        loadDailyPlannerReport(currentReportDate);
+      } catch (err) {
+        showModalAlert("Error saving routine: " + err.message, "Error", "error");
+      }
+    }
+
+    async function dispatchQuickPlannerTask() {
+      if (!familyId) return showToast("Family ID missing", "error");
+      const childEmail = document.getElementById('quickTaskChildSelect').value;
+      const title = document.getElementById('quickTaskTitle').value.trim();
+      const startTime = document.getElementById('quickTaskStart').value;
+      const endTime = document.getElementById('quickTaskEnd').value;
+      const reward = Number(document.getElementById('quickTaskReward').value) || 0;
+      const penalty = Number(document.getElementById('quickTaskPenalty').value) || 0;
+
+      if (!title) return showToast("Please provide a task title.", "warning");
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const targetKids = (childEmail === 'all') 
+          ? cachedChildren 
+          : cachedChildren.filter(c => c.email.toLowerCase() === childEmail.toLowerCase());
+
+        if (targetKids.length === 0) return showToast("No children found to assign this task to.", "warning");
+
+        const batch = db.batch();
+        targetKids.forEach(kid => {
+          const taskRef = famRef.collection('planner_tasks').doc();
+          batch.set(taskRef, {
+            templateId: 'manual',
+            templateTitle: 'Ad-hoc Task',
+            date: currentReportDate,
+            childEmail: kid.email.toLowerCase(),
+            childName: kid.name,
+            title,
+            startTime,
+            endTime,
+            timeRange: formatTimeRange(startTime, endTime),
+            reward,
+            penalty,
+            status: 'todo',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+
+        await batch.commit();
+        showToast(`Task "${title}" added for ${currentReportDate}!`, "success");
+        document.getElementById('quickTaskTitle').value = '';
+        loadDailyPlannerReport(currentReportDate);
+      } catch (err) {
+        showModalAlert("Error adding task: " + err.message, "Error", "error");
+      }
+    }
+
+    async function approvePlannerTask(taskId, email, childName, title, reward) {
+      if (!familyId) return showToast("Family ID missing", "error");
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const numReward = Number(reward) || 0;
+        const now = new Date();
+
+        const batch = db.batch();
+        const taskRef = famRef.collection('planner_tasks').doc(taskId);
+        batch.update(taskRef, {
+          status: 'approved',
+          rewardApplied: numReward,
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: activeOwnerEmail
+        });
+
+        if (numReward > 0) {
+          const txRef = famRef.collection('transactions').doc();
+          batch.set(txRef, {
+            email,
+            type: 'Allowance',
+            amount: numReward,
+            desc: `Plan: ${title}`,
+            date: now.toISOString().split('T')[0],
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        await batch.commit();
+        showToast(`Approved task "${title}" (+${activeCurrency}${numReward})`, "success");
+      } catch (err) {
+        showModalAlert("Error approving task: " + err.message, "Error", "error");
+      }
+    }
+
+    async function rejectPlannerTask(taskId) {
+      const reason = await showModalPrompt("Enter reason for redo / rejection:", "Please complete properly", "Task Redo Required");
+      if (reason === null) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('planner_tasks').doc(taskId).update({
+          status: 'todo',
+          rejectReason: reason,
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast("Task marked for redo", "info");
+      } catch (err) {
+        showModalAlert("Error resetting task: " + err.message, "Error", "error");
+      }
+    }
+
+    async function penalizePlannerTask(taskId, email, childName, title, defaultPenalty) {
+      const penaltyInput = await showModalPrompt(`Enter penalty amount to deduct from ${childName} for "${title}" (${activeCurrency}):`, defaultPenalty || 10, "Apply Accountability Penalty", { inputType: 'number' });
+      if (penaltyInput === null) return;
+      const numPenalty = Number(penaltyInput) || 0;
+      if (numPenalty <= 0) return showToast("Penalty amount must be greater than 0", "warning");
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const now = new Date();
+        const batch = db.batch();
+
+        const taskRef = famRef.collection('planner_tasks').doc(taskId);
+        batch.update(taskRef, {
+          status: 'penalized',
+          penaltyApplied: numPenalty,
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: activeOwnerEmail
+        });
+
+        const txRef = famRef.collection('transactions').doc();
+        batch.set(txRef, {
+          email,
+          type: 'Penalty',
+          amount: -Math.abs(numPenalty),
+          desc: `Penalty (Missed Plan): ${title}`,
+          date: now.toISOString().split('T')[0],
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await batch.commit();
+        showToast(`Deducted ${activeCurrency}${numPenalty} penalty from ${childName}.`, "info");
+      } catch (err) {
+        showModalAlert("Error applying penalty: " + err.message, "Error", "error");
+      }
+    }
+
+    async function awardDailyBonus(childEmail, childName, bonusAmt, dateStr) {
+      const bonus = await showModalPrompt(`Award full-day completion bonus to ${childName} for ${dateStr} (${activeCurrency}):`, bonusAmt || 50, "Award 100% Day Bonus", { inputType: 'number' });
+      if (bonus === null) return;
+      const numBonus = Number(bonus) || 0;
+      if (numBonus <= 0) return;
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('transactions').add({
+          email: childEmail,
+          type: 'Reward',
+          amount: numBonus,
+          desc: `100% Daily Routine Bonus (${dateStr})`,
+          date: dateStr,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(`Awarded ${activeCurrency}${numBonus} daily bonus to ${childName}!`, "success");
+      } catch (err) {
+        showModalAlert("Error awarding bonus: " + err.message, "Error", "error");
+      }
+    }
+
+    async function ensureDailyPlannerTasks(db, familyId, dateStr, childList) {
+      if (!familyId || !dateStr || !childList || childList.length === 0) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const parts = dateStr.split('-');
+        const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const currentDay = dayNames[dt.getDay()];
+
+        const templatesSnap = await famRef.collection('planner_templates').get();
+        if (templatesSnap.empty) return;
+
+        const existingSnap = await famRef.collection('planner_tasks').where('date', '==', dateStr).get();
+        const existingKeySet = new Set();
+        existingSnap.forEach(d => {
+          const t = d.data();
+          existingKeySet.add(`${t.templateId}_${t.itemKey}_${t.childEmail}`);
+        });
+
+        const batch = db.batch();
+        let count = 0;
+
+        templatesSnap.forEach(tDoc => {
+          const tmpl = tDoc.data();
+          if (tmpl.status === 'paused') return;
+          const days = tmpl.days || [];
+          if (!days.includes(currentDay) && !days.includes('daily')) return;
+
+          const targetKids = (tmpl.assignedTo === 'all') 
+            ? childList 
+            : childList.filter(c => c.email.toLowerCase() === tmpl.assignedTo.toLowerCase());
+
+          const items = tmpl.items || [];
+          targetKids.forEach(kid => {
+            items.forEach((item, idx) => {
+              const itemKey = item.id || `item_${idx}`;
+              const key = `${tDoc.id}_${itemKey}_${kid.email.toLowerCase()}`;
+              if (!existingKeySet.has(key)) {
+                const taskRef = famRef.collection('planner_tasks').doc();
+                batch.set(taskRef, {
+                  templateId: tDoc.id,
+                  templateTitle: tmpl.title || 'Daily Routine',
+                  itemKey: itemKey,
+                  date: dateStr,
+                  childEmail: kid.email.toLowerCase(),
+                  childName: kid.name,
+                  title: item.title,
+                  startTime: item.startTime || '09:00',
+                  endTime: item.endTime || '10:00',
+                  timeRange: formatTimeRange(item.startTime, item.endTime),
+                  reward: Number(item.reward) || 0,
+                  penalty: Number(item.penalty) || 0,
+                  dailyBonus: Number(tmpl.dailyBonus) || 0,
+                  status: 'todo',
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                existingKeySet.add(key);
+                count++;
+              }
+            });
+          });
+        });
+
+        if (count > 0) {
+          await batch.commit();
+        }
+      } catch (err) {
+        console.error("ensureDailyPlannerTasks error:", err);
+      }
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('app_theme', next);
+      updateThemeToggleButtons(next);
+    }
+
+    function updateThemeToggleButtons(theme) {
+      const isLight = theme === 'light';
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
+        btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
+      });
+    }
+
+    // Initialize starter template rows on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateThemeToggleButtons(localStorage.getItem('app_theme') || 'dark');
+      addRoutineItemRow({ startTime: '16:00', endTime: '16:30', title: 'Quran class', reward: 0, penalty: 0 });
+      addRoutineItemRow({ startTime: '17:00', endTime: '18:00', title: 'Clean dishes', reward: 30, penalty: 10 });
+      addRoutineItemRow({ startTime: '18:00', endTime: '20:00', title: 'Do homework', reward: 20, penalty: 0 });
+      addRoutineItemRow({ startTime: '20:00', endTime: '20:15', title: 'Brush teeth', reward: 10, penalty: 0 });
+      addRoutineItemRow({ startTime: '21:00', endTime: '21:30', title: 'Go to bed', reward: 0, penalty: 0 });
+    });
+
     async function deleteDoc(coll, id) {
-      if (confirm("Delete this entry?")) {
+      const ok = await showModalConfirm("Are you sure you want to permanently delete this entry?", "Confirm Deletion", { isDanger: true, confirmText: "Delete" });
+      if (!ok) return;
+      try {
         await db.collection('families').doc(familyId).collection(coll).doc(id).delete();
+        showToast("Entry deleted", "info");
+      } catch (err) {
+        showModalAlert("Error deleting entry: " + err.message, "Error", "error");
+      }
+    }
+
+    // =========================================================================
+    // EDIT MODAL HANDLERS (CHORES, RULES, SCHEDULES, ROUTINES, DAILY TASKS)
+    // =========================================================================
+
+    // 1. Chores
+    function openEditChoreModal(id) {
+      const chore = cachedChores.find(c => c.id === id);
+      if (!chore) return;
+      document.getElementById('editChoreId').value = id;
+      document.getElementById('editChoreTitle').value = chore.title || '';
+      document.getElementById('editChoreReward').value = chore.reward || 0;
+      document.getElementById('editChoreModal').classList.add('active');
+    }
+
+    function closeEditChoreModal() {
+      document.getElementById('editChoreModal').classList.remove('active');
+    }
+
+    async function saveEditChore() {
+      const id = document.getElementById('editChoreId').value;
+      const title = document.getElementById('editChoreTitle').value.trim();
+      const reward = Number(document.getElementById('editChoreReward').value) || 0;
+      if (!title || !reward) return showToast("Please enter chore title and reward.", "warning");
+
+      try {
+        await db.collection('families').doc(familyId).collection('chores').doc(id).update({ title, reward });
+        closeEditChoreModal();
+        showToast(`Chore "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update chore: " + err.message, "Error", "error");
+      }
+    }
+
+    // 2. Rules
+    function openEditRuleModal(id) {
+      const rule = cachedRules.find(r => r.id === id);
+      if (!rule) return;
+      document.getElementById('editRuleId').value = id;
+      document.getElementById('editRuleType').value = rule.type || 'Reward';
+      document.getElementById('editRuleTitle').value = rule.title || '';
+      document.getElementById('editRuleAmount').value = rule.amount || 0;
+      document.getElementById('editRuleModal').classList.add('active');
+    }
+
+    function closeEditRuleModal() {
+      document.getElementById('editRuleModal').classList.remove('active');
+    }
+
+    async function saveEditRule() {
+      const id = document.getElementById('editRuleId').value;
+      const type = document.getElementById('editRuleType').value;
+      const title = document.getElementById('editRuleTitle').value.trim();
+      const amount = Number(document.getElementById('editRuleAmount').value) || 0;
+      if (!title || !amount) return showToast("Please enter rule title and amount.", "warning");
+
+      try {
+        await db.collection('families').doc(familyId).collection('rules').doc(id).update({ type, title, amount });
+        closeEditRuleModal();
+        showToast(`Rule "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update rule: " + err.message, "Error", "error");
+      }
+    }
+
+    // 3. Recurring Schedules
+    function openEditScheduleModal(id) {
+      const s = cachedSchedules.find(x => x.id === id);
+      if (!s) return;
+      document.getElementById('editScheduleId').value = id;
+      document.getElementById('editScheduleTitle').value = s.title || '';
+
+      const childSelect = document.getElementById('editScheduleTargetChild');
+      childSelect.innerHTML = '<option value="all">🌟 All Children (Individual Payouts)</option>';
+      cachedChildren.forEach(c => {
+        childSelect.innerHTML += `<option value="${c.email}">${c.name} (${c.email})</option>`;
+      });
+      childSelect.value = s.targetEmail || 'all';
+
+      document.getElementById('editScheduleFreq').value = s.frequency || 'WEEKLY';
+      onEditScheduleFreqChange();
+
+      if (s.frequency === 'WEEKLY') {
+        document.getElementById('editScheduleDaySelect').value = s.scheduleDay || '5';
+      } else {
+        document.getElementById('editScheduleDayText').value = s.scheduleDay || '';
+      }
+      document.getElementById('editScheduleAmount').value = s.amount || 0;
+
+      document.getElementById('editScheduleModal').classList.add('active');
+    }
+
+    function onEditScheduleFreqChange() {
+      const freq = document.getElementById('editScheduleFreq').value;
+      const daySelect = document.getElementById('editScheduleDaySelect');
+      const dayText = document.getElementById('editScheduleDayText');
+      const dayLabel = document.getElementById('editScheduleDayLabel');
+      const amtLabel = document.getElementById('editScheduleAmountLabel');
+
+      if (freq === 'WEEKLY') {
+        daySelect.style.display = 'block';
+        dayText.style.display = 'none';
+        dayLabel.innerText = 'Payout Day of Week';
+        amtLabel.innerText = `Weekly Amount (${activeCurrency})`;
+      } else if (freq === 'MONTHLY') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'Day of Month (1-31)';
+        dayLabel.innerText = 'Day of Month (1-31)';
+        amtLabel.innerText = `Monthly Amount (${activeCurrency})`;
+      } else if (freq === 'ANNUAL' || freq === 'ANNUAL_DATE') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'DD/MM (e.g. 18/05)';
+        dayLabel.innerText = 'Birthday / Date (DD/MM)';
+        amtLabel.innerText = `Annual Amount (${activeCurrency})`;
+      } else if (freq === 'INTEREST_MONTHLY') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'Day of Month (1-31)';
+        dayLabel.innerText = 'Compound Date (1-31)';
+        amtLabel.innerText = 'Savings Bonus Rate (%)';
+      }
+    }
+
+    function closeEditScheduleModal() {
+      document.getElementById('editScheduleModal').classList.remove('active');
+    }
+
+    async function saveEditSchedule() {
+      const id = document.getElementById('editScheduleId').value;
+      const title = document.getElementById('editScheduleTitle').value.trim();
+      const targetEmail = document.getElementById('editScheduleTargetChild').value;
+      const frequency = document.getElementById('editScheduleFreq').value;
+      const amount = Number(document.getElementById('editScheduleAmount').value) || 0;
+
+      let scheduleDay = '';
+      if (frequency === 'WEEKLY') {
+        scheduleDay = document.getElementById('editScheduleDaySelect').value;
+      } else {
+        scheduleDay = document.getElementById('editScheduleDayText').value.trim();
+      }
+
+      if (!title || scheduleDay === '' || !amount) {
+        return showToast("Please complete all schedule fields.", "warning");
+      }
+
+      try {
+        await db.collection('families').doc(familyId).collection('schedules').doc(id).update({
+          title, targetEmail, frequency, scheduleDay, amount
+        });
+        closeEditScheduleModal();
+        showToast(`Schedule "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update schedule: " + err.message, "Error", "error");
+      }
+    }
+
+    // 4. Routine Templates
+    function editPlannerRoutine(id) {
+      const tmpl = cachedRoutineTemplates.find(t => t.id === id);
+      if (!tmpl) return;
+      editingRoutineId = id;
+
+      document.getElementById('routineEditBanner').style.display = 'flex';
+      document.getElementById('editingRoutineTitleName').innerText = tmpl.title;
+      document.getElementById('routineBuilderHeading').innerText = '✏️ Edit Recurring Routine Schedule';
+      document.getElementById('routineTitle').value = tmpl.title || '';
+      document.getElementById('routineTargetChild').value = tmpl.assignedTo || 'all';
+      document.getElementById('routineDailyBonus').value = tmpl.dailyBonus || 0;
+
+      const days = tmpl.days || [];
+      document.querySelectorAll('input[name="routineDay"]').forEach(cb => {
+        cb.checked = days.includes(cb.value);
+      });
+
+      const container = document.getElementById('routineItemsTable');
+      container.innerHTML = '';
+      if (tmpl.items && tmpl.items.length > 0) {
+        tmpl.items.forEach(it => addRoutineItemRow(it));
+      } else {
+        addRoutineItemRow();
+      }
+
+      document.getElementById('btnSavePlannerRoutine').innerText = '💾 Update Routine Schedule';
+      document.getElementById('btnCancelPlannerRoutine').style.display = 'inline-block';
+
+      document.getElementById('routineScheduleBuilder').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelPlannerRoutineEdit() {
+      editingRoutineId = null;
+      document.getElementById('routineEditBanner').style.display = 'none';
+      document.getElementById('routineBuilderHeading').innerText = '🛠️ Create Recurring Routine Schedule';
+      document.getElementById('routineTitle').value = '';
+      document.getElementById('routineTargetChild').value = 'all';
+      document.getElementById('routineDailyBonus').value = '0';
+      document.querySelectorAll('input[name="routineDay"]').forEach(cb => {
+        cb.checked = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(cb.value);
+      });
+      const container = document.getElementById('routineItemsTable');
+      container.innerHTML = '';
+      addRoutineItemRow({ startTime: '16:00', endTime: '16:30', title: 'Quran class', reward: 0, penalty: 0 });
+      addRoutineItemRow({ startTime: '17:00', endTime: '18:00', title: 'Clean dishes', reward: 30, penalty: 10 });
+      addRoutineItemRow({ startTime: '18:00', endTime: '20:00', title: 'Do homework', reward: 20, penalty: 0 });
+      addRoutineItemRow({ startTime: '20:00', endTime: '20:15', title: 'Brush teeth', reward: 10, penalty: 0 });
+      addRoutineItemRow({ startTime: '21:00', endTime: '21:30', title: 'Go to bed', reward: 0, penalty: 0 });
+
+      document.getElementById('btnSavePlannerRoutine').innerText = '💾 Save Routine Schedule';
+      document.getElementById('btnCancelPlannerRoutine').style.display = 'none';
+    }
+
+    // 5. Daily Scheduled Tasks
+    function openEditTaskModal(id) {
+      const task = cachedDailyTasks.find(t => t.id === id);
+      if (!task) return;
+      document.getElementById('editTaskId').value = id;
+      document.getElementById('editTaskTitle').value = task.title || '';
+      document.getElementById('editTaskStartTime').value = task.startTime || '16:00';
+      document.getElementById('editTaskEndTime').value = task.endTime || '16:30';
+      document.getElementById('editTaskReward').value = task.reward || 0;
+      document.getElementById('editTaskPenalty').value = task.penalty || 0;
+      document.getElementById('editTaskModal').classList.add('active');
+    }
+
+    function closeEditTaskModal() {
+      document.getElementById('editTaskModal').classList.remove('active');
+    }
+
+    async function saveEditTask() {
+      const id = document.getElementById('editTaskId').value;
+      const title = document.getElementById('editTaskTitle').value.trim();
+      const startTime = document.getElementById('editTaskStartTime').value || '16:00';
+      const endTime = document.getElementById('editTaskEndTime').value || '16:30';
+      const reward = Number(document.getElementById('editTaskReward').value) || 0;
+      const penalty = Number(document.getElementById('editTaskPenalty').value) || 0;
+
+      if (!title) return showToast("Please provide task title", "warning");
+
+      try {
+        const timeRange = formatTimeRange(startTime, endTime);
+        await db.collection('families').doc(familyId).collection('planner_tasks').doc(id).update({
+          title, startTime, endTime, timeRange, reward, penalty
+        });
+        closeEditTaskModal();
+        showToast(`Task "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update task: " + err.message, "Error", "error");
       }
     }
   </script>
