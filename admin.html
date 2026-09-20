@@ -3,29 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0b0f19" id="metaThemeColor">
   <title>Platform Master Admin — Kindo</title>
   <script>
     (function() {
       const savedTheme = localStorage.getItem('app_theme') || 'dark';
       document.documentElement.setAttribute('data-theme', savedTheme);
+      const meta = document.getElementById('metaThemeColor');
+      if (meta) meta.setAttribute('content', savedTheme === 'light' ? '#ffffff' : '#0b0f19');
     })();
   </script>
   <style>
     :root {
+      color-scheme: dark;
       --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
       --danger: #ef4444; --cyan: #06b6d4; --bg: #0b0f19; --card-bg: rgba(30, 41, 59, 0.7);
       --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
     }
+    html[data-theme="light"],
     [data-theme="light"] {
-      --bg: #f8fafc;
-      --card-bg: rgba(255, 255, 255, 0.95);
+      color-scheme: light !important;
+      --bg: #ffffff;
+      --card-bg: #ffffff;
       --card-border: #e2e8f0;
       --text: #0f172a;
       --text-muted: #64748b;
     }
     [data-theme="light"] body {
-      background-color: var(--bg);
+      background-color: #ffffff !important;
       color: var(--text);
+      color-scheme: light !important;
     }
     [data-theme="light"] .card,
     [data-theme="light"] .stat-card {
@@ -592,6 +600,8 @@
 
     function updateThemeToggleButtons(theme) {
       const isLight = theme === 'light';
+      const meta = document.getElementById('metaThemeColor');
+      if (meta) meta.setAttribute('content', isLight ? '#ffffff' : '#0b0f19');
       document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
         btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
         btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');

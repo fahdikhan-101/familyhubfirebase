@@ -140,6 +140,7 @@
     }
     [data-theme="light"] .app-modal-box {
       background: #ffffff;
+      color-scheme: light !important;
       border-color: #e2e8f0;
       box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.15);
       color: #0f172a;
@@ -148,7 +149,7 @@
       color: #475569;
     }
     [data-theme="light"] .app-modal-input {
-      background: #f8fafc;
+      background: #ffffff;
       border-color: #cbd5e1;
       color: #0f172a;
     }
@@ -157,12 +158,13 @@
       background: #ffffff;
     }
     [data-theme="light"] .app-modal-btn-cancel {
-      background: #f1f5f9;
+      background: #ffffff;
       border-color: #cbd5e1;
       color: #334155;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     [data-theme="light"] .app-modal-btn-cancel:hover {
-      background: #e2e8f0;
+      background: #f8fafc;
     }
 
     /* Floating Toast System */
