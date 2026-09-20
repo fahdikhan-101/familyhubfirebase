@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family Allowance Hub - Parent Console</title>
+  <title>Kindo — Parent Console</title>
   <script>
     (function() {
       const savedTheme = localStorage.getItem('app_theme') || 'dark';
@@ -24,28 +24,45 @@
       --text-muted: #64748b;
     }
     [data-theme="light"] body {
-      background: radial-gradient(circle at 50% 0%, #e2e8f0 0%, var(--bg) 80%);
+      background-color: var(--bg);
       color: var(--text);
+    }
+    [data-theme="light"] .header-bar {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: #e2e8f0;
     }
     [data-theme="light"] .card {
       background: #ffffff;
+      border-color: #e2e8f0;
       box-shadow: 0 4px 20px -2px rgba(0,0,0,0.06);
-      border-color: #e2e8f0;
     }
-    [data-theme="light"] .stat-box {
-      background: #f1f5f9;
-      border-color: #e2e8f0;
+    [data-theme="light"] .child-report-card {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 4px 16px -2px rgba(0,0,0,0.06) !important;
     }
-    [data-theme="light"] input,
-    [data-theme="light"] select {
-      background: #ffffff;
-      border-color: #cbd5e1;
-      color: #0f172a;
+    [data-theme="light"] .progress-bar-track {
+      background: #e2e8f0 !important;
+    }
+    [data-theme="light"] .empty-state-box {
+      background: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+      color: #64748b !important;
+    }
+    [data-theme="light"] .action-text-approved {
+      background: #dcfce7 !important;
+      color: #15803d !important;
+      border-color: #86efac !important;
+    }
+    [data-theme="light"] .action-text-penalized {
+      background: #fee2e2 !important;
+      color: #b91c1c !important;
+      border-color: #fca5a5 !important;
     }
     [data-theme="light"] th {
-      color: #475569;
-      border-bottom: 1.5px solid #e2e8f0;
-      font-weight: 800;
+      background: #f8fafc;
+      color: #334155;
+      border-color: #e2e8f0;
     }
     [data-theme="light"] td {
       color: #1e293b;
@@ -274,8 +291,8 @@
   <div class="container">
     <div class="header-bar">
       <div>
-        <h1 id="familyHeaderTitle"><a id="familyBrandLink" href="index.html" style="color:inherit; text-decoration:none;">Family Allowance Hub</a></h1>
-        <span id="subHeaderBadge" style="font-size:0.82rem; color:var(--text-muted);">Family Parent Console</span>
+        <h1 id="familyHeaderTitle"><a id="familyBrandLink" href="index.html" style="color:inherit; text-decoration:none;">Kindo</a></h1>
+        <span id="subHeaderBadge" style="font-size:0.82rem; color:var(--text-muted);">Parent Console · Turn chores into savings and goals into reality</span>
       </div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
         <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
@@ -602,7 +619,7 @@
             <div class="form-group">
               <label>Role</label>
               <select id="memRole" onchange="toggleMemberRoleFields(this.value)">
-                <option value="Child">Child (PiggyBank App)</option>
+                <option value="Child">Child (Kindo App)</option>
                 <option value="Parent">Parent (Admin Access)</option>
               </select>
             </div>
@@ -636,7 +653,7 @@
           </div>
 
           <div class="card" style="border-left:4px solid var(--primary);">
-            <h3>🤖 AI PiggyCoach Settings (Secret Vault)</h3>
+            <h3>🤖 AI Kindo Coach Settings (Secret Vault)</h3>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">
               Your Gemini API Key is stored in an encrypted private vault accessible only by your active family members.
             </p>
@@ -869,9 +886,10 @@
       adminMain.style.display = 'none';
       onboardSec.style.display = 'block';
       onboardSec.innerHTML = `
-        <div style="font-size:3rem; margin-bottom:10px;">👋</div>
-        <h2>Welcome to Family Allowance Hub!</h2>
-        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+        <div style="font-size:3rem; margin-bottom:10px;">✨</div>
+        <h2>Welcome to Kindo!</h2>
+        <p style="color:#a5b4fc; font-weight:700; font-size:0.95rem; margin-top:2px;">Turn chores into savings and goals into reality.</p>
+        <p style="color:var(--text-muted); font-size:0.88rem; margin:10px 0 20px;">
           Signed in as <strong>${email}</strong>.<br>
           Please enter your family name below to request access.
         </p>
@@ -1073,10 +1091,10 @@
 
         const bLink = document.getElementById('familyBrandLink');
         if (bLink) {
-          bLink.innerText = `${activeFamilyName} Allowance Hub`;
+          bLink.innerText = `${activeFamilyName} · Kindo`;
           bLink.href = `index.html?familyId=${familyId}`;
         } else {
-          document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} Allowance Hub`;
+          document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} · Kindo`;
         }
         document.getElementById('setCurrency').value = activeCurrency;
         document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
@@ -1544,7 +1562,7 @@
             <td>${c.email}</td>
             <td style="color:#34d399; font-weight:800;">${activeCurrency}${b.toLocaleString()}</td>
             <td>
-              <a href="app.html?familyId=${familyId}&childEmail=${encodeURIComponent(c.email)}&from=parent" class="btn-preview-pill" title="Preview ${c.name}'s piggybank">👁️ Preview ${c.name} ↗</a>
+              <a href="app.html?familyId=${familyId}&childEmail=${encodeURIComponent(c.email)}&from=parent" class="btn-preview-pill" title="Preview ${c.name}'s Kindo app">👁️ Preview ${c.name} ↗</a>
             </td>
           </tr>`;
       });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>My PiggyBank Hub</title>
+  <title>Kindo — Turn chores into savings and goals into reality</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
     (function() {
@@ -320,9 +320,10 @@
 
     <!-- LOGIN SCREEN -->
     <div class="card" id="loginCard" style="text-align: center; padding: 36px 20px; margin-top: 30px;">
-      <div style="font-size: 3.5rem; margin-bottom: 8px;">🐷</div>
-      <h2 style="margin: 0 0 6px; font-weight: 900; font-size: 1.5rem;">Family PiggyBank</h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px;">Sign in with Google to enable AI Coaching, or use your PIN</p>
+      <div style="font-size: 3.5rem; margin-bottom: 8px;">✨</div>
+      <h2 style="margin: 0 0 4px; font-weight: 900; font-size: 1.6rem; letter-spacing: -0.5px;">Kindo</h2>
+      <p style="color: #a5b4fc; font-size: 0.88rem; font-weight: 700; margin: 0 0 6px;">Turn chores into savings and goals into reality.</p>
+      <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0 20px;">Sign in with Google to enable AI Coaching, or use your PIN</p>
       
       <!-- Primary Child Sign-in (Google OAuth with Option 1 Auto-Discovery) -->
       <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
@@ -1418,7 +1419,7 @@
           aiBlock = `
             <div class="ai-coach-card">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask PiggyCoach (AI Mentor)</strong>
+                <strong style="color:#c7d2fe; font-size:0.8rem;">🤖 Ask Kindo Coach (AI Mentor)</strong>
                 <span style="font-size:0.65rem; background:rgba(99,102,241,0.25); color:#a5b4fc; padding:2px 6px; border-radius:6px; font-weight:800;">LIVE</span>
               </div>
               <div class="chip-row">
@@ -1435,7 +1436,7 @@
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:1.1rem;">🔒</span>
                 <div>
-                  <strong style="font-size:0.78rem; color:#cbd5e1;">PiggyCoach is locked in PIN mode</strong>
+                  <strong style="font-size:0.78rem; color:#cbd5e1;">Kindo Coach is locked in PIN mode</strong>
                   <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
                     To protect your parent's secret AI Key, sign in with your Google account on the lock screen to unlock live AI coaching.
                   </div>
@@ -1468,14 +1469,14 @@
       const targetBoxes = document.querySelectorAll(`.ai-box-${goalId}`);
       targetBoxes.forEach(b => {
         b.style.display = 'block';
-        b.innerHTML = `<span style="color:#38bdf8;">🧠 PiggyCoach is calculating your complete savings strategy...</span>`;
+        b.innerHTML = `<span style="color:#38bdf8;">🧠 Kindo Coach is calculating your complete savings strategy...</span>`;
       });
 
       try {
         const secretDoc = await db.collection('families').doc(familyId).collection('settings').doc('secrets').get();
         if (!secretDoc.exists || !secretDoc.data().geminiApiKey) {
           targetBoxes.forEach(b => {
-            b.innerHTML = `<span style="color:#f87171;">PiggyCoach requires an active API key in Parent Settings.</span>`;
+            b.innerHTML = `<span style="color:#f87171;">Kindo Coach requires an active API key in Parent Settings.</span>`;
           });
           return;
         }
@@ -1500,7 +1501,7 @@
         const todayDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         const prompt = `
-You are "PiggyCoach", an enthusiastic, smart, and encouraging financial mentor for kids and teens.
+You are "Kindo Coach", an enthusiastic, smart, and encouraging financial mentor for kids and teens helping them turn chores into savings and goals into reality.
 Today's Date: ${todayDate}
 
 Student Profile:
@@ -1547,19 +1548,19 @@ Instructions:
 
         if (reply) {
           targetBoxes.forEach(b => {
-            b.innerHTML = `<strong>🤖 PiggyCoach:</strong><div style="margin-top:6px; line-height:1.5;">${reply}</div>`;
+            b.innerHTML = `<strong>🤖 Kindo Coach:</strong><div style="margin-top:6px; line-height:1.5;">${reply}</div>`;
           });
           playChimeSound();
         } else {
           targetBoxes.forEach(b => {
-            b.innerHTML = `<span style="color:#f87171;">PiggyCoach couldn't calculate advice right now. Please try again!</span>`;
+            b.innerHTML = `<span style="color:#f87171;">Kindo Coach couldn't calculate advice right now. Please try again!</span>`;
           });
         }
 
       } catch (err) {
-        console.error("PiggyCoach Error:", err);
+        console.error("Kindo Coach Error:", err);
         targetBoxes.forEach(b => {
-          b.innerHTML = `<span style="color:#f87171;">PiggyCoach Error: ${err.message}</span>`;
+          b.innerHTML = `<span style="color:#f87171;">Kindo Coach Error: ${err.message}</span>`;
         });
       } finally {
         if (row) {

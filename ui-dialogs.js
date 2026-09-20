@@ -1,6 +1,7 @@
 /**
  * ui-dialogs.js
- * In-Page Dialog & Notification System for Family Allowance Hub.
+ * In-Page Dialog & Notification System for Kindo.
+ * "Turn chores into savings and goals into reality."
  * Replaces native browser alert(), confirm(), and prompt() with responsive,
  * theme-aware in-page modals and non-intrusive floating toasts.
  */
@@ -425,3 +426,4 @@
     document.addEventListener('DOMContentLoaded', ensureContainers);
   }
 })();
+
