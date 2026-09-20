@@ -77,12 +77,13 @@
   <div class="container">
     <div class="header-bar">
       <div>
-        <h1 id="familyHeaderTitle">Family Allowance Hub</h1>
+        <h1 id="familyHeaderTitle"><a id="familyBrandLink" href="index.html" style="color:inherit; text-decoration:none;">Family Allowance Hub</a></h1>
         <span id="subHeaderBadge" style="font-size:0.82rem; color:var(--text-muted);">Family Parent Console</span>
       </div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
+        <a id="parentHomeLink" href="index.html" class="btn" style="background:rgba(255,255,255,0.06); border:1px solid var(--card-border); color:#cbd5e1; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-weight:700;">🏠 Home</a>
         <span id="userAuthBadge" style="font-size:0.8rem; color:var(--text-muted);"></span>
-        <a id="childAppLinkBtn" href="app.html" target="_blank" class="btn btn-blue" style="text-decoration:none; display:none;">Preview Child View ↗</a>
+        <a id="childAppLinkBtn" href="app.html" class="btn btn-blue" style="text-decoration:none; display:none; align-items:center; gap:5px;">Preview Child View ↗</a>
         <button id="authBtn" class="btn btn-google" onclick="handleAuthAction()">Sign in with Google</button>
       </div>
     </div>
@@ -122,7 +123,7 @@
         <div class="card">
           <h3>🧒 Children Balances</h3>
           <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Balance</th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Balance</th><th style="width:110px;">Child View</th></tr></thead>
             <tbody id="childrenBalancesTable"></tbody>
           </table>
         </div>
@@ -525,6 +526,15 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialFamId = urlParams.get('familyId') || localStorage.getItem('family_id');
+      const homeLink = document.getElementById('parentHomeLink');
+      const brandLink = document.getElementById('familyBrandLink');
+      if (initialFamId) {
+        if (homeLink) homeLink.href = `index.html?familyId=${initialFamId}`;
+        if (brandLink) brandLink.href = `index.html?familyId=${initialFamId}`;
+      }
+
       auth.onAuthStateChanged(async (user) => {
         currentUser = user;
         const onboardSec = document.getElementById('onboardSection');
@@ -592,8 +602,10 @@
             const childBtn = document.getElementById('childAppLinkBtn');
             if (childBtn) {
               childBtn.style.display = 'inline-flex';
-              childBtn.href = `app.html?familyId=${familyId}`;
+              childBtn.href = `app.html?familyId=${familyId}&from=parent`;
             }
+            if (homeLink) homeLink.href = `index.html?familyId=${familyId}`;
+            if (brandLink) brandLink.href = `index.html?familyId=${familyId}`;
 
             initRealtimeListeners();
             runCatchUpScheduledPayouts(db, familyId, false);
@@ -702,7 +714,13 @@
           document.getElementById('nonOwnerWarning').style.display = 'block';
         }
 
-        document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} Allowance Hub`;
+        const bLink = document.getElementById('familyBrandLink');
+        if (bLink) {
+          bLink.innerText = `${activeFamilyName} Allowance Hub`;
+          bLink.href = `index.html?familyId=${familyId}`;
+        } else {
+          document.getElementById('familyHeaderTitle').innerText = `${activeFamilyName} Allowance Hub`;
+        }
         document.getElementById('setCurrency').value = activeCurrency;
         document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
         document.getElementById('setAiEnabled').checked = Boolean(d.aiEnabled);
@@ -1146,7 +1164,15 @@
       cachedChildren.forEach(c => {
         const b = balMap[c.email] || 0;
         total += b;
-        bTable.innerHTML += `<tr><td><strong>${c.name}</strong></td><td>${c.email}</td><td style="color:#34d399; font-weight:800;">${activeCurrency}${b.toLocaleString()}</td></tr>`;
+        bTable.innerHTML += `
+          <tr>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.email}</td>
+            <td style="color:#34d399; font-weight:800;">${activeCurrency}${b.toLocaleString()}</td>
+            <td>
+              <a href="app.html?familyId=${familyId}&childEmail=${encodeURIComponent(c.email)}&from=parent" class="btn btn-blue" style="padding:3px 8px; font-size:0.72rem; text-decoration:none; display:inline-flex; align-items:center; gap:3px;">Preview ↗</a>
+            </td>
+          </tr>`;
       });
       document.getElementById('statTotalOwed').innerText = activeCurrency + total.toLocaleString();
     }

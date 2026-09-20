@@ -138,7 +138,11 @@
         <span class="user-rank" id="childHeaderRank">Novice</span>
       </div>
     </div>
-    <button class="btn-lock" onclick="logout()">🔒 Lock</button>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <a id="topParentConsoleBtn" href="parent.html" class="btn-lock" style="display: none; text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15);" title="Return to Parent Console">👨‍👧 Parent Console</a>
+      <a id="topHomeBtn" href="index.html" class="btn-lock" style="display: none; text-decoration: none; color: #cbd5e1;" title="Go to Home">🏠 Home</a>
+      <button class="btn-lock" onclick="logout()" title="Lock session and return to Home">🔒 Lock</button>
+    </div>
   </div>
 
   <div class="container">
@@ -158,15 +162,24 @@
           <label for="childNameSelect">Hero Name</label>
           <select id="childNameSelect"><option value="">Loading heroes...</option></select>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="pinInputGroup">
           <label for="pinInput">4-Digit Secret PIN</label>
           <input type="password" id="pinInput" placeholder="••••" maxlength="6" style="text-align:center; letter-spacing:6px; font-size:1.5rem;">
         </div>
-        <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
+        <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
+          <button id="parentDirectPreviewBtn" class="btn" style="display: none; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #a5b4fc; font-weight: 700;" onclick="loginAsParentPreview()">👁️ Preview as Parent</button>
+        </div>
       </div>
 
       <div id="noFamilyNotice" style="margin-top:16px; font-size:0.78rem; color:var(--text-muted);">
         Signing in with Google will automatically locate your family vault!
+      </div>
+
+      <!-- Quick Navigation on Login Screen -->
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+        <a id="loginCardHomeBtn" href="index.html" class="btn-lock" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🏠 Back to Home</a>
+        <a id="loginCardParentBtn" href="parent.html" class="btn-lock" style="text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; gap: 4px;">👨‍👧 Parent Console</a>
       </div>
     </div>
 
@@ -353,6 +366,13 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     let familyId = urlParams.get('familyId') || localStorage.getItem('family_id');
+    const fromParent = urlParams.get('from') === 'parent' || urlParams.get('parentPreview') === 'true';
+    const requestedChildEmail = urlParams.get('childEmail');
+
+    let isParentViewer = Boolean(fromParent || sessionStorage.getItem('is_parent_preview') === 'true');
+    if (fromParent) {
+      sessionStorage.setItem('is_parent_preview', 'true');
+    }
 
     let activeCurrency = "Rs. ";
     let activeFamilyDoc = null;
@@ -368,6 +388,53 @@
     let currentChildTimeframe = 'ALL';
     let todayPlannerTasks = [];
     let uPlannerUnsub = null;
+
+    function updateNavigationButtons() {
+      const topParentBtn = document.getElementById('topParentConsoleBtn');
+      const topHomeBtn = document.getElementById('topHomeBtn');
+      const loginCardHomeBtn = document.getElementById('loginCardHomeBtn');
+      const loginCardParentBtn = document.getElementById('loginCardParentBtn');
+      const parentDirectPreviewBtn = document.getElementById('parentDirectPreviewBtn');
+
+      const targetFamId = familyId || localStorage.getItem('family_id');
+      const parentUrl = targetFamId ? `parent.html?familyId=${targetFamId}` : 'parent.html';
+      const homeUrl = targetFamId ? `index.html?familyId=${targetFamId}` : 'index.html';
+
+      if (loginCardHomeBtn) loginCardHomeBtn.href = homeUrl;
+      if (loginCardParentBtn) loginCardParentBtn.href = parentUrl;
+      if (topHomeBtn) topHomeBtn.href = homeUrl;
+      if (topParentBtn) topParentBtn.href = parentUrl;
+
+      if (isParentViewer) {
+        if (topParentBtn) topParentBtn.style.display = 'inline-flex';
+        if (topHomeBtn) topHomeBtn.style.display = 'inline-flex';
+        if (loginCardParentBtn) loginCardParentBtn.style.display = 'inline-flex';
+        if (parentDirectPreviewBtn) {
+          const sel = document.getElementById('childNameSelect');
+          parentDirectPreviewBtn.style.display = (sel && sel.value) ? 'inline-flex' : 'none';
+        }
+      }
+    }
+
+    function checkParentAutoPreview() {
+      const sel = document.getElementById('childNameSelect');
+      const previewBtn = document.getElementById('parentDirectPreviewBtn');
+      if (previewBtn && isParentViewer) {
+        previewBtn.style.display = (sel && sel.value) ? 'inline-flex' : 'none';
+      }
+    }
+
+    function loginAsParentPreview() {
+      const sel = document.getElementById('childNameSelect');
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return alert("Please choose a hero name first.");
+
+      currentChild = { id: opt.value, name: opt.getAttribute('data-name'), email: opt.getAttribute('data-email') };
+      authMethod = "PARENT_PREVIEW";
+      sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+      sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+      unlockApp();
+    }
 
     function playChimeSound() {
       try {
@@ -433,10 +500,27 @@
       document.getElementById('pinLoginContainer').style.display = 'block';
       document.getElementById('noFamilyNotice').style.display = 'none';
 
+      updateNavigationButtons();
+
+      // If parent navigated to preview a specific child directly
+      if (isParentViewer && requestedChildEmail) {
+        const matchingDoc = usersSnap.docs.find(d => (d.data().email || '').toLowerCase() === requestedChildEmail.toLowerCase());
+        if (matchingDoc) {
+          currentChild = { id: matchingDoc.id, name: matchingDoc.data().name, email: matchingDoc.data().email };
+          authMethod = "PARENT_PREVIEW";
+          sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+          sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+          unlockApp();
+          return;
+        }
+      }
+
       runCatchUpScheduledPayouts(db, familyId, false);
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
+      updateNavigationButtons();
+
       if (familyId) {
         await loadFamilyData(familyId);
       }
@@ -453,10 +537,27 @@
     // Automatically detect authenticated Google session (e.g. redirected from index.html)
     auth.onAuthStateChanged(async (user) => {
       if (!user) return;
-      if (currentChild) return; // Already logged in
+      updateNavigationButtons();
 
       const email = String(user.email || '').toLowerCase().trim();
       let famId = familyId || localStorage.getItem('family_id');
+
+      // Check if logged-in user is a Parent or Owner
+      try {
+        const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+        if (subDoc.exists) {
+          const subData = subDoc.data();
+          if (subData.role === 'Parent' || (activeFamilyDoc && activeFamilyDoc.ownerEmail && activeFamilyDoc.ownerEmail.toLowerCase() === email)) {
+            isParentViewer = true;
+            sessionStorage.setItem('is_parent_preview', 'true');
+            updateNavigationButtons();
+          }
+        }
+      } catch (subErr) {
+        console.warn("Parent role check note:", subErr);
+      }
+
+      if (currentChild) return; // Already logged in
 
       if (!famId) {
         try {
@@ -566,6 +667,7 @@
       document.getElementById('bottomNav').style.display = 'flex';
       document.getElementById('avatarInitial').innerText = currentChild.name.charAt(0).toUpperCase();
       document.getElementById('childHeaderName').innerText = currentChild.name;
+      updateNavigationButtons();
       switchNavTab('tab-home', document.querySelectorAll('.nav-item')[0]);
       bindChildData();
     }
@@ -1557,8 +1659,10 @@ Instructions:
       }
       sessionStorage.removeItem('child_session');
       sessionStorage.removeItem('child_auth_method');
+      sessionStorage.removeItem('is_parent_preview');
       auth.signOut();
-      window.location.reload();
+      const targetFamilyId = familyId || localStorage.getItem('family_id');
+      window.location.href = targetFamilyId ? `index.html?familyId=${targetFamilyId}` : 'index.html';
     }
   </script>
 </body>
