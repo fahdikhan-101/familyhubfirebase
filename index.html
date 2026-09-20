@@ -58,6 +58,51 @@
       border-color: #cbd5e1;
       color: #0f172a;
     }
+    [data-theme="light"] .btn-child-action {
+      background: #e0f2fe !important;
+      border-color: #0284c7 !important;
+      color: #0369a1 !important;
+    }
+    [data-theme="light"] .btn-child-action:hover {
+      background: #bae6fd !important;
+    }
+    [data-theme="light"] .calc-slider {
+      background: #cbd5e1 !important;
+    }
+    [data-theme="light"] .calc-slider::-webkit-slider-runnable-track {
+      background: #cbd5e1 !important;
+    }
+    [data-theme="light"] .calc-slider::-moz-range-track {
+      background: #cbd5e1 !important;
+    }
+    [data-theme="light"] #calcOutput {
+      color: #0284c7 !important;
+    }
+    [data-theme="light"] .hero-badge {
+      background: #e0e7ff;
+      border-color: #c7d2fe;
+      color: #4338ca;
+    }
+    [data-theme="light"] .routine-showcase-card {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 10px 30px -4px rgba(0,0,0,0.08) !important;
+    }
+    [data-theme="light"] .routine-item-mockup {
+      background: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] .routine-time-badge {
+      background: #e0f2fe !important;
+      color: #0369a1 !important;
+      border: 1px solid #bae6fd;
+    }
+    [data-theme="light"] .routine-bonus-banner {
+      background: #f0fdf4 !important;
+      border-color: #86efac !important;
+      color: #166534 !important;
+    }
     .theme-toggle-btn {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--card-border);
@@ -75,6 +120,17 @@
     }
     .theme-toggle-btn:hover { transform: scale(1.04); }
     .theme-toggle-btn:active { transform: scale(0.96); }
+    .btn-child-action {
+      border: 1.5px solid rgba(6, 182, 212, 0.45);
+      color: #38bdf8;
+      background: rgba(6, 182, 212, 0.12);
+      font-weight: 800;
+      transition: all 0.2s ease;
+    }
+    .btn-child-action:hover {
+      background: rgba(6, 182, 212, 0.22);
+      transform: translateY(-1px);
+    }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
     body { background-color: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; }
     
@@ -148,7 +204,7 @@
     <a href="#" class="logo">🐷 Family Allowance Hub</a>
     <div class="nav-actions">
       <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
-      <button onclick="handleChildEntry()" class="btn-ghost" style="border-color: rgba(6, 182, 212, 0.4); color: #38bdf8; background: rgba(6, 182, 212, 0.1); font-weight: 800;">🧒 Open Child PiggyBank ↗</button>
+      <button onclick="handleChildEntry()" class="btn-ghost btn-child-action">🧒 Open Child PiggyBank ↗</button>
       <a id="parentPortalNavBtn" href="parent.html" class="btn-cta">Parent Portal ↗</a>
     </div>
   </nav>
@@ -162,7 +218,7 @@
     </p>
     <div class="hero-actions">
       <a id="parentHeroBtn" href="parent.html" class="btn-cta" style="padding: 13px 32px; font-size: 1.05rem;">Get Started Free 🚀</a>
-      <button onclick="handleChildEntry()" class="btn-ghost" style="padding: 13px 28px; font-size: 1.05rem; border-color: rgba(6, 182, 212, 0.4); color: #38bdf8; background: rgba(6, 182, 212, 0.1); font-weight: 800;">🧒 Open Child PiggyBank ↗</button>
+      <button onclick="handleChildEntry()" class="btn-ghost btn-child-action" style="padding: 13px 28px; font-size: 1.05rem;">🧒 Open Child PiggyBank ↗</button>
     </div>
   </section>
 
@@ -243,12 +299,169 @@
       </p>
     </div>
 
+    <div class="card-feature" style="border: 1.5px solid rgba(99, 102, 241, 0.35);">
+      <div class="icon-box" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">⏰</div>
+      <div style="display:inline-block; font-size:0.72rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">✨ New Feature</div>
+      <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px;">Daily & Weekly Routine Planner</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Build lifelong discipline with time-slotted routines like Quran classes, dishes, homework, and bedtime. Kids check off tasks to earn bounties, and parents track daily compliance with 100% Day completion bonuses.
+      </p>
+    </div>
+
     <div class="card-feature">
       <div class="icon-box" style="background: rgba(129, 140, 248, 0.2); color: #a5b4fc;">📱</div>
       <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px;">Any Device, No Downloads</h3>
       <p style="color: var(--text-muted); font-size: 0.9rem;">
         Works on phones, iPads, laptops, and Android tablets. Add it directly to your home screen in seconds—no heavy app store downloads or update friction.
       </p>
+    </div>
+  </div>
+
+  <!-- NEW FEATURE DEEP DIVE: ROUTINE PLANNER & HABIT TRACKER -->
+  <section class="section-title" id="routine-planner" style="margin-top: 90px; margin-bottom: 30px;">
+    <span style="background: linear-gradient(135deg, #6366f1, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">✨ Flagship Feature</span>
+    <h2>Daily & Weekly Habit Planner</h2>
+    <p style="color: var(--text-muted); font-size: 1rem; max-width: 680px; margin: 12px auto 0;">
+      Turn daily chaos into consistent, positive habits. Schedule daily and weekly routines with exact time slots, real pocket money rewards, and accountability deductions.
+    </p>
+  </section>
+
+  <div style="max-width: 1150px; margin: 0 auto 90px; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px; align-items: center; position: relative; z-index: 10;">
+    <!-- LEFT: Feature Highlights -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card-feature" style="padding: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="font-size: 1.8rem; line-height: 1;">⏱️</div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 4px;">Scheduled Time-Slot Routines</h4>
+            <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+              Create structured schedules for all kids or customize per child. Set precise windows like <strong>4:00 PM – 4:30 PM Quran Class</strong>, <strong>6:00 PM – 8:00 PM Homework</strong>, and <strong>9:00 PM Bedtime</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-feature" style="padding: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="font-size: 1.8rem; line-height: 1;">💰</div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 4px;">Rewards & Accountability Penalties</h4>
+            <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+              Attach money rewards for completed habits (e.g. +Rs. 50 for dishes). Parents also have the optional choice to enforce discipline through deductions for skipped responsibilities.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-feature" style="padding: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="font-size: 1.8rem; line-height: 1;">✅</div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 4px;">Interactive Kid To-Do Checklist</h4>
+            <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+              Kids see their personalized daily agenda right in their PiggyBank app with time indicators. One tap marks a task as done and alerts parents for review.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-feature" style="padding: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="font-size: 1.8rem; line-height: 1;">🏆</div>
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 4px;">Compliance Reports & 100% Day Bonus</h4>
+            <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">
+              Parents get a centralized Daily Compliance dashboard with progress bars, 1-click approvals, and optional bonuses when a child completes 100% of their day's tasks!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Visual Schedule Mockup -->
+    <div class="routine-showcase-card" style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 24px; padding: 26px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 14px;">
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">Live Interactive Preview</div>
+          <h3 style="font-size: 1.15rem; font-weight: 900; margin-top: 2px;">Zaariya's Daily Schedule 🌟</h3>
+        </div>
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; font-weight: 800; font-size: 0.75rem; padding: 4px 10px; border-radius: 9999px;">
+          80% Complete
+        </div>
+      </div>
+
+      <!-- Schedule Progress Bar -->
+      <div style="background: rgba(255,255,255,0.08); border-radius: 9999px; height: 7px; overflow: hidden; margin-bottom: 18px;">
+        <div style="background: linear-gradient(90deg, #10b981, #06b6d4); height: 100%; width: 80%; border-radius: 9999px;"></div>
+      </div>
+
+      <!-- Routine Items Mockup List -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Item 1 -->
+        <div class="routine-item-mockup" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.1rem; color: #10b981;">✓</span>
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 800; text-decoration: line-through; opacity: 0.8;">📖 Quran Class</div>
+              <span class="routine-time-badge" style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; background: rgba(6,182,212,0.12); padding: 2px 7px; border-radius: 6px; display: inline-block; margin-top: 2px;">4:00 PM – 4:30 PM</span>
+            </div>
+          </div>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 3px 8px; border-radius: 8px;">+Rs. 50 Credited</span>
+        </div>
+
+        <!-- Item 2 -->
+        <div class="routine-item-mockup" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.1rem; color: #10b981;">✓</span>
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 800; text-decoration: line-through; opacity: 0.8;">🍽️ Clean Dinner Dishes</div>
+              <span class="routine-time-badge" style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; background: rgba(6,182,212,0.12); padding: 2px 7px; border-radius: 6px; display: inline-block; margin-top: 2px;">5:00 PM – 6:00 PM</span>
+            </div>
+          </div>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 3px 8px; border-radius: 8px;">+Rs. 40 Credited</span>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="routine-item-mockup" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.1rem; color: #10b981;">✓</span>
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 800; text-decoration: line-through; opacity: 0.8;">📚 Homework & Reading</div>
+              <span class="routine-time-badge" style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; background: rgba(6,182,212,0.12); padding: 2px 7px; border-radius: 6px; display: inline-block; margin-top: 2px;">6:00 PM – 8:00 PM</span>
+            </div>
+          </div>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 3px 8px; border-radius: 8px;">+Rs. 60 Credited</span>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="routine-item-mockup" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border); border-radius: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.1rem; color: #10b981;">✓</span>
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 800; text-decoration: line-through; opacity: 0.8;">🪥 Brush Teeth & Night Routine</div>
+              <span class="routine-time-badge" style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; background: rgba(6,182,212,0.12); padding: 2px 7px; border-radius: 6px; display: inline-block; margin-top: 2px;">8:00 PM – 8:15 PM</span>
+            </div>
+          </div>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 3px 8px; border-radius: 8px;">+Rs. 20 Credited</span>
+        </div>
+
+        <!-- Item 5 (Pending) -->
+        <div class="routine-item-mockup" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.1rem; color: #f59e0b;">⏳</span>
+            <div>
+              <div style="font-size: 0.88rem; font-weight: 800;">🛏️ Lights Out & Sleep by 9:00 PM</div>
+              <span class="routine-time-badge" style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; background: rgba(6,182,212,0.12); padding: 2px 7px; border-radius: 6px; display: inline-block; margin-top: 2px;">9:00 PM</span>
+            </div>
+          </div>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #38bdf8; background: rgba(6, 182, 212, 0.12); padding: 3px 8px; border-radius: 8px;">Ready to complete</span>
+        </div>
+      </div>
+
+      <!-- Bonus Banner -->
+      <div class="routine-bonus-banner" style="margin-top: 16px; padding: 12px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.15)); border: 1px dashed rgba(99, 102, 241, 0.4); border-radius: 14px; text-align: center;">
+        <span style="font-size: 0.82rem; font-weight: 800; color: #a5b4fc;">🏆 1 Task Away from 100% Day Bonus (+Rs. 100)!</span>
+      </div>
     </div>
   </div>
 
@@ -332,7 +545,7 @@
       </p>
 
       <div id="modalSavedFamilyBox" style="display:none; margin-bottom:14px;">
-        <a id="modalSavedFamilyBtn" href="app.html" class="btn-ghost" style="width: 100%; justify-content: center; border-color: rgba(6,182,212,0.4); color: #38bdf8; background: rgba(6,182,212,0.1); font-weight: 800; text-decoration: none; padding: 11px;">
+        <a id="modalSavedFamilyBtn" href="app.html" class="btn-ghost btn-child-action" style="width: 100%; justify-content: center; text-decoration: none; padding: 11px;">
           🔑 Continue to Saved Family Vault (PIN Login) →
         </a>
         <div style="font-size:0.75rem; color:var(--text-muted); margin:10px 0 6px;">— or sign in with Google —</div>
@@ -353,6 +566,7 @@
       <a id="footerParentLink" href="parent.html">Parent Login</a>
       <a href="javascript:void(0)" onclick="handleChildEntry()">Child PiggyBank</a>
       <a href="#features">Features</a>
+      <a href="#routine-planner">Daily Planner</a>
       <a href="privacy.html">Privacy Policy</a>
       <a href="terms.html">Terms of Service</a>
     </div>

@@ -67,6 +67,44 @@
     }
     .theme-toggle-btn:hover { transform: scale(1.04); }
     .theme-toggle-btn:active { transform: scale(0.96); }
+
+    .btn-header-nav {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #cbd5e1;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .btn-header-nav:hover { transform: scale(1.03); }
+    [data-theme="light"] .btn-header-nav {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    .user-account-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 6px 4px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+    }
+    [data-theme="light"] .user-account-group {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; min-height: 100vh; }
     .container { max-width: 1100px; margin: 0 auto; }
@@ -115,9 +153,11 @@
       </div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
-        <a href="index.html" class="btn" style="background:rgba(255,255,255,0.06); border:1px solid var(--card-border); color:#cbd5e1; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">🏠 Home</a>
-        <span id="adminEmailBadge" style="font-size:0.85rem; color:var(--text-muted);"></span>
-        <button id="authBtn" class="btn btn-gray" onclick="handleAuth()">Sign In</button>
+        <a href="index.html" class="btn btn-header-nav">🏠 Home</a>
+        <div class="user-account-group">
+          <span id="adminEmailBadge" style="font-size:0.82rem; font-weight:700; display:none;"></span>
+          <button id="authBtn" class="btn btn-gray" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 9999px;" onclick="handleAuth()">Sign In</button>
+        </div>
       </div>
     </div>
 
@@ -213,7 +253,8 @@
 
       if (user && user.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
         authBtn.innerText = "Sign Out";
-        badge.innerText = user.email;
+        badge.innerText = "🛡️ " + user.email;
+        badge.style.display = 'inline-block';
         lockCard.style.display = 'none';
         adminPanel.style.display = 'block';
         loadAdminData();
@@ -224,6 +265,7 @@
         }
         authBtn.innerText = "Sign In";
         badge.innerText = "";
+        badge.style.display = 'none';
         lockCard.style.display = 'block';
         adminPanel.style.display = 'none';
       }
