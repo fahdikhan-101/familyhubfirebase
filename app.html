@@ -376,6 +376,50 @@
       }
     });
 
+    // Automatically detect authenticated Google session (e.g. redirected from index.html)
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      if (currentChild) return; // Already logged in
+
+      const email = String(user.email || '').toLowerCase().trim();
+      let famId = familyId || localStorage.getItem('family_id');
+
+      if (!famId) {
+        try {
+          const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+          if (subDoc.exists && subDoc.data().familyId) {
+            famId = subDoc.data().familyId;
+            await loadFamilyData(famId);
+          }
+        } catch (e) {
+          console.warn("Could not lookup subscription on auth state change:", e);
+        }
+      }
+
+      if (famId) {
+        try {
+          if (!activeFamilyDoc) {
+            await loadFamilyData(famId);
+          }
+          const userSnap = await db.collection('families').doc(famId).collection('users')
+            .where('email', '==', email)
+            .where('role', '==', 'Child')
+            .get();
+
+          if (!userSnap.empty) {
+            const childDoc = userSnap.docs[0];
+            currentChild = { id: childDoc.id, name: childDoc.data().name, email: childDoc.data().email };
+            authMethod = "GOOGLE";
+            sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+            sessionStorage.setItem('child_auth_method', "GOOGLE");
+            unlockApp();
+          }
+        } catch (e) {
+          console.warn("Auto-detect child account failed:", e);
+        }
+      }
+    });
+
     async function attemptLogin() {
       const sel = document.getElementById('childNameSelect');
       const opt = sel.options[sel.selectedIndex];

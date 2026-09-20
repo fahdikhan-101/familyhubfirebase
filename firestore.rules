@@ -34,6 +34,17 @@ service cloud.firestore {
       return isSuperAdmin() || isFamilyOwner(familyId) || isSubscribedParent(familyId);
     }
 
+    function isFamilyMember(familyId) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/platform_subscriptions/$(request.auth.token.email.lower())) &&
+        get(/databases/$(database)/documents/platform_subscriptions/$(request.auth.token.email.lower())).data.familyId == familyId &&
+        get(/databases/$(database)/documents/platform_subscriptions/$(request.auth.token.email.lower())).data.status == "active";
+    }
+
+    function isMember(familyId) {
+      return isParent(familyId) || isFamilyMember(familyId);
+    }
+
     // -------------------------------------------------------------
     // GLOBAL PLATFORM CONFIG
     // -------------------------------------------------------------
@@ -83,23 +94,33 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------
-    // 2. FAMILY TENANTS
+    // 2. USERS COLLECTION GROUP (Safe lookup fallback)
+    // -------------------------------------------------------------
+    match /{path=**}/users/{userId} {
+      allow read: if request.auth != null && (
+        isSuperAdmin() ||
+        resource.data.email.lower() == request.auth.token.email.lower()
+      );
+    }
+
+    // -------------------------------------------------------------
+    // 3. FAMILY TENANTS
     // -------------------------------------------------------------
     match /families/{familyId} {
-      allow read: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+      allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
       allow create: if isSuperAdmin();
       allow update: if isSuperAdmin() || (isFamilyOwner(familyId) && isFamilyActive(familyId));
       allow delete: if isSuperAdmin();
 
       // --- PROTECTED SECRETS (Gemini API Key) ---
       match /settings/secrets {
-        allow read: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId)) || (request.auth != null && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
         allow write: if isSuperAdmin() || (isFamilyOwner(familyId) && isFamilyActive(familyId));
       }
 
       // --- SUBCOLLECTION 1: USERS ---
       match /users/{userId} {
-        allow read: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
         
         // FIX: Only Family Owner or Super Admin can delete family members (co-parents CANNOT delete)
         allow delete: if isSuperAdmin() || (
@@ -114,7 +135,7 @@ service cloud.firestore {
 
       // --- SUBCOLLECTION 2: TRANSACTIONS (LEDGER) ---
       match /transactions/{txId} {
-        allow read: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
         allow delete: if isSuperAdmin() || (isFamilyOwner(familyId) && isFamilyActive(familyId));
 
         allow create: if isSuperAdmin() || (
@@ -122,6 +143,7 @@ service cloud.firestore {
           (
             isParent(familyId) ||
             (
+              isMember(familyId) &&
               request.resource.data.amount is number &&
               (
                 (request.resource.data.type == "Expense" && request.resource.data.amount < 0) ||
@@ -137,40 +159,51 @@ service cloud.firestore {
 
       // --- SUBCOLLECTION 3: CHORE LOGS ---
       match /choreLog/{logId} {
-        allow read: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
         allow create: if isSuperAdmin() || (
           isFamilyActive(familyId) && 
-          (isParent(familyId) || request.resource.data.status == "pending")
+          (isParent(familyId) || (isMember(familyId) && request.resource.data.status == "pending"))
         );
         allow update, delete: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
       }
 
       // --- SUBCOLLECTION 4: CHORES CATALOG ---
       match /chores/{choreId} {
-        allow read, write: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow write: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
       }
 
       // --- SUBCOLLECTION 5: BEHAVIOR RULES ---
       match /rules/{ruleId} {
-        allow read, write: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow write: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
       }
 
       // --- SUBCOLLECTION 6: SCHEDULES ---
       match /schedules/{scheduleId} {
-        allow read: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
         allow create, delete: if isSuperAdmin() || (isFamilyOwner(familyId) && isFamilyActive(familyId));
         allow update: if isSuperAdmin() || (
           isFamilyActive(familyId) && 
           (
             isFamilyOwner(familyId) || 
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastRunDate'])
+            (isMember(familyId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastRunDate']))
           )
         );
       }
 
       // --- SUBCOLLECTION 7: GOALS ---
       match /goals/{goalId} {
-        allow read, write: if isSuperAdmin() || (isParent(familyId) && isFamilyActive(familyId));
+        allow read: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow create: if isSuperAdmin() || (isMember(familyId) && isFamilyActive(familyId));
+        allow update, delete: if isSuperAdmin() || 
+          (isParent(familyId) && isFamilyActive(familyId)) ||
+          (
+            isMember(familyId) && isFamilyActive(familyId) && (
+              (resource.data.email != null && resource.data.email.lower() == request.auth.token.email.lower()) ||
+              (resource.data.childEmail != null && resource.data.childEmail.lower() == request.auth.token.email.lower())
+            )
+          );
       }
 
       // --- SUBCOLLECTION 8: ARCHIVES ---

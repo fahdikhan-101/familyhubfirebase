@@ -319,25 +319,42 @@
         const res = await auth.signInWithPopup(provider);
         const email = String(res.user.email || '').toLowerCase().trim();
 
-        // Search which family this child belongs to
-        const snap = await db.collectionGroup('users')
-          .where('email', '==', email)
-          .get();
+        let matchedFamilyId = null;
 
-        if (snap.empty) {
-          auth.signOut();
+        // 1. Direct O(1) lookup in platform_subscriptions (fast & authorized)
+        const subDoc = await db.collection('platform_subscriptions').doc(email).get();
+
+        if (subDoc.exists && subDoc.data().familyId) {
+          const subData = subDoc.data();
+          if (subData.status && subData.status !== 'active') {
+            await auth.signOut();
+            return alert(`Your family vault is currently suspended. Please ask your parents.`);
+          }
+          matchedFamilyId = subData.familyId;
+        } else {
+          // 2. Fallback: Search users collection group if subscription doc wasn't created
+          try {
+            const snap = await db.collectionGroup('users')
+              .where('email', '==', email)
+              .get();
+            if (!snap.empty) {
+              snap.forEach(doc => {
+                matchedFamilyId = doc.ref.parent.parent.id;
+              });
+            }
+          } catch (cgErr) {
+            console.warn("collectionGroup lookup fallback skipped:", cgErr.message);
+          }
+        }
+
+        if (!matchedFamilyId) {
+          await auth.signOut();
           return alert(`No child account found for ${email}. Please ask your parents to add your email in their Parent Admin Console first!`);
         }
 
-        let matchedFamilyId = null;
-        snap.forEach(doc => {
-          matchedFamilyId = doc.ref.parent.parent.id;
-        });
-
-        if (matchedFamilyId) {
-          localStorage.setItem('family_id', matchedFamilyId);
-          window.location.href = `app.html?familyId=${matchedFamilyId}`;
-        }
+        localStorage.setItem('family_id', matchedFamilyId);
+        sessionStorage.setItem('child_auth_method', 'GOOGLE');
+        window.location.href = `app.html?familyId=${matchedFamilyId}`;
       } catch (err) {
         alert("Child Sign In Error: " + err.message);
       }
