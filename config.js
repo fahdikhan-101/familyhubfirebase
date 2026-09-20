@@ -1,5 +1,5 @@
 // Environment configuration (Switch this block when deploying to Staging vs Prod)
-const ENV = "STAGING"; // Change to "STAGING" when working on staging
+const ENV = "PROD"; // Production environment (family-allowance-hub)
 
 const STAGING_CONFIG = {
     apiKey: "AIzaSyDv8DYJhOLSB1gjOehmmlpEuF05t4csqgI",
