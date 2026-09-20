@@ -86,6 +86,41 @@
     .type-allowance { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
     .type-expense { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
     .type-transfer { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.35); }
+
+    .planner-task-item {
+      background: rgba(15, 23, 42, 0.55); border: 1px solid var(--card-border); border-radius: 14px;
+      padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between;
+      align-items: center; gap: 12px; transition: all 0.2s ease;
+    }
+    .planner-task-item.status-approved { border-left: 4px solid var(--success); background: rgba(16, 185, 129, 0.06); }
+    .planner-task-item.status-pending { border-left: 4px solid var(--warning); background: rgba(245, 158, 11, 0.06); }
+    .planner-task-item.status-penalized { border-left: 4px solid var(--danger); background: rgba(239, 68, 68, 0.06); }
+    .planner-task-item.status-todo { border-left: 4px solid var(--cyan); }
+    .task-time-pill {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 700;
+      color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 8px; border-radius: 6px; margin-bottom: 4px;
+    }
+    .task-title { font-weight: 800; font-size: 0.95rem; color: #fff; }
+    .task-reward-tag { font-size: 0.76rem; font-weight: 800; color: var(--success); }
+    .task-penalty-tag { font-size: 0.72rem; font-weight: 700; color: var(--danger); margin-left: 6px; }
+    .btn-mark-done {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: white;
+      font-weight: 800; font-size: 0.8rem; padding: 8px 14px; border-radius: 10px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px; transition: transform 0.15s ease;
+    }
+    .btn-mark-done:active { transform: scale(0.95); }
+    .btn-waiting-review {
+      background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24;
+      font-weight: 800; font-size: 0.75rem; padding: 6px 10px; border-radius: 10px;
+    }
+    .btn-task-approved {
+      background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399;
+      font-weight: 800; font-size: 0.75rem; padding: 6px 10px; border-radius: 10px;
+    }
+    .btn-task-penalized {
+      background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5;
+      font-weight: 800; font-size: 0.75rem; padding: 6px 10px; border-radius: 10px;
+    }
   </style>
   <script src="config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
@@ -143,10 +178,20 @@
         <div class="balance-val" id="balanceDisplay">Rs. 0</div>
       </div>
 
+      <!-- TODAY'S ROUTINE SPOTLIGHT -->
+      <div class="card" id="homePlannerSpotlight" style="border-left: 4px solid var(--cyan); display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <h3 style="margin: 0; font-size: 0.95rem;">📋 Today's Routine & Tasks</h3>
+          <button onclick="switchNavTab('tab-planner', document.querySelectorAll('.nav-item')[1])" style="background: none; border: none; color: #38bdf8; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Full Plan →</button>
+        </div>
+        <div id="homePlannerSummary" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:8px;"></div>
+        <div id="homePlannerNextTask"></div>
+      </div>
+
       <div class="card" id="homeGoalSpotlight" style="border-left: 4px solid var(--accent); display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <h3 style="margin: 0; font-size: 0.95rem;">🎯 Top Wishlist Target</h3>
-          <button onclick="switchNavTab('tab-goals', document.querySelectorAll('.nav-item')[1])" style="background: none; border: none; color: #a5b4fc; font-size: 0.75rem; font-weight: 700; cursor: pointer;">View All →</button>
+          <button onclick="switchNavTab('tab-goals', document.querySelectorAll('.nav-item')[2])" style="background: none; border: none; color: #a5b4fc; font-size: 0.75rem; font-weight: 700; cursor: pointer;">View All →</button>
         </div>
         <div id="homeGoalContent"></div>
       </div>
@@ -196,6 +241,32 @@
             No sibling transfers in this period.
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- TAB: PLANNER & TO-DO TIMELINE -->
+    <div id="tab-planner" class="tab-content">
+      <div class="card" style="border-left: 4px solid var(--cyan);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <h3 style="margin:0;">📋 Today's Routine Plan</h3>
+          <span id="plannerDateBadge" style="font-size:0.75rem; color:var(--text-muted); font-weight:700;"></span>
+        </div>
+        
+        <div style="margin-top:10px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-bottom:4px;">
+            <span id="plannerProgressText">0 of 0 tasks done</span>
+            <span id="plannerPotentialReward" style="color:var(--success); font-weight:800;">+Rs. 0 potential</span>
+          </div>
+          <div class="goal-progress-bg" style="margin:0 0 12px;">
+            <div id="plannerProgressBar" class="goal-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div id="plannerBonusNotice" style="display:none; background:rgba(16, 185, 129, 0.12); border:1px solid rgba(16, 185, 129, 0.3); border-radius:12px; padding:10px; margin-bottom:12px; font-size:0.82rem; color:#6ee7b7;">
+          🌟 <strong>Daily Completion Bonus:</strong> Finish all tasks today to unlock a special bonus!
+        </div>
+
+        <div id="plannerTimelineContainer">Loading today's schedule...</div>
       </div>
     </div>
 
@@ -268,6 +339,7 @@
 
   <div class="bottom-nav" id="bottomNav" style="display: none;">
     <button class="nav-item active" onclick="switchNavTab('tab-home', this)"><span class="icon">🏠</span><span>Home</span></button>
+    <button class="nav-item" onclick="switchNavTab('tab-planner', this)"><span class="icon">📋</span><span>Plan</span></button>
     <button class="nav-item" onclick="switchNavTab('tab-goals', this)"><span class="icon">🎯</span><span>Goals</span></button>
     <button class="nav-item" onclick="switchNavTab('tab-missions', this)"><span class="icon">⚡</span><span>Actions</span></button>
     <button class="nav-item" onclick="switchNavTab('tab-activity', this)"><span class="icon">📜</span><span>Ledger</span></button>
@@ -294,6 +366,8 @@
     let availableSiblings = [];
     let currentFilter = 'ALL';
     let currentChildTimeframe = 'ALL';
+    let todayPlannerTasks = [];
+    let uPlannerUnsub = null;
 
     function playChimeSound() {
       try {
@@ -680,6 +754,33 @@
           }
         });
       });
+
+      // Planner routines & today's tasks
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      const todayObj = new Date();
+      const dateBadge = document.getElementById('plannerDateBadge');
+      if (dateBadge) {
+        dateBadge.innerText = todayObj.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+      }
+
+      // Ensure daily tasks for today are populated from active recurring routines
+      ensureDailyPlannerTasks(db, familyId, todayDateStr, [currentChild]);
+
+      if (uPlannerUnsub) {
+        uPlannerUnsub();
+        uPlannerUnsub = null;
+      }
+
+      uPlannerUnsub = famRef.collection('planner_tasks')
+        .where('childEmail', '==', currentChild.email.toLowerCase())
+        .where('date', '==', todayDateStr)
+        .onSnapshot(snap => {
+          todayPlannerTasks = [];
+          snap.forEach(d => todayPlannerTasks.push({ id: d.id, ...d.data() }));
+          renderChildPlanner(todayPlannerTasks);
+        }, err => {
+          console.error("Planner tasks listener error:", err);
+        });
     }
 
     async function sendSiblingTransfer() {
@@ -1160,7 +1261,300 @@ Instructions:
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[m]));
+    }
+
+    function formatTime12Hour(timeStr) {
+      if (!timeStr) return '';
+      const parts = timeStr.split(':');
+      let hour = parseInt(parts[0], 10);
+      const min = parts[1] || '00';
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12 || 12;
+      return `${hour}:${min} ${ampm}`;
+    }
+
+    function formatTimeRange(start, end) {
+      if (!start) return '';
+      if (!end) return formatTime12Hour(start);
+      return `${formatTime12Hour(start)} – ${formatTime12Hour(end)}`;
+    }
+
+    async function ensureDailyPlannerTasks(db, familyId, dateStr, childList) {
+      if (!familyId || !dateStr || !childList || childList.length === 0) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const parts = dateStr.split('-');
+        const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const currentDay = dayNames[dt.getDay()];
+
+        const templatesSnap = await famRef.collection('planner_templates').get();
+        if (templatesSnap.empty) return;
+
+        const existingSnap = await famRef.collection('planner_tasks').where('date', '==', dateStr).get();
+        const existingKeySet = new Set();
+        existingSnap.forEach(d => {
+          const t = d.data();
+          existingKeySet.add(`${t.templateId}_${t.itemKey}_${(t.childEmail || '').toLowerCase()}`);
+        });
+
+        const batch = db.batch();
+        let count = 0;
+
+        templatesSnap.forEach(tDoc => {
+          const tmpl = tDoc.data();
+          if (tmpl.status === 'paused') return;
+          const days = tmpl.days || [];
+          if (!days.includes(currentDay) && !days.includes('daily')) return;
+
+          const targetKids = (tmpl.assignedTo === 'all') 
+            ? childList 
+            : childList.filter(c => c.email.toLowerCase() === tmpl.assignedTo.toLowerCase());
+
+          const items = tmpl.items || [];
+          targetKids.forEach(kid => {
+            items.forEach((item, idx) => {
+              const itemKey = item.id || `item_${idx}`;
+              const key = `${tDoc.id}_${itemKey}_${kid.email.toLowerCase()}`;
+              if (!existingKeySet.has(key)) {
+                const taskRef = famRef.collection('planner_tasks').doc();
+                batch.set(taskRef, {
+                  templateId: tDoc.id,
+                  templateTitle: tmpl.title || 'Daily Routine',
+                  itemKey: itemKey,
+                  date: dateStr,
+                  childEmail: kid.email.toLowerCase(),
+                  childName: kid.name,
+                  title: item.title,
+                  startTime: item.startTime || '09:00',
+                  endTime: item.endTime || '10:00',
+                  timeRange: formatTimeRange(item.startTime, item.endTime),
+                  reward: Number(item.reward) || 0,
+                  penalty: Number(item.penalty) || 0,
+                  dailyBonus: Number(tmpl.dailyBonus) || 0,
+                  status: 'todo',
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                existingKeySet.add(key);
+                count++;
+              }
+            });
+          });
+        });
+
+        if (count > 0) {
+          await batch.commit();
+        }
+      } catch (err) {
+        console.error("ensureDailyPlannerTasks error:", err);
+      }
+    }
+
+    function renderChildPlanner(tasks) {
+      const container = document.getElementById('plannerTimelineContainer');
+      const progressText = document.getElementById('plannerProgressText');
+      const progressBar = document.getElementById('plannerProgressBar');
+      const potentialRewardSpan = document.getElementById('plannerPotentialReward');
+      const bonusNotice = document.getElementById('plannerBonusNotice');
+      const homeSpotlight = document.getElementById('homePlannerSpotlight');
+      const homeSummary = document.getElementById('homePlannerSummary');
+      const homeNextTask = document.getElementById('homePlannerNextTask');
+
+      if (!container) return;
+
+      // Chronological sort by startTime
+      tasks.sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
+
+      const totalCount = tasks.length;
+      const approvedCount = tasks.filter(t => t.status === 'approved').length;
+      const pendingCount = tasks.filter(t => t.status === 'pending').length;
+      const todoCount = tasks.filter(t => t.status === 'todo').length;
+      const penalizedCount = tasks.filter(t => t.status === 'penalized').length;
+
+      const pct = totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
+      if (progressBar) progressBar.style.width = `${pct}%`;
+
+      if (progressText) {
+        if (totalCount === 0) {
+          progressText.innerText = "No tasks today";
+        } else if (pendingCount > 0) {
+          progressText.innerText = `${approvedCount} of ${totalCount} completed (${pendingCount} under review)`;
+        } else {
+          progressText.innerText = `${approvedCount} of ${totalCount} tasks completed (${pct}%)`;
+        }
+      }
+
+      const totalPotential = tasks.reduce((sum, t) => sum + (Number(t.reward) || 0), 0);
+      const earnedReward = tasks.filter(t => t.status === 'approved').reduce((sum, t) => sum + (Number(t.reward) || 0), 0);
+      if (potentialRewardSpan) {
+        if (totalPotential > 0) {
+          potentialRewardSpan.innerText = `Earned: +${activeCurrency}${earnedReward} / +${activeCurrency}${totalPotential}`;
+        } else {
+          potentialRewardSpan.innerText = `All habits on track`;
+        }
+      }
+
+      // Daily Bonus notice
+      if (bonusNotice) {
+        const bonusTask = tasks.find(t => Number(t.dailyBonus) > 0);
+        if (bonusTask && Number(bonusTask.dailyBonus) > 0) {
+          bonusNotice.style.display = 'block';
+          if (approvedCount === totalCount && totalCount > 0) {
+            bonusNotice.innerHTML = `🌟 <strong>100% Complete!</strong> Daily bonus of ${activeCurrency}${bonusTask.dailyBonus} earned or ready for parent award! 🎉`;
+          } else {
+            bonusNotice.innerHTML = `🌟 <strong>Daily Completion Bonus:</strong> Finish all ${totalCount} tasks today to unlock a +${activeCurrency}${bonusTask.dailyBonus} bonus!`;
+          }
+        } else {
+          bonusNotice.style.display = 'none';
+        }
+      }
+
+      // Home Dashboard Spotlight
+      if (homeSpotlight) {
+        if (totalCount === 0) {
+          homeSpotlight.style.display = 'none';
+        } else {
+          homeSpotlight.style.display = 'block';
+          if (homeSummary) {
+            homeSummary.innerText = `${approvedCount} of ${totalCount} tasks done (${pct}%)`;
+          }
+          if (homeNextTask) {
+            const nextTodo = tasks.find(t => t.status === 'todo');
+            const nextPending = tasks.find(t => t.status === 'pending');
+            if (nextTodo) {
+              homeNextTask.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(6,182,212,0.08); padding:8px 10px; border-radius:10px; margin-top:4px;">
+                  <div>
+                    <div style="font-size:0.72rem; color:#38bdf8; font-weight:700;">⏰ ${formatTimeRange(nextTodo.startTime, nextTodo.endTime)}</div>
+                    <div style="font-weight:800; font-size:0.88rem; color:#fff;">${escapeHtml(nextTodo.title)}</div>
+                  </div>
+                  <button class="btn-mark-done" style="padding:6px 10px; font-size:0.75rem;" onclick="markPlannerTaskDone('${nextTodo.id}', '${escapeHtml(nextTodo.title)}')">✓ Done</button>
+                </div>
+              `;
+            } else if (nextPending) {
+              homeNextTask.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(245,158,11,0.08); padding:8px 10px; border-radius:10px; margin-top:4px;">
+                  <div>
+                    <div style="font-size:0.72rem; color:#fbbf24; font-weight:700;">⏳ In Review</div>
+                    <div style="font-weight:800; font-size:0.88rem; color:#fff;">${escapeHtml(nextPending.title)}</div>
+                  </div>
+                  <span class="btn-waiting-review" style="font-size:0.72rem; padding:4px 8px;">Waiting</span>
+                </div>
+              `;
+            } else {
+              homeNextTask.innerHTML = `
+                <div style="background:rgba(16,185,129,0.1); border-radius:10px; padding:8px 10px; font-size:0.82rem; color:#34d399; font-weight:700;">
+                  🎉 All ${totalCount} routine tasks completed for today! Awesome job!
+                </div>
+              `;
+            }
+          }
+        }
+      }
+
+      // Render timeline list
+      if (totalCount === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:35px 20px; color:var(--text-muted); background:rgba(15,23,42,0.4); border-radius:14px; border:1px dashed var(--card-border);">
+            <div style="font-size:2.2rem; margin-bottom:6px;">🌴</div>
+            <strong style="color:var(--text-main); font-size:0.95rem;">No tasks scheduled for today!</strong>
+            <p style="margin:6px 0 0; font-size:0.82rem;">Enjoy your day or head to the Actions tab to claim extra chores!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = tasks.map(task => {
+        const timeBadge = formatTimeRange(task.startTime, task.endTime);
+        const rewardText = Number(task.reward) > 0 ? `<span class="task-reward-tag">+${activeCurrency}${task.reward}</span>` : '';
+        const penaltyText = Number(task.penalty) > 0 ? `<span class="task-penalty-tag">-${activeCurrency}${task.penalty} if missed</span>` : '';
+
+        let actionHtml = '';
+        if (task.status === 'todo') {
+          actionHtml = `<button class="btn-mark-done" onclick="markPlannerTaskDone('${task.id}', '${escapeHtml(task.title)}')">✓ Mark Done</button>`;
+        } else if (task.status === 'pending') {
+          actionHtml = `
+            <div style="text-align:right;">
+              <span class="btn-waiting-review">⏳ In Review</span>
+              <button onclick="unmarkPlannerTask('${task.id}')" style="display:block; background:none; border:none; color:var(--text-muted); font-size:0.68rem; margin-top:4px; text-decoration:underline; cursor:pointer; text-align:right; width:100%;">Undo</button>
+            </div>
+          `;
+        } else if (task.status === 'approved') {
+          actionHtml = `<span class="btn-task-approved">✅ Approved (+${activeCurrency}${task.reward || 0})</span>`;
+        } else if (task.status === 'penalized') {
+          actionHtml = `<span class="btn-task-penalized">⚠️ Penalized (-${activeCurrency}${task.penalty || 0})</span>`;
+        }
+
+        const noteHtml = task.childNote ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; font-style:italic;">Your note: "${escapeHtml(task.childNote)}"</div>` : '';
+        const parentNoteHtml = task.parentNote ? `<div style="font-size:0.75rem; color:#f87171; margin-top:4px;">Parent note: "${escapeHtml(task.parentNote)}"</div>` : '';
+
+        return `
+          <div class="planner-task-item status-${task.status}">
+            <div style="flex:1; min-width:0;">
+              <div class="task-time-pill">⏰ ${timeBadge}</div>
+              <div class="task-title">${escapeHtml(task.title)}</div>
+              <div style="margin-top:2px;">
+                ${rewardText}
+                ${penaltyText}
+              </div>
+              ${noteHtml}
+              ${parentNoteHtml}
+            </div>
+            <div style="margin-left:8px; flex-shrink:0;">
+              ${actionHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function markPlannerTaskDone(taskId, taskTitle) {
+      if (!taskId) return;
+      const note = prompt(`Mark "${taskTitle || 'Task'}" as completed?\nOptional note for parent:`, "");
+      if (note === null) return;
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('planner_tasks').doc(taskId).update({
+          status: 'pending',
+          claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          childNote: (note || '').trim()
+        });
+        playChimeSound();
+        confetti({ particleCount: 60, spread: 60 });
+        alert("🎉 Awesome! Task submitted for your parent to review.");
+      } catch (err) {
+        alert("Could not mark task done: " + err.message);
+      }
+    }
+
+    async function unmarkPlannerTask(taskId) {
+      if (!confirm("Cancel submission and return this task to to-do?")) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('planner_tasks').doc(taskId).update({
+          status: 'todo',
+          childNote: ''
+        });
+      } catch (err) {
+        alert("Could not update task: " + err.message);
+      }
+    }
+
     function logout() {
+      if (uPlannerUnsub) {
+        uPlannerUnsub();
+        uPlannerUnsub = null;
+      }
       sessionStorage.removeItem('child_session');
       sessionStorage.removeItem('child_auth_method');
       auth.signOut();

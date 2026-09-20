@@ -57,6 +57,15 @@
     .badge-transfer { background: rgba(6,182,212,0.2); color: #67e8f9; }
     .badge-owner { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .badge-linked { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-todo { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+    .badge-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-approved { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-penalized { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .time-slot-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(99, 102, 241, 0.15); color: #a5b4fc; font-size: 0.75rem; font-weight: 700; }
+    .routine-row { display: grid; grid-template-columns: 110px 110px 1.5fr 100px 100px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    @media (max-width: 650px) {
+      .routine-row { grid-template-columns: 1fr 1fr; gap: 6px; background: rgba(15,23,42,0.4); padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+    }
   </style>
   <script src="config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
@@ -85,6 +94,7 @@
     <div id="adminMain" style="display:none;">
       <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('tab-overview', this)">📊 Overview</button>
+        <button class="tab-btn" onclick="switchTab('tab-planner', this)">📋 Planner & Routines</button>
         <button class="tab-btn" onclick="switchTab('tab-chores', this)">🧹 Chores & Approvals</button>
         <button class="tab-btn" onclick="switchTab('tab-behavior', this)">⭐ Rules & Actions</button>
         <button class="tab-btn" onclick="switchTab('tab-schedules', this)">📅 Schedules</button>
@@ -98,6 +108,10 @@
           <div class="stat-box" style="border-top: 3px solid var(--primary);">
             <div class="stat-title">Total Owed to Children</div>
             <div class="stat-value" id="statTotalOwed" style="color:#818cf8;">Rs. 0</div>
+          </div>
+          <div class="stat-box" style="border-top: 3px solid var(--cyan);">
+            <div class="stat-title">Pending Plan Tasks</div>
+            <div class="stat-value" id="statPlannerPendingCount" style="color:#38bdf8;">0</div>
           </div>
           <div class="stat-box" style="border-top: 3px solid var(--warning);">
             <div class="stat-title">Pending Chores</div>
@@ -118,6 +132,131 @@
           <table>
             <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th><th>Action</th></tr></thead>
             <tbody id="transactionsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: PLANNER & ROUTINES -->
+      <div id="tab-planner" class="tab-pane">
+        <!-- 1. PENDING APPROVALS QUEUE -->
+        <div class="card" style="border-left: 4px solid var(--cyan);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <h3 style="margin:0;">⏳ Pending Planner Approvals</h3>
+            <span id="pendingPlannerBadge" class="badge badge-todo">0 Pending</span>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Kids have marked these daily routine tasks as done. Review and approve rewards or apply penalties.</p>
+          <table>
+            <thead><tr><th>Date & Time</th><th>Child</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Actions</th></tr></thead>
+            <tbody id="pendingPlannerTable"></tbody>
+          </table>
+        </div>
+
+        <!-- 2. DAILY COMPLIANCE & PROGRESS REPORT -->
+        <div class="card" style="border-left: 4px solid var(--primary);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            <div>
+              <h3 style="margin:0;">📊 Daily Compliance Report</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin:2px 0 0;">Check which tasks were completed by each kid on any given day.</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <button class="btn btn-gray" type="button" style="padding:6px 10px; font-size:0.75rem;" onclick="shiftReportDate(-1)">◀ Yesterday</button>
+              <input type="date" id="reportDatePicker" style="padding:6px 10px; width:auto; font-size:0.82rem;" onchange="changeReportDate(this.value)">
+              <button class="btn btn-gray" type="button" style="padding:6px 10px; font-size:0.75rem;" onclick="setReportDateToday()">Today</button>
+              <button class="btn btn-gray" type="button" style="padding:6px 10px; font-size:0.75rem;" onclick="shiftReportDate(1)">Tomorrow ▶</button>
+            </div>
+          </div>
+
+          <div id="dailyReportSummaryCards" class="stats-grid" style="margin-bottom:16px;"></div>
+          <div id="dailyReportChildrenContainer"></div>
+        </div>
+
+        <!-- 3. QUICK DISPATCH ONE-OFF TASK FOR TODAY -->
+        <div class="card">
+          <h3>⚡ Quick Add Task for Selected Date</h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Need to add a one-time chore or appointment for today? Add it directly here.</p>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+            <div class="form-group">
+              <label>Assign To</label>
+              <select id="quickTaskChildSelect"></select>
+            </div>
+            <div class="form-group">
+              <label>Task Title</label>
+              <input type="text" id="quickTaskTitle" placeholder="e.g. Clean room / Quran class">
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="quickTaskStart" value="16:00">
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="quickTaskEnd" value="17:00">
+            </div>
+            <div class="form-group">
+              <label>Reward (<span class="currencySymbol">Rs. </span>)</label>
+              <input type="number" id="quickTaskReward" value="20" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label>Penalty (<span class="currencySymbol">Rs. </span>)</label>
+              <input type="number" id="quickTaskPenalty" value="0" placeholder="0">
+            </div>
+          </div>
+          <button class="btn btn-blue" onclick="dispatchQuickPlannerTask()">+ Add Task to Date</button>
+        </div>
+
+        <!-- 4. RECURRING ROUTINE BUILDER -->
+        <div class="card">
+          <h3>🛠️ Create Recurring Routine Schedule</h3>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Build repeating weekly plans (e.g. Quran class, dishes, homework, bedtime) that auto-generate every day.</p>
+          
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+            <div class="form-group">
+              <label>Routine Title</label>
+              <input type="text" id="routineTitle" placeholder="e.g. Weekday School Schedule">
+            </div>
+            <div class="form-group">
+              <label>Target Kid(s)</label>
+              <select id="routineTargetChild">
+                <option value="all">🌟 All Children</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>100% Daily Completion Bonus (<span class="currencySymbol">Rs. </span>)</label>
+              <input type="number" id="routineDailyBonus" placeholder="0 (Optional bonus if all tasks done)" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Active Days of Week</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;" id="routineDaysContainer">
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Mon" checked style="width:auto;"> Mon</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Tue" checked style="width:auto;"> Tue</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Wed" checked style="width:auto;"> Wed</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Thu" checked style="width:auto;"> Thu</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Fri" checked style="width:auto;"> Fri</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Sat" style="width:auto;"> Sat</label>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; text-transform:none; cursor:pointer; background:rgba(255,255,255,0.06); padding:6px 12px; border-radius:8px;"><input type="checkbox" name="routineDay" value="Sun" style="width:auto;"> Sun</label>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong style="font-size:0.9rem;">Time Slots & Tasks in Routine</strong>
+              <button class="btn btn-gray" type="button" style="padding:4px 10px; font-size:0.75rem;" onclick="addRoutineItemRow()">+ Add Task Slot</button>
+            </div>
+            <div id="routineItemsTable"></div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <button class="btn btn-green" onclick="savePlannerRoutine()">💾 Save Routine Schedule</button>
+          </div>
+        </div>
+
+        <!-- 5. ACTIVE ROUTINE SCHEDULES LIST -->
+        <div class="card">
+          <h3>📑 Active Routine Templates</h3>
+          <table>
+            <thead><tr><th>Title</th><th>Target</th><th>Days</th><th>Tasks</th><th>Bonus</th><th>Actions</th></tr></thead>
+            <tbody id="routineTemplatesTable"></tbody>
           </table>
         </div>
       </div>
@@ -597,8 +736,13 @@
         cachedMembersSnap = [];
         const actSelect = document.getElementById('actionChildSelect');
         const schedSelect = document.getElementById('schedTargetSelect');
+        const quickChildSelect = document.getElementById('quickTaskChildSelect');
+        const routineChildSelect = document.getElementById('routineTargetChild');
+
         actSelect.innerHTML = '';
         schedSelect.innerHTML = '<option value="all">All Children</option>';
+        if (quickChildSelect) quickChildSelect.innerHTML = '<option value="all">🌟 All Children</option>';
+        if (routineChildSelect) routineChildSelect.innerHTML = '<option value="all">🌟 All Children</option>';
 
         snap.forEach(doc => {
           const u = doc.data();
@@ -607,11 +751,14 @@
             cachedChildren.push({ id: doc.id, ...u });
             actSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
             schedSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+            if (quickChildSelect) quickChildSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
+            if (routineChildSelect) routineChildSelect.innerHTML += `<option value="${u.email}">${u.name}</option>`;
           }
         });
         window._cachedMembers = cachedMembersSnap;
         refreshMembersTable();
         calculateBalances();
+        initDailyPlannerReport();
       });
       unsubscribers.push(u3);
 
@@ -701,6 +848,87 @@
         });
       });
       unsubscribers.push(u8);
+
+      const uPlannerPending = famRef.collection('planner_tasks')
+        .where('status', '==', 'pending')
+        .onSnapshot(snap => {
+          const pTable = document.getElementById('pendingPlannerTable');
+          const pBadge = document.getElementById('pendingPlannerBadge');
+          const pStat = document.getElementById('statPlannerPendingCount');
+          if (pBadge) pBadge.innerText = `${snap.size} Pending`;
+          if (pStat) pStat.innerText = snap.size;
+          if (pTable) {
+            pTable.innerHTML = '';
+            if (snap.empty) {
+              pTable.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted); text-align:center; padding:16px;">No pending planner approvals. All clear!</td></tr>';
+            } else {
+              snap.forEach(doc => {
+                const t = doc.data();
+                const safeTitle = (t.title || '').replace(/'/g, "\\'");
+                const safeName = (t.childName || t.childEmail || '').replace(/'/g, "\\'");
+                pTable.innerHTML += `
+                  <tr>
+                    <td>
+                      <div>${t.date || ''}</div>
+                      <span class="time-slot-pill">⏰ ${t.timeRange || (t.startTime + ' - ' + t.endTime)}</span>
+                    </td>
+                    <td><strong>${t.childName || t.childEmail}</strong></td>
+                    <td>
+                      <strong>${t.title}</strong>
+                      ${t.childNote ? `<div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Note: "${t.childNote}"</div>` : ''}
+                    </td>
+                    <td style="color:var(--success); font-weight:800;">+${activeCurrency}${t.reward || 0}</td>
+                    <td style="color:var(--danger); font-weight:800;">-${activeCurrency}${t.penalty || 0}</td>
+                    <td>
+                      <button class="btn btn-green" style="padding:4px 8px; font-size:0.75rem;" onclick="approvePlannerTask('${doc.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.reward || 0})">✓ Approve</button>
+                      <button class="btn btn-gray" style="padding:4px 8px; font-size:0.75rem;" onclick="rejectPlannerTask('${doc.id}')">✕ Redo</button>
+                      <button class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="penalizePlannerTask('${doc.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.penalty || 0})">🛑 Penalize</button>
+                    </td>
+                  </tr>
+                `;
+              });
+            }
+          }
+        });
+      unsubscribers.push(uPlannerPending);
+
+      const uPlannerTemplates = famRef.collection('planner_templates')
+        .onSnapshot(snap => {
+          const tTable = document.getElementById('routineTemplatesTable');
+          if (tTable) {
+            tTable.innerHTML = '';
+            if (snap.empty) {
+              tTable.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted); text-align:center; padding:16px;">No recurring routines created yet. Use the builder above to set one up!</td></tr>';
+            } else {
+              snap.forEach(doc => {
+                const tmpl = doc.data();
+                const daysStr = (tmpl.days || []).join(', ');
+                const bonusStr = tmpl.dailyBonus ? `+${activeCurrency}${tmpl.dailyBonus}` : '—';
+                const targetStr = tmpl.assignedTo === 'all' ? 'All Kids' : (cachedChildren.find(c => c.email === tmpl.assignedTo)?.name || tmpl.assignedTo);
+                
+                let itemsSummary = '<div style="font-size:0.75rem; line-height:1.5;">';
+                (tmpl.items || []).forEach(it => {
+                  itemsSummary += `• <strong>${formatTimeRange(it.startTime, it.endTime)}</strong>: ${it.title} (+${activeCurrency}${it.reward || 0})<br>`;
+                });
+                itemsSummary += '</div>';
+
+                tTable.innerHTML += `
+                  <tr>
+                    <td><strong>${tmpl.title}</strong></td>
+                    <td><span class="badge badge-linked">${targetStr}</span></td>
+                    <td><span style="font-size:0.8rem;">${daysStr}</span></td>
+                    <td style="max-width:320px;">${itemsSummary}</td>
+                    <td style="color:var(--success); font-weight:800;">${bonusStr}</td>
+                    <td>
+                      <button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteDoc('planner_templates', '${doc.id}')">✕</button>
+                    </td>
+                  </tr>
+                `;
+              });
+            }
+          }
+        });
+      unsubscribers.push(uPlannerTemplates);
     }
 
     function refreshMembersTable() {
@@ -1230,6 +1458,555 @@
       await batch.commit();
       alert("AI Settings securely updated in private vault!");
     }
+
+    // =========================================================================
+    // PLANNER & ROUTINES SYSTEM
+    // =========================================================================
+    let currentReportDate = new Date().toISOString().split('T')[0];
+    let uDailyReportUnsub = null;
+    let routineSlotCounter = 0;
+
+    function formatTime12Hour(timeStr) {
+      if (!timeStr) return '';
+      const parts = timeStr.split(':');
+      let hour = parseInt(parts[0], 10);
+      const min = parts[1] || '00';
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12 || 12;
+      return `${hour}:${min} ${ampm}`;
+    }
+
+    function formatTimeRange(start, end) {
+      if (!start) return '';
+      if (!end) return formatTime12Hour(start);
+      return `${formatTime12Hour(start)} – ${formatTime12Hour(end)}`;
+    }
+
+    function initDailyPlannerReport() {
+      const picker = document.getElementById('reportDatePicker');
+      if (picker && !picker.value) picker.value = currentReportDate;
+      if (familyId && cachedChildren && cachedChildren.length > 0) {
+        ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren).then(() => {
+          loadDailyPlannerReport(currentReportDate);
+        });
+      } else {
+        loadDailyPlannerReport(currentReportDate);
+      }
+    }
+
+    function changeReportDate(newDate) {
+      if (!newDate) return;
+      currentReportDate = newDate;
+      if (familyId && cachedChildren && cachedChildren.length > 0) {
+        ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren).then(() => {
+          loadDailyPlannerReport(currentReportDate);
+        });
+      } else {
+        loadDailyPlannerReport(currentReportDate);
+      }
+    }
+
+    function shiftReportDate(days) {
+      const parts = currentReportDate.split('-');
+      const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      dt.setDate(dt.getDate() + days);
+      const yr = dt.getFullYear();
+      const mo = String(dt.getMonth() + 1).padStart(2, '0');
+      const da = String(dt.getDate()).padStart(2, '0');
+      currentReportDate = `${yr}-${mo}-${da}`;
+      const picker = document.getElementById('reportDatePicker');
+      if (picker) picker.value = currentReportDate;
+      changeReportDate(currentReportDate);
+    }
+
+    function setReportDateToday() {
+      currentReportDate = new Date().toISOString().split('T')[0];
+      const picker = document.getElementById('reportDatePicker');
+      if (picker) picker.value = currentReportDate;
+      changeReportDate(currentReportDate);
+    }
+
+    function loadDailyPlannerReport(dateStr) {
+      if (!familyId || !dateStr) return;
+      if (uDailyReportUnsub) {
+        uDailyReportUnsub();
+        uDailyReportUnsub = null;
+      }
+      const famRef = db.collection('families').doc(familyId);
+      uDailyReportUnsub = famRef.collection('planner_tasks')
+        .where('date', '==', dateStr)
+        .onSnapshot(snap => {
+          renderDailyReport(snap);
+        });
+    }
+
+    function renderDailyReport(snap) {
+      const summaryCards = document.getElementById('dailyReportSummaryCards');
+      const childrenContainer = document.getElementById('dailyReportChildrenContainer');
+      if (!summaryCards || !childrenContainer) return;
+
+      const allTasks = [];
+      snap.forEach(d => allTasks.push({ id: d.id, ...d.data() }));
+
+      // Sort tasks by startTime
+      allTasks.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+      const totalTasks = allTasks.length;
+      const approvedTasks = allTasks.filter(t => t.status === 'approved').length;
+      const pendingTasks = allTasks.filter(t => t.status === 'pending').length;
+      const penalizedTasks = allTasks.filter(t => t.status === 'penalized').length;
+      const todoTasks = allTasks.filter(t => t.status === 'todo').length;
+
+      const completionPct = totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 0;
+
+      summaryCards.innerHTML = `
+        <div class="stat-box" style="border-top: 3px solid var(--primary);">
+          <div class="stat-title">Overall Compliance</div>
+          <div class="stat-value" style="color:#818cf8;">${completionPct}%</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">${approvedTasks} of ${totalTasks} tasks done</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--cyan);">
+          <div class="stat-title">Pending Review</div>
+          <div class="stat-value" style="color:#38bdf8;">${pendingTasks}</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--warning);">
+          <div class="stat-title">To-Do Remaining</div>
+          <div class="stat-value" style="color:#fbbf24;">${todoTasks}</div>
+        </div>
+        <div class="stat-box" style="border-top: 3px solid var(--danger);">
+          <div class="stat-title">Penalized / Missed</div>
+          <div class="stat-value" style="color:#f87171;">${penalizedTasks}</div>
+        </div>
+      `;
+
+      if (totalTasks === 0) {
+        childrenContainer.innerHTML = `
+          <div style="text-align:center; padding:30px 20px; color:var(--text-muted); background:rgba(15,23,42,0.4); border-radius:14px; border:1px dashed var(--card-border);">
+            <div style="font-size:2.2rem; margin-bottom:6px;">📅</div>
+            <strong>No tasks scheduled for ${currentReportDate}</strong>
+            <p style="margin:4px 0 14px; font-size:0.85rem;">You can generate tasks from active routines or use the Quick Add form above.</p>
+            <button class="btn btn-blue" type="button" onclick="ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren).then(() => loadDailyPlannerReport(currentReportDate))">⚡ Generate from Routines</button>
+          </div>
+        `;
+        return;
+      }
+
+      let childHtml = '';
+
+      cachedChildren.forEach(child => {
+        const cEmail = child.email.toLowerCase();
+        const cTasks = allTasks.filter(t => t.childEmail === cEmail);
+        const cTotal = cTasks.length;
+        if (cTotal === 0) return;
+
+        const cDone = cTasks.filter(t => t.status === 'approved').length;
+        const cPending = cTasks.filter(t => t.status === 'pending').length;
+        const cPenalized = cTasks.filter(t => t.status === 'penalized').length;
+        const cPct = Math.round((cDone / cTotal) * 100);
+
+        let earnedToday = 0;
+        let penalizedToday = 0;
+        cTasks.forEach(t => {
+          if (t.status === 'approved') earnedToday += Number(t.rewardApplied || t.reward || 0);
+          if (t.status === 'penalized') penalizedToday += Number(t.penaltyApplied || 0);
+        });
+
+        const is100Done = (cDone === cTotal && cTotal > 0);
+
+        let taskRows = '';
+        cTasks.forEach(t => {
+          let badgeHtml = '';
+          if (t.status === 'approved') badgeHtml = `<span class="badge badge-approved">✓ Approved (+${activeCurrency}${t.rewardApplied || t.reward || 0})</span>`;
+          else if (t.status === 'pending') badgeHtml = `<span class="badge badge-pending">⏳ Needs Approval</span>`;
+          else if (t.status === 'penalized') badgeHtml = `<span class="badge badge-penalized">🛑 Penalized (-${activeCurrency}${t.penaltyApplied || 0})</span>`;
+          else badgeHtml = `<span class="badge badge-todo">⚪ To-Do</span>`;
+
+          const safeTitle = (t.title || '').replace(/'/g, "\\'");
+          const safeName = (child.name || '').replace(/'/g, "\\'");
+
+          let actionButtons = '';
+          if (t.status === 'pending') {
+            actionButtons = `
+              <button class="btn btn-green" style="padding:3px 7px; font-size:0.72rem;" onclick="approvePlannerTask('${t.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.reward || 0})">✓ Approve</button>
+              <button class="btn btn-gray" style="padding:3px 7px; font-size:0.72rem;" onclick="rejectPlannerTask('${t.id}')">✕ Redo</button>
+              <button class="btn btn-red" style="padding:3px 7px; font-size:0.72rem;" onclick="penalizePlannerTask('${t.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.penalty || 0})">🛑 Penalize</button>
+            `;
+          } else if (t.status === 'todo') {
+            actionButtons = `
+              <button class="btn btn-red" style="padding:3px 7px; font-size:0.72rem;" onclick="penalizePlannerTask('${t.id}', '${t.childEmail}', '${safeName}', '${safeTitle}', ${t.penalty || 0})">🛑 Penalize</button>
+            `;
+          } else if (t.status === 'approved') {
+            actionButtons = `<span style="color:var(--success); font-size:0.78rem; font-weight:700;">Credited</span>`;
+          } else if (t.status === 'penalized') {
+            actionButtons = `<span style="color:var(--danger); font-size:0.78rem; font-weight:700;">Deducted</span>`;
+          }
+
+          taskRows += `
+            <tr>
+              <td><span class="time-slot-pill">⏰ ${t.timeRange || (t.startTime + ' - ' + t.endTime)}</span></td>
+              <td>
+                <strong>${t.title}</strong>
+                ${t.childNote ? `<div style="font-size:0.72rem; color:var(--text-muted); font-style:italic;">"${t.childNote}"</div>` : ''}
+              </td>
+              <td>${t.reward ? `<span style="color:var(--success); font-weight:700;">+${activeCurrency}${t.reward}</span>` : '—'}</td>
+              <td>${t.penalty ? `<span style="color:var(--danger); font-weight:700;">-${activeCurrency}${t.penalty}</span>` : '—'}</td>
+              <td>${badgeHtml}</td>
+              <td>${actionButtons}</td>
+            </tr>
+          `;
+        });
+
+        childHtml += `
+          <div class="card" style="background:rgba(15,23,42,0.6); border:1px solid var(--card-border); margin-bottom:14px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+              <div>
+                <strong style="font-size:1.1rem; color:#fff;">${child.name}</strong>
+                <span style="font-size:0.78rem; color:var(--text-muted); margin-left:8px;">${cDone} of ${cTotal} completed</span>
+                ${is100Done ? `<span class="badge badge-reward" style="margin-left:8px;">🏆 100% Day Completed!</span>` : ''}
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.8rem; color:var(--success); font-weight:800;">Earned: +${activeCurrency}${earnedToday}</span>
+                ${penalizedToday > 0 ? `<span style="font-size:0.8rem; color:var(--danger); font-weight:800;">Penalties: -${activeCurrency}${penalizedToday}</span>` : ''}
+                ${is100Done ? `<button class="btn btn-green" style="padding:4px 10px; font-size:0.75rem;" onclick="awardDailyBonus('${child.email}', '${child.name.replace(/'/g, "\\'")}', 50, '${currentReportDate}')">🎁 Award Day Bonus</button>` : ''}
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.08); border-radius:9999px; height:8px; overflow:hidden; margin-bottom:12px;">
+              <div style="background:linear-gradient(90deg, #10b981 0%, #06b6d4 100%); height:100%; width:${cPct}%; border-radius:9999px; transition:width 0.3s ease;"></div>
+            </div>
+
+            <table>
+              <thead><tr><th>Time</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>${taskRows}</tbody>
+            </table>
+          </div>
+        `;
+      });
+
+      childrenContainer.innerHTML = childHtml || `<div style="color:var(--text-muted); padding:16px;">No children tasks for this date.</div>`;
+    }
+
+    function addRoutineItemRow(defaultData = null) {
+      const container = document.getElementById('routineItemsTable');
+      if (!container) return;
+      const id = 'slot_' + (++routineSlotCounter);
+      const startTime = defaultData?.startTime || '16:00';
+      const endTime = defaultData?.endTime || '16:30';
+      const title = defaultData?.title || '';
+      const reward = defaultData?.reward !== undefined ? defaultData.reward : 20;
+      const penalty = defaultData?.penalty !== undefined ? defaultData.penalty : 0;
+
+      const row = document.createElement('div');
+      row.className = 'routine-row';
+      row.id = id;
+      row.innerHTML = `
+        <div><input type="time" class="slot-start" value="${startTime}" title="Start Time"></div>
+        <div><input type="time" class="slot-end" value="${endTime}" title="End Time"></div>
+        <div><input type="text" class="slot-title" value="${title}" placeholder="e.g. Quran class / Dishes"></div>
+        <div><input type="number" class="slot-reward" value="${reward}" placeholder="Reward"></div>
+        <div><input type="number" class="slot-penalty" value="${penalty}" placeholder="Penalty"></div>
+        <div><button type="button" class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="document.getElementById('${id}').remove()">✕</button></div>
+      `;
+      container.appendChild(row);
+    }
+
+    async function savePlannerRoutine() {
+      if (!familyId) return alert("Family ID missing");
+      const title = document.getElementById('routineTitle').value.trim();
+      if (!title) return alert("Please enter a routine title (e.g. Weekday School Schedule).");
+
+      const assignedTo = document.getElementById('routineTargetChild').value;
+      const dailyBonus = Number(document.getElementById('routineDailyBonus').value) || 0;
+
+      const dayCheckboxes = document.querySelectorAll('input[name="routineDay"]:checked');
+      const days = Array.from(dayCheckboxes).map(cb => cb.value);
+      if (days.length === 0) return alert("Please select at least one active day of the week.");
+
+      const rows = document.querySelectorAll('#routineItemsTable .routine-row');
+      if (rows.length === 0) return alert("Please add at least one task slot to the routine.");
+
+      const items = [];
+      let hasError = false;
+      rows.forEach((row, idx) => {
+        const sTime = row.querySelector('.slot-start').value;
+        const eTime = row.querySelector('.slot-end').value;
+        const tTitle = row.querySelector('.slot-title').value.trim();
+        const rReward = Number(row.querySelector('.slot-reward').value) || 0;
+        const pPenalty = Number(row.querySelector('.slot-penalty').value) || 0;
+
+        if (!tTitle) {
+          hasError = true;
+          return;
+        }
+        items.push({
+          id: `task_${Date.now()}_${idx}`,
+          startTime: sTime || '16:00',
+          endTime: eTime || '17:00',
+          title: tTitle,
+          reward: rReward,
+          penalty: pPenalty
+        });
+      });
+
+      if (hasError || items.length === 0) {
+        return alert("Please enter a title for every task slot row.");
+      }
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('planner_templates').add({
+          title,
+          assignedTo,
+          days,
+          dailyBonus,
+          items,
+          status: 'active',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert("Routine Schedule successfully created!");
+        document.getElementById('routineTitle').value = '';
+        await ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren);
+        loadDailyPlannerReport(currentReportDate);
+      } catch (err) {
+        alert("Error saving routine: " + err.message);
+      }
+    }
+
+    async function dispatchQuickPlannerTask() {
+      if (!familyId) return alert("Family ID missing");
+      const childEmail = document.getElementById('quickTaskChildSelect').value;
+      const title = document.getElementById('quickTaskTitle').value.trim();
+      const startTime = document.getElementById('quickTaskStart').value;
+      const endTime = document.getElementById('quickTaskEnd').value;
+      const reward = Number(document.getElementById('quickTaskReward').value) || 0;
+      const penalty = Number(document.getElementById('quickTaskPenalty').value) || 0;
+
+      if (!title) return alert("Please provide a task title.");
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const targetKids = (childEmail === 'all') 
+          ? cachedChildren 
+          : cachedChildren.filter(c => c.email.toLowerCase() === childEmail.toLowerCase());
+
+        if (targetKids.length === 0) return alert("No children found to assign this task to.");
+
+        const batch = db.batch();
+        targetKids.forEach(kid => {
+          const taskRef = famRef.collection('planner_tasks').doc();
+          batch.set(taskRef, {
+            templateId: 'manual',
+            templateTitle: 'Ad-hoc Task',
+            date: currentReportDate,
+            childEmail: kid.email.toLowerCase(),
+            childName: kid.name,
+            title,
+            startTime,
+            endTime,
+            timeRange: formatTimeRange(startTime, endTime),
+            reward,
+            penalty,
+            status: 'todo',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        });
+
+        await batch.commit();
+        alert(`Task "${title}" added for ${currentReportDate}!`);
+        document.getElementById('quickTaskTitle').value = '';
+        loadDailyPlannerReport(currentReportDate);
+      } catch (err) {
+        alert("Error adding task: " + err.message);
+      }
+    }
+
+    async function approvePlannerTask(taskId, email, childName, title, reward) {
+      if (!familyId) return alert("Family ID missing");
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const numReward = Number(reward) || 0;
+        const now = new Date();
+
+        const batch = db.batch();
+        const taskRef = famRef.collection('planner_tasks').doc(taskId);
+        batch.update(taskRef, {
+          status: 'approved',
+          rewardApplied: numReward,
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: activeOwnerEmail
+        });
+
+        if (numReward > 0) {
+          const txRef = famRef.collection('transactions').doc();
+          batch.set(txRef, {
+            email,
+            type: 'Allowance',
+            amount: numReward,
+            desc: `Plan: ${title}`,
+            date: now.toISOString().split('T')[0],
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        await batch.commit();
+      } catch (err) {
+        alert("Error approving task: " + err.message);
+      }
+    }
+
+    async function rejectPlannerTask(taskId) {
+      const reason = prompt("Enter reason for redo / rejection:", "Please complete properly");
+      if (reason === null) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('planner_tasks').doc(taskId).update({
+          status: 'todo',
+          rejectReason: reason,
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (err) {
+        alert("Error resetting task: " + err.message);
+      }
+    }
+
+    async function penalizePlannerTask(taskId, email, childName, title, defaultPenalty) {
+      const penaltyInput = prompt(`Enter penalty amount to deduct from ${childName} for "${title}" (${activeCurrency}):`, defaultPenalty || 10);
+      if (penaltyInput === null) return;
+      const numPenalty = Number(penaltyInput) || 0;
+      if (numPenalty <= 0) return alert("Penalty amount must be greater than 0");
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const now = new Date();
+        const batch = db.batch();
+
+        const taskRef = famRef.collection('planner_tasks').doc(taskId);
+        batch.update(taskRef, {
+          status: 'penalized',
+          penaltyApplied: numPenalty,
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: activeOwnerEmail
+        });
+
+        const txRef = famRef.collection('transactions').doc();
+        batch.set(txRef, {
+          email,
+          type: 'Penalty',
+          amount: -Math.abs(numPenalty),
+          desc: `Penalty (Missed Plan): ${title}`,
+          date: now.toISOString().split('T')[0],
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await batch.commit();
+        alert(`Deducted ${activeCurrency}${numPenalty} penalty from ${childName}.`);
+      } catch (err) {
+        alert("Error applying penalty: " + err.message);
+      }
+    }
+
+    async function awardDailyBonus(childEmail, childName, bonusAmt, dateStr) {
+      const bonus = prompt(`Award full-day completion bonus to ${childName} for ${dateStr} (${activeCurrency}):`, bonusAmt || 50);
+      if (bonus === null) return;
+      const numBonus = Number(bonus) || 0;
+      if (numBonus <= 0) return;
+
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        await famRef.collection('transactions').add({
+          email: childEmail,
+          type: 'Reward',
+          amount: numBonus,
+          desc: `100% Daily Routine Bonus (${dateStr})`,
+          date: dateStr,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert(`Awarded ${activeCurrency}${numBonus} daily bonus to ${childName}!`);
+      } catch (err) {
+        alert("Error awarding bonus: " + err.message);
+      }
+    }
+
+    async function ensureDailyPlannerTasks(db, familyId, dateStr, childList) {
+      if (!familyId || !dateStr || !childList || childList.length === 0) return;
+      try {
+        const famRef = db.collection('families').doc(familyId);
+        const parts = dateStr.split('-');
+        const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const currentDay = dayNames[dt.getDay()];
+
+        const templatesSnap = await famRef.collection('planner_templates').get();
+        if (templatesSnap.empty) return;
+
+        const existingSnap = await famRef.collection('planner_tasks').where('date', '==', dateStr).get();
+        const existingKeySet = new Set();
+        existingSnap.forEach(d => {
+          const t = d.data();
+          existingKeySet.add(`${t.templateId}_${t.itemKey}_${t.childEmail}`);
+        });
+
+        const batch = db.batch();
+        let count = 0;
+
+        templatesSnap.forEach(tDoc => {
+          const tmpl = tDoc.data();
+          if (tmpl.status === 'paused') return;
+          const days = tmpl.days || [];
+          if (!days.includes(currentDay) && !days.includes('daily')) return;
+
+          const targetKids = (tmpl.assignedTo === 'all') 
+            ? childList 
+            : childList.filter(c => c.email.toLowerCase() === tmpl.assignedTo.toLowerCase());
+
+          const items = tmpl.items || [];
+          targetKids.forEach(kid => {
+            items.forEach((item, idx) => {
+              const itemKey = item.id || `item_${idx}`;
+              const key = `${tDoc.id}_${itemKey}_${kid.email.toLowerCase()}`;
+              if (!existingKeySet.has(key)) {
+                const taskRef = famRef.collection('planner_tasks').doc();
+                batch.set(taskRef, {
+                  templateId: tDoc.id,
+                  templateTitle: tmpl.title || 'Daily Routine',
+                  itemKey: itemKey,
+                  date: dateStr,
+                  childEmail: kid.email.toLowerCase(),
+                  childName: kid.name,
+                  title: item.title,
+                  startTime: item.startTime || '09:00',
+                  endTime: item.endTime || '10:00',
+                  timeRange: formatTimeRange(item.startTime, item.endTime),
+                  reward: Number(item.reward) || 0,
+                  penalty: Number(item.penalty) || 0,
+                  dailyBonus: Number(tmpl.dailyBonus) || 0,
+                  status: 'todo',
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                existingKeySet.add(key);
+                count++;
+              }
+            });
+          });
+        });
+
+        if (count > 0) {
+          await batch.commit();
+        }
+      } catch (err) {
+        console.error("ensureDailyPlannerTasks error:", err);
+      }
+    }
+
+    // Initialize starter template rows on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      addRoutineItemRow({ startTime: '16:00', endTime: '16:30', title: 'Quran class', reward: 0, penalty: 0 });
+      addRoutineItemRow({ startTime: '17:00', endTime: '18:00', title: 'Clean dishes', reward: 30, penalty: 10 });
+      addRoutineItemRow({ startTime: '18:00', endTime: '20:00', title: 'Do homework', reward: 20, penalty: 0 });
+      addRoutineItemRow({ startTime: '20:00', endTime: '20:15', title: 'Brush teeth', reward: 10, penalty: 0 });
+      addRoutineItemRow({ startTime: '21:00', endTime: '21:30', title: 'Go to bed', reward: 0, penalty: 0 });
+    });
 
     async function deleteDoc(coll, id) {
       if (confirm("Delete this entry?")) {
