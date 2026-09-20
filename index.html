@@ -5,12 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Family Allowance Hub — The Modern Pocket Money & Chores App</title>
   <meta name="description" content="Automate pocket money, motivate chores with fun bounties, and teach your kids smart saving habits with an interactive AI mentor.">
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('app_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <style>
     :root {
       --primary: #6366f1; --primary-dark: #4f46e5; --accent: #ec4899; --success: #10b981;
       --cyan: #06b6d4; --warning: #f59e0b; --bg: #0b0f19; --card-bg: rgba(30, 41, 59, 0.6);
       --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
     }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+    [data-theme="light"] body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    [data-theme="light"] .glow-1 { background: rgba(99, 102, 241, 0.08); }
+    [data-theme="light"] .glow-2 { background: rgba(236, 72, 153, 0.06); }
+    [data-theme="light"] .logo { color: #0f172a; }
+    [data-theme="light"] .step-box { background: #ffffff; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); border-color: #e2e8f0; }
+    [data-theme="light"] .step-num { color: rgba(15, 23, 42, 0.12); }
+    [data-theme="light"] .card-feature,
+    [data-theme="light"] .review-card,
+    [data-theme="light"] .calc-box {
+      background: #ffffff;
+      box-shadow: 0 4px 25px -4px rgba(0,0,0,0.06);
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .review-text { color: #334155; }
+    [data-theme="light"] .reviewer-info h4 { color: #0f172a; }
+    [data-theme="light"] .modal-box {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+    [data-theme="light"] .btn-ghost {
+      background: rgba(0, 0, 0, 0.04);
+      border-color: #cbd5e1;
+      color: #1e293b;
+    }
+    [data-theme="light"] .btn-ghost:hover { background: rgba(0, 0, 0, 0.08); }
+    [data-theme="light"] .theme-toggle-btn {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .theme-toggle-btn:hover { transform: scale(1.04); }
+    .theme-toggle-btn:active { transform: scale(0.96); }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
     body { background-color: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; }
     
@@ -83,7 +147,8 @@
   <nav>
     <a href="#" class="logo">🐷 Family Allowance Hub</a>
     <div class="nav-actions">
-      <button onclick="handleChildEntry()" class="btn-ghost">Child PiggyBank 🚀</button>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
+      <button onclick="handleChildEntry()" class="btn-ghost" style="border-color: rgba(6, 182, 212, 0.4); color: #38bdf8; background: rgba(6, 182, 212, 0.1); font-weight: 800;">🧒 Open Child PiggyBank ↗</button>
       <a id="parentPortalNavBtn" href="parent.html" class="btn-cta">Parent Portal ↗</a>
     </div>
   </nav>
@@ -97,7 +162,7 @@
     </p>
     <div class="hero-actions">
       <a id="parentHeroBtn" href="parent.html" class="btn-cta" style="padding: 13px 32px; font-size: 1.05rem;">Get Started Free 🚀</a>
-      <button onclick="handleChildEntry()" class="btn-ghost" style="padding: 13px 26px; font-size: 1.05rem;">Open Child PiggyBank 🧒</button>
+      <button onclick="handleChildEntry()" class="btn-ghost" style="padding: 13px 28px; font-size: 1.05rem; border-color: rgba(6, 182, 212, 0.4); color: #38bdf8; background: rgba(6, 182, 212, 0.1); font-weight: 800;">🧒 Open Child PiggyBank ↗</button>
     </div>
   </section>
 
@@ -261,11 +326,19 @@
   <div class="modal-backdrop" id="childModal">
     <div class="modal-box">
       <div style="font-size: 2.6rem; margin-bottom: 6px;">🧒</div>
-      <h3 style="font-size: 1.3rem; font-weight: 900; margin-bottom: 6px;">Open Your PiggyBank</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px;">
+      <h3 style="font-size: 1.3rem; font-weight: 900; margin-bottom: 6px;">Open Child PiggyBank</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px;">
         Sign in with your Google account to automatically locate your family vault:
       </p>
-      <button onclick="childGoogleLogin()" class="btn-cta" style="width: 100%; justify-content: center; background: #fff; color: #0f172a; margin-bottom: 12px;">
+
+      <div id="modalSavedFamilyBox" style="display:none; margin-bottom:14px;">
+        <a id="modalSavedFamilyBtn" href="app.html" class="btn-ghost" style="width: 100%; justify-content: center; border-color: rgba(6,182,212,0.4); color: #38bdf8; background: rgba(6,182,212,0.1); font-weight: 800; text-decoration: none; padding: 11px;">
+          🔑 Continue to Saved Family Vault (PIN Login) →
+        </a>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin:10px 0 6px;">— or sign in with Google —</div>
+      </div>
+
+      <button onclick="childGoogleLogin()" class="btn-cta" style="width: 100%; justify-content: center; background: #fff; color: #0f172a; margin-bottom: 12px; border: 1px solid #cbd5e1;">
         Sign in with Google
       </button>
       <button onclick="closeChildModal()" class="btn-ghost" style="width: 100%; justify-content: center;">
@@ -291,6 +364,22 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('app_theme', next);
+      updateThemeToggleButtons(next);
+    }
+
+    function updateThemeToggleButtons(theme) {
+      const isLight = theme === 'light';
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
+        btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
+      });
+    }
 
     function updateCalc(val) {
       const yearly = Number(val) * 52;
@@ -362,6 +451,8 @@
 
     // Handle any incoming familyId parameters from shared links
     window.addEventListener('DOMContentLoaded', () => {
+      updateThemeToggleButtons(localStorage.getItem('app_theme') || 'dark');
+
       const urlParams = new URLSearchParams(window.location.search);
       let familyId = urlParams.get('familyId');
 
@@ -377,6 +468,13 @@
         document.getElementById('parentHeroBtn').href = `parent.html${query}`;
         document.getElementById('calcParentCta').href = `parent.html${query}`;
         document.getElementById('footerParentLink').href = `parent.html${query}`;
+
+        const sfBox = document.getElementById('modalSavedFamilyBox');
+        const sfBtn = document.getElementById('modalSavedFamilyBtn');
+        if (sfBox && sfBtn) {
+          sfBox.style.display = 'block';
+          sfBtn.href = `app.html${query}`;
+        }
       }
     });
   </script>

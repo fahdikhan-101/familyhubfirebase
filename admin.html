@@ -4,12 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Platform Master Admin — Family Allowance Hub</title>
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('app_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <style>
     :root {
       --primary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b;
       --danger: #ef4444; --cyan: #06b6d4; --bg: #0b0f19; --card-bg: rgba(30, 41, 59, 0.7);
       --card-border: rgba(255, 255, 255, 0.1); --text: #f8fafc; --text-muted: #94a3b8;
     }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+    [data-theme="light"] body {
+      background-color: var(--bg);
+      color: var(--text);
+    }
+    [data-theme="light"] .card,
+    [data-theme="light"] .stat-card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    }
+    [data-theme="light"] input {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    [data-theme="light"] td {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    [data-theme="light"] .btn-gray {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    [data-theme="light"] .theme-toggle-btn {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 7px 13px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .theme-toggle-btn:hover { transform: scale(1.04); }
+    .theme-toggle-btn:active { transform: scale(0.96); }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); margin: 0; padding: 24px; min-height: 100vh; }
     .container { max-width: 1100px; margin: 0 auto; }
@@ -56,7 +113,8 @@
         </div>
         <span style="font-size:0.85rem; color:var(--text-muted);">Family Allowance Hub Infrastructure</span>
       </div>
-      <div style="display:flex; align-items:center; gap:12px;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
         <a href="index.html" class="btn" style="background:rgba(255,255,255,0.06); border:1px solid var(--card-border); color:#cbd5e1; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight:700;">🏠 Home</a>
         <span id="adminEmailBadge" style="font-size:0.85rem; color:var(--text-muted);"></span>
         <button id="authBtn" class="btn btn-gray" onclick="handleAuth()">Sign In</button>
@@ -445,6 +503,26 @@
       alert(`Member ${memberEmail} removed.`);
       auditPlatformStorage();
     }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('app_theme', next);
+      updateThemeToggleButtons(next);
+    }
+
+    function updateThemeToggleButtons(theme) {
+      const isLight = theme === 'light';
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
+        btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateThemeToggleButtons(localStorage.getItem('app_theme') || 'dark');
+    });
   </script>
 </body>
 </html>

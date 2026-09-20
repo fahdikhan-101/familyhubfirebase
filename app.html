@@ -5,12 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>My PiggyBank Hub</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('app_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
   <style>
     :root {
       --primary: #6366f1; --primary-dark: #4f46e5; --accent: #ec4899; --success: #10b981;
       --warning: #f59e0b; --danger: #ef4444; --cyan: #06b6d4; --bg: #0f172a;
       --card-bg: rgba(30, 41, 59, 0.7); --card-border: rgba(255, 255, 255, 0.1);
       --text: #f8fafc; --text-muted: #94a3b8;
+    }
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+    [data-theme="light"] body {
+      background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, var(--bg) 75%);
+      color: var(--text);
+    }
+    [data-theme="light"] .top-bar {
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid #e2e8f0;
+    }
+    [data-theme="light"] .btn-lock {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    [data-theme="light"] .card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .balance-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(236, 72, 153, 0.08) 100%);
+      border-color: #cbd5e1;
+    }
+    [data-theme="light"] .balance-val {
+      color: #1e1b4b;
+      text-shadow: none;
+    }
+    [data-theme="light"] h3 {
+      color: #0f172a;
+    }
+    [data-theme="light"] input,
+    [data-theme="light"] select {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    [data-theme="light"] .bottom-nav {
+      background: rgba(255, 255, 255, 0.95);
+      border-top: 1px solid #e2e8f0;
+    }
+    [data-theme="light"] .goal-card,
+    [data-theme="light"] .kid-stat-box,
+    [data-theme="light"] .planner-task-item {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .task-title,
+    [data-theme="light"] .goal-title {
+      color: #0f172a;
+    }
+    [data-theme="light"] .chip,
+    [data-theme="light"] .slicer {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    [data-theme="light"] .chip.active,
+    [data-theme="light"] .slicer.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+    [data-theme="light"] .tx-item {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    [data-theme="light"] .theme-toggle-btn {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    [data-theme="light"] .ai-response-box {
+      background: #f1f5f9;
+      color: #1e293b;
+      border-color: #cbd5e1;
+    }
+    [data-theme="light"] .ai-coach-card {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .theme-toggle-btn:hover { transform: scale(1.04); }
+    .theme-toggle-btn:active { transform: scale(0.96); }
+
+    .child-preview-chip {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+      border: 1.5px solid rgba(6, 182, 212, 0.4);
+      color: #38bdf8;
+      padding: 8px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      transition: all 0.18s ease;
+      user-select: none;
+    }
+    .child-preview-chip:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.3) 0%, rgba(99, 102, 241, 0.3) 100%);
+      border-color: #38bdf8;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+    }
+    [data-theme="light"] .child-preview-chip {
+      background: #f0f9ff;
+      border-color: #0284c7;
+      color: #0369a1;
+    }
+    [data-theme="light"] .child-preview-chip:hover {
+      background: #e0f2fe;
     }
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 75%); margin: 0; padding: 0; color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
@@ -134,13 +271,21 @@
     <div class="user-profile">
       <div class="user-avatar" id="avatarInitial">H</div>
       <div class="user-details">
-        <span class="user-name" id="childHeaderName">Hero</span>
-        <span class="user-rank" id="childHeaderRank">Novice</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="user-name" id="childHeaderName">Hero</span>
+          <span id="parentPreviewBadge" style="display:none; font-size:0.68rem; background:rgba(6,182,212,0.2); color:#38bdf8; border:1px solid rgba(6,182,212,0.4); padding:1px 6px; border-radius:6px; font-weight:800;">👁️ Parent Preview</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="user-rank" id="childHeaderRank">Novice</span>
+          <select id="siblingSwitcher" onchange="switchSiblingPreview(this.value)" style="display:none; width:auto; padding:2px 8px; font-size:0.72rem; height:24px; border-radius:6px; background:rgba(15,23,42,0.7); border:1px solid var(--cyan); color:#38bdf8; font-weight:700;">
+          </select>
+        </div>
       </div>
     </div>
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <a id="topParentConsoleBtn" href="parent.html" class="btn-lock" style="display: none; text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15);" title="Return to Parent Console">👨‍👧 Parent Console</a>
-      <a id="topHomeBtn" href="index.html" class="btn-lock" style="display: none; text-decoration: none; color: #cbd5e1;" title="Go to Home">🏠 Home</a>
+    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+      <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
+      <a id="topParentConsoleBtn" href="parent.html" class="btn-lock" style="display: none; text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); font-weight:700;" title="Return to Parent Console">👨‍👧 Parent Console</a>
+      <a id="topHomeBtn" href="index.html" class="btn-lock" style="display: none; text-decoration: none; color: #cbd5e1; font-weight:700;" title="Go to Home">🏠 Home</a>
       <button class="btn-lock" onclick="logout()" title="Lock session and return to Home">🔒 Lock</button>
     </div>
   </div>
@@ -156,11 +301,21 @@
       <!-- Primary Child Sign-in (Google OAuth with Option 1 Auto-Discovery) -->
       <button class="btn btn-google" onclick="loginWithGoogle()">Sign in with Google</button>
       
+      <!-- Dedicated Parent Quick Preview Section (shown when in parent preview mode) -->
+      <div id="parentQuickPreviewSection" style="display:none; margin: 18px 0; padding: 14px; background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 14px; text-align: left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <strong style="font-size: 0.85rem; color: #38bdf8;">👁️ Parent Preview Mode</strong>
+          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">No PIN needed</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 10px;">Select any kid to open and inspect their live balance and routine:</p>
+        <div id="parentChildChipsContainer" style="display:flex; gap: 8px; flex-wrap: wrap;"></div>
+      </div>
+
       <div id="pinLoginContainer" style="display:none;">
         <div style="margin: 18px 0 14px; font-size: 0.8rem; color: var(--text-muted);">— or use 4-Digit PIN —</div>
         <div class="form-group">
           <label for="childNameSelect">Hero Name</label>
-          <select id="childNameSelect"><option value="">Loading heroes...</option></select>
+          <select id="childNameSelect" onchange="checkParentAutoPreview()"><option value="">Loading heroes...</option></select>
         </div>
         <div class="form-group" id="pinInputGroup">
           <label for="pinInput">4-Digit Secret PIN</label>
@@ -168,7 +323,7 @@
         </div>
         <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
           <button class="btn btn-blue" onclick="attemptLogin()">✨ Unlock with PIN</button>
-          <button id="parentDirectPreviewBtn" class="btn" style="display: none; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #a5b4fc; font-weight: 700;" onclick="loginAsParentPreview()">👁️ Preview as Parent</button>
+          <button id="parentDirectPreviewBtn" class="btn" style="display: none; background: linear-gradient(135deg, #06b6d4, #6366f1); border: none; color: #fff; font-weight: 800; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);" onclick="loginAsParentPreview()">👁️ Preview Selected Child ↗</button>
         </div>
       </div>
 
@@ -178,8 +333,9 @@
 
       <!-- Quick Navigation on Login Screen -->
       <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-        <a id="loginCardHomeBtn" href="index.html" class="btn-lock" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🏠 Back to Home</a>
-        <a id="loginCardParentBtn" href="parent.html" class="btn-lock" style="text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; gap: 4px;">👨‍👧 Parent Console</a>
+        <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light and dark mode">☀️ Light</button>
+        <a id="loginCardHomeBtn" href="index.html" class="btn-lock" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight:700;">🏠 Back to Home</a>
+        <a id="loginCardParentBtn" href="parent.html" class="btn-lock" style="text-decoration: none; color: #a5b4fc; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; gap: 4px; font-weight:700;">👨‍👧 Parent Console</a>
       </div>
     </div>
 
@@ -388,6 +544,61 @@
     let currentChildTimeframe = 'ALL';
     let todayPlannerTasks = [];
     let uPlannerUnsub = null;
+    let cachedFamilyChildren = [];
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('app_theme', next);
+      updateThemeToggleButtons(next);
+    }
+
+    function updateThemeToggleButtons(theme) {
+      const isLight = theme === 'light';
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.innerHTML = isLight ? '🌙 Dark' : '☀️ Light';
+        btn.setAttribute('title', isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode');
+      });
+    }
+
+    function renderParentQuickPreviewChips() {
+      const previewSec = document.getElementById('parentQuickPreviewSection');
+      const chipsCont = document.getElementById('parentChildChipsContainer');
+      if (!previewSec || !chipsCont) return;
+      if (isParentViewer && cachedFamilyChildren && cachedFamilyChildren.length > 0) {
+        previewSec.style.display = 'block';
+        chipsCont.innerHTML = cachedFamilyChildren.map(c => `
+          <button type="button" class="child-preview-chip" onclick="previewChildDirect('${c.id}', '${c.name.replace(/'/g, "\\'")}', '${c.email}')">
+            <span style="font-size:1.1rem;">🧒</span>
+            <span><strong>${c.name}</strong></span>
+            <span style="font-size:0.72rem; opacity:0.85;">👁️ Preview →</span>
+          </button>
+        `).join('');
+      } else {
+        previewSec.style.display = 'none';
+      }
+    }
+
+    function previewChildDirect(id, name, email) {
+      currentChild = { id, name, email };
+      authMethod = "PARENT_PREVIEW";
+      sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+      sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+      unlockApp();
+    }
+
+    function switchSiblingPreview(childEmail) {
+      if (!isParentViewer || !cachedFamilyChildren) return;
+      const target = cachedFamilyChildren.find(c => (c.email || '').toLowerCase() === childEmail.toLowerCase());
+      if (target) {
+        currentChild = { id: target.id, name: target.name, email: target.email };
+        authMethod = "PARENT_PREVIEW";
+        sessionStorage.setItem('child_session', JSON.stringify(currentChild));
+        sessionStorage.setItem('child_auth_method', "PARENT_PREVIEW");
+        unlockApp();
+      }
+    }
 
     function updateNavigationButtons() {
       const topParentBtn = document.getElementById('topParentConsoleBtn');
@@ -490,16 +701,20 @@
       activeCurrency = activeFamilyDoc.currency || "Rs. ";
       document.querySelectorAll('.currencySymbol').forEach(el => el.innerText = activeCurrency);
 
-      // Populate PIN Hero Select
+      // Populate PIN Hero Select and cached children
+      cachedFamilyChildren = [];
       const usersSnap = await db.collection('families').doc(familyId).collection('users').where('role', '==', 'Child').get();
       const sel = document.getElementById('childNameSelect');
       sel.innerHTML = '<option value="">-- Choose Name --</option>';
       usersSnap.forEach(d => {
+        const cObj = { id: d.id, name: d.data().name, email: d.data().email, pinHash: d.data().pinHash };
+        cachedFamilyChildren.push(cObj);
         sel.innerHTML += `<option value="${d.id}" data-name="${d.data().name}" data-email="${d.data().email}" data-hash="${d.data().pinHash}">${d.data().name}</option>`;
       });
       document.getElementById('pinLoginContainer').style.display = 'block';
       document.getElementById('noFamilyNotice').style.display = 'none';
 
+      renderParentQuickPreviewChips();
       updateNavigationButtons();
 
       // If parent navigated to preview a specific child directly
@@ -519,6 +734,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
+      updateThemeToggleButtons(localStorage.getItem('app_theme') || 'dark');
       updateNavigationButtons();
 
       if (familyId) {
@@ -550,6 +766,7 @@
           if (subData.role === 'Parent' || (activeFamilyDoc && activeFamilyDoc.ownerEmail && activeFamilyDoc.ownerEmail.toLowerCase() === email)) {
             isParentViewer = true;
             sessionStorage.setItem('is_parent_preview', 'true');
+            renderParentQuickPreviewChips();
             updateNavigationButtons();
           }
         }
@@ -667,6 +884,21 @@
       document.getElementById('bottomNav').style.display = 'flex';
       document.getElementById('avatarInitial').innerText = currentChild.name.charAt(0).toUpperCase();
       document.getElementById('childHeaderName').innerText = currentChild.name;
+
+      const pBadge = document.getElementById('parentPreviewBadge');
+      const sSwitcher = document.getElementById('siblingSwitcher');
+      if (pBadge) pBadge.style.display = isParentViewer ? 'inline-block' : 'none';
+      if (sSwitcher) {
+        if (isParentViewer && cachedFamilyChildren && cachedFamilyChildren.length > 1) {
+          sSwitcher.style.display = 'inline-block';
+          sSwitcher.innerHTML = cachedFamilyChildren.map(c => 
+            `<option value="${c.email}" ${(currentChild.email && c.email.toLowerCase() === currentChild.email.toLowerCase()) ? 'selected' : ''}>Switch: ${c.name}</option>`
+          ).join('');
+        } else {
+          sSwitcher.style.display = 'none';
+        }
+      }
+
       updateNavigationButtons();
       switchNavTab('tab-home', document.querySelectorAll('.nav-item')[0]);
       bindChildData();
@@ -1657,10 +1889,16 @@ Instructions:
         uPlannerUnsub();
         uPlannerUnsub = null;
       }
+      const wasParentViewer = (authMethod === "PARENT_PREVIEW" || isParentViewer);
       sessionStorage.removeItem('child_session');
       sessionStorage.removeItem('child_auth_method');
       sessionStorage.removeItem('is_parent_preview');
-      auth.signOut();
+
+      // Only sign out of Firebase Auth if this was a child's Google account session
+      if (!wasParentViewer) {
+        auth.signOut();
+      }
+
       const targetFamilyId = familyId || localStorage.getItem('family_id');
       window.location.href = targetFamilyId ? `index.html?familyId=${targetFamilyId}` : 'index.html';
     }
