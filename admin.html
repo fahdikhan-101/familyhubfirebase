@@ -136,6 +136,7 @@
     .status-suspended { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
   </style>
   <script src="config.js"></script>
+  <script src="ui-dialogs.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -260,7 +261,11 @@
         loadAdminData();
       } else {
         if (user) {
-          alert(`Access denied for ${user.email}. Super Admin privileges required.`);
+          showModalAlert({
+            title: "Access Denied",
+            message: `Access denied for ${user.email}. Super Admin privileges required.`,
+            btnText: "Understood"
+          });
           auth.signOut();
         }
         authBtn.innerText = "Sign In";
@@ -277,7 +282,7 @@
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
+        auth.signInWithPopup(provider).catch(err => showToast("Auth Error: " + err.message, "error"));
       }
     }
 
@@ -329,7 +334,13 @@
 
     // Provision new family tenant workspace
     async function approveFamilyRequest(subDocId, email, familyName) {
-      if (!confirm(`Provision new family workspace for ${email}?`)) return;
+      const confirmed = await showModalConfirm({
+        title: "Provision Family Workspace?",
+        message: `Provision new family workspace for ${email} (${familyName})?`,
+        confirmText: "Provision Workspace",
+        confirmColor: "#10b981"
+      });
+      if (!confirmed) return;
 
       const cleanEmail = email.toLowerCase().trim();
       const newFamilyRef = db.collection('families').doc();
@@ -369,14 +380,20 @@
       }, { merge: true });
 
       await batch.commit();
-      alert(`Family workspace created! ID: ${familyId}`);
+      showToast(`Family workspace created! ID: ${familyId}`, "success");
       auditPlatformStorage();
     }
 
     async function rejectFamilyRequest(subDocId) {
-      if (!confirm("Reject and delete this registration request?")) return;
+      const confirmed = await showModalConfirm({
+        title: "Reject Request?",
+        message: "Reject and delete this registration request?",
+        confirmText: "Reject & Delete",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
       await db.collection('platform_subscriptions').doc(subDocId).delete();
-      alert("Request removed.");
+      showToast("Request removed.", "info");
     }
 
     async function saveGlobalLimits() {
@@ -389,7 +406,7 @@
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
-      alert("Global quotas updated successfully!");
+      showToast("Global quotas updated successfully!", "success");
     }
 
     // Comprehensive Drill-Down Storage & Metric Calculator
@@ -504,7 +521,13 @@
     // Platform Super Admin Actions
     async function adminToggleFamilyStatus(famId, currentStatus) {
       const nextStatus = (currentStatus === 'active') ? 'suspended' : 'active';
-      if (!confirm(`Set family status to ${nextStatus.toUpperCase()}?`)) return;
+      const confirmed = await showModalConfirm({
+        title: `Set Status to ${nextStatus.toUpperCase()}?`,
+        message: `Are you sure you want to change the status of this family to ${nextStatus.toUpperCase()}?`,
+        confirmText: "Confirm",
+        confirmColor: nextStatus === 'active' ? '#10b981' : '#f59e0b'
+      });
+      if (!confirmed) return;
 
       const batch = db.batch();
       batch.update(db.collection('families').doc(famId), { status: nextStatus });
@@ -514,11 +537,18 @@
       subs.forEach(d => batch.update(d.ref, { status: nextStatus }));
 
       await batch.commit();
+      showToast(`Family status set to ${nextStatus.toUpperCase()}`, "success");
       auditPlatformStorage();
     }
 
     async function adminCascadeDeleteFamily(famId) {
-      if (!confirm(`DANGER: Delete entire family ${famId} and revoke all member access permanently?`)) return;
+      const confirmed = await showModalConfirm({
+        title: "DANGER: Delete Family Workspace?",
+        message: `Permanently delete entire family ${famId} and revoke all member access? This action cannot be undone.`,
+        confirmText: "Permanently Delete",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
 
       const batch = db.batch();
 
@@ -530,19 +560,25 @@
       subs.forEach(d => batch.delete(d.ref));
 
       await batch.commit();
-      alert("Family workspace and all linked member pointers deleted.");
+      showToast("Family workspace and all linked member pointers deleted.", "info");
       auditPlatformStorage();
     }
 
     async function adminDeleteFamilyMember(famId, userId, memberEmail) {
-      if (!confirm(`Remove member ${memberEmail} from family ${famId}?`)) return;
+      const confirmed = await showModalConfirm({
+        title: "Remove Member?",
+        message: `Remove member ${memberEmail} from family ${famId}?`,
+        confirmText: "Remove Member",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
 
       const batch = db.batch();
       batch.delete(db.collection('families').doc(famId).collection('users').doc(userId));
       batch.delete(db.collection('platform_subscriptions').doc(memberEmail.toLowerCase()));
 
       await batch.commit();
-      alert(`Member ${memberEmail} removed.`);
+      showToast(`Member ${memberEmail} removed.`, "info");
       auditPlatformStorage();
     }
 

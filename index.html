@@ -190,6 +190,7 @@
     footer a { color: #a5b4fc; text-decoration: none; margin: 0 10px; }
   </style>
   <script src="config.js"></script>
+  <script src="ui-dialogs.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -631,7 +632,11 @@
           const subData = subDoc.data();
           if (subData.status && subData.status !== 'active') {
             await auth.signOut();
-            return alert(`Your family vault is currently suspended. Please ask your parents.`);
+            return showModalAlert({
+              title: "Vault Suspended",
+              message: "Your family vault is currently suspended. Please ask your parents.",
+              btnText: "Understood"
+            });
           }
           matchedFamilyId = subData.familyId;
         } else {
@@ -652,14 +657,18 @@
 
         if (!matchedFamilyId) {
           await auth.signOut();
-          return alert(`No child account found for ${email}. Please ask your parents to add your email in their Parent Admin Console first!`);
+          return showModalAlert({
+            title: "Child Account Not Found",
+            message: `No child account found for ${email}. Please ask your parents to add your email in their Parent Admin Console first!`,
+            btnText: "Understood"
+          });
         }
 
         localStorage.setItem('family_id', matchedFamilyId);
         sessionStorage.setItem('child_auth_method', 'GOOGLE');
         window.location.href = `app.html?familyId=${matchedFamilyId}`;
       } catch (err) {
-        alert("Child Sign In Error: " + err.message);
+        showToast("Child Sign In Error: " + err.message, "error");
       }
     }
 

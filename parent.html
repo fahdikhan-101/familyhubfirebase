@@ -264,6 +264,7 @@
     }
   </style>
   <script src="config.js"></script>
+  <script src="ui-dialogs.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
@@ -404,8 +405,14 @@
         </div>
 
         <!-- 4. RECURRING ROUTINE BUILDER -->
-        <div class="card">
-          <h3>🛠️ Create Recurring Routine Schedule</h3>
+        <div class="card" id="routineScheduleBuilder">
+          <div id="routineEditBanner" style="display:none; background:rgba(99,102,241,0.18); border:1.5px solid rgba(99,102,241,0.5); padding:10px 16px; border-radius:12px; margin-bottom:14px; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="color:#a5b4fc;">✏️ Editing Routine:</strong> <span id="editingRoutineTitleName" style="font-weight:800; color:var(--text);"></span>
+            </div>
+            <button class="btn btn-gray" type="button" style="padding:4px 10px; font-size:0.75rem;" onclick="cancelPlannerRoutineEdit()">✕ Cancel Edit</button>
+          </div>
+          <h3 id="routineBuilderHeading">🛠️ Create Recurring Routine Schedule</h3>
           <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Build repeating weekly plans (e.g. Quran class, dishes, homework, bedtime) that auto-generate every day.</p>
           
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
@@ -446,8 +453,9 @@
             <div id="routineItemsTable"></div>
           </div>
 
-          <div style="margin-top:16px;">
-            <button class="btn btn-green" onclick="savePlannerRoutine()">💾 Save Routine Schedule</button>
+          <div style="margin-top:16px; display:flex; align-items:center; gap:10px;">
+            <button id="btnSavePlannerRoutine" class="btn btn-green" onclick="savePlannerRoutine()">💾 Save Routine Schedule</button>
+            <button id="btnCancelPlannerRoutine" class="btn btn-gray" type="button" style="display:none;" onclick="cancelPlannerRoutineEdit()">Cancel Edit</button>
           </div>
         </div>
 
@@ -652,6 +660,149 @@
     </div>
   </div>
 
+  <!-- IN-PAGE MODALS FOR EDITING -->
+
+  <!-- 1. Edit Chore Modal -->
+  <div class="app-modal-backdrop" id="editChoreModal">
+    <div class="app-modal-box" style="max-width:420px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Chore</h3>
+      </div>
+      <input type="hidden" id="editChoreId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Chore Title</label>
+        <input type="text" class="app-modal-input" id="editChoreTitle" placeholder="e.g. Wash Dishes">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Reward (<span class="currencySymbol">Rs. </span>)</label>
+        <input type="number" class="app-modal-input" id="editChoreReward" placeholder="50">
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditChoreModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditChore()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Edit Rule Modal -->
+  <div class="app-modal-backdrop" id="editRuleModal">
+    <div class="app-modal-box" style="max-width:420px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Behavior Rule</h3>
+      </div>
+      <input type="hidden" id="editRuleId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Type</label>
+        <select class="app-modal-input" id="editRuleType">
+          <option value="Reward">Reward</option>
+          <option value="Penalty">Penalty</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Rule Title</label>
+        <input type="text" class="app-modal-input" id="editRuleTitle" placeholder="e.g. Clean Bedroom">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Amount (<span class="currencySymbol">Rs. </span>)</label>
+        <input type="number" class="app-modal-input" id="editRuleAmount" placeholder="50">
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditRuleModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditRule()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Edit Schedule Modal -->
+  <div class="app-modal-backdrop" id="editScheduleModal">
+    <div class="app-modal-box" style="max-width:460px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Recurring Schedule</h3>
+      </div>
+      <input type="hidden" id="editScheduleId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Schedule Title</label>
+        <input type="text" class="app-modal-input" id="editScheduleTitle" placeholder="e.g. Friday Pocket Money">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Target Child</label>
+        <select class="app-modal-input" id="editScheduleTargetChild"></select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Frequency</label>
+        <select class="app-modal-input" id="editScheduleFreq" onchange="onEditScheduleFreqChange()">
+          <option value="WEEKLY">Weekly</option>
+          <option value="MONTHLY">Monthly</option>
+          <option value="ANNUAL">Annual (Birthday)</option>
+          <option value="INTEREST_MONTHLY">Monthly Savings Bonus (%)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label id="editScheduleDayLabel" style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Payout Day</label>
+        <select class="app-modal-input" id="editScheduleDaySelect">
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+        </select>
+        <input type="text" class="app-modal-input" id="editScheduleDayText" placeholder="Day (1-31) or MM-DD" style="display:none;">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label id="editScheduleAmountLabel" style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Amount (<span class="currencySymbol">Rs. </span>)</label>
+        <input type="number" class="app-modal-input" id="editScheduleAmount" placeholder="1000">
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditScheduleModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditSchedule()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Edit Scheduled Task Modal -->
+  <div class="app-modal-backdrop" id="editTaskModal">
+    <div class="app-modal-box" style="max-width:440px;">
+      <div class="app-modal-header">
+        <span class="app-modal-icon">✏️</span>
+        <h3 class="app-modal-title">Edit Scheduled Task</h3>
+      </div>
+      <input type="hidden" id="editTaskId">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Task Title</label>
+        <input type="text" class="app-modal-input" id="editTaskTitle" placeholder="e.g. Quran class">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Start Time</label>
+          <input type="time" class="app-modal-input" id="editTaskStartTime">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">End Time</label>
+          <input type="time" class="app-modal-input" id="editTaskEndTime">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Reward (<span class="currencySymbol">Rs. </span>)</label>
+          <input type="number" class="app-modal-input" id="editTaskReward" value="0">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">Penalty (<span class="currencySymbol">Rs. </span>)</label>
+          <input type="number" class="app-modal-input" id="editTaskPenalty" value="0">
+        </div>
+      </div>
+      <div class="app-modal-actions">
+        <button type="button" class="app-modal-btn app-modal-btn-cancel" onclick="closeEditTaskModal()">Cancel</button>
+        <button type="button" class="app-modal-btn app-modal-btn-primary" onclick="saveEditTask()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 
 
@@ -670,6 +821,11 @@
     let isCurrentUserManagerOwner = false;
     let cachedChildren = [];
     let cachedRules = [];
+    let cachedChores = [];
+    let cachedSchedules = [];
+    let cachedRoutineTemplates = [];
+    let cachedDailyTasks = [];
+    let editingRoutineId = null;
     let linkedSubscriptionsSet = new Set();
     let currentUser = null;
     let unsubscribers = [];
@@ -703,7 +859,7 @@
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        auth.signInWithPopup(provider).catch(err => alert("Auth Error: " + err.message));
+        auth.signInWithPopup(provider).catch(err => showToast("Auth Error: " + err.message, "error"));
       }
     }
 
@@ -824,7 +980,7 @@
 
     async function submitAccessRequest(email) {
       const famName = document.getElementById('reqFamName').value.trim();
-      if (!famName) return alert("Please enter your family name.");
+      if (!famName) return showToast("Please enter your family name.", "warning");
 
       const cleanEmail = email.toLowerCase().trim();
       await db.collection('platform_subscriptions').doc(cleanEmail).set({
@@ -1031,11 +1187,13 @@
       unsubscribers.push(u5);
 
       const u6 = famRef.collection('chores').onSnapshot(snap => {
+        cachedChores = [];
         const cBody = document.getElementById('choresCatalogTable');
         cBody.innerHTML = '';
         snap.forEach(doc => {
           const c = doc.data();
-          cBody.innerHTML += `<tr><td><strong>${c.title}</strong></td><td>${activeCurrency}${c.reward}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('chores', '${doc.id}')">✕</button></td></tr>`;
+          cachedChores.push({ id: doc.id, ...c });
+          cBody.innerHTML += `<tr><td><strong>${c.title}</strong></td><td>${activeCurrency}${c.reward}</td><td><button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditChoreModal('${doc.id}')" title="Edit Chore">✏️</button><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('chores', '${doc.id}')">✕</button></td></tr>`;
         });
       });
       unsubscribers.push(u6);
@@ -1047,23 +1205,26 @@
         snap.forEach(doc => {
           const r = doc.data();
           cachedRules.push({ id: doc.id, ...r });
-          rBody.innerHTML += `<tr><td><span class="badge ${r.type==='Reward'?'badge-reward':'badge-penalty'}">${r.type}</span></td><td>${r.title}</td><td>${activeCurrency}${r.amount}</td><td><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('rules', '${doc.id}')">✕</button></td></tr>`;
+          cBody = document.getElementById('rulesCatalogTable');
+          rBody.innerHTML += `<tr><td><span class="badge ${r.type==='Reward'?'badge-reward':'badge-penalty'}">${r.type}</span></td><td>${r.title}</td><td>${activeCurrency}${r.amount}</td><td><button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditRuleModal('${doc.id}')" title="Edit Rule">✏️</button><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('rules', '${doc.id}')">✕</button></td></tr>`;
         });
         filterPresetRules();
       });
       unsubscribers.push(u7);
 
       const u8 = famRef.collection('schedules').onSnapshot(snap => {
+        cachedSchedules = [];
         const sBody = document.getElementById('schedulesTable');
         sBody.innerHTML = '';
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         snap.forEach(doc => {
           const s = doc.data();
+          cachedSchedules.push({ id: doc.id, ...s });
           let displayDay = s.scheduleDay;
           if (s.frequency === 'WEEKLY' && dayNames[Number(s.scheduleDay)] !== undefined) {
             displayDay = dayNames[Number(s.scheduleDay)];
           }
-          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td>${isCurrentUserManagerOwner ? `<button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button>` : '-'}</td></tr>`;
+          sBody.innerHTML += `<tr><td><strong>${s.title}</strong></td><td>${s.targetEmail}</td><td>${s.frequency}</td><td>${displayDay}</td><td>${activeCurrency}${s.amount}</td><td>${isCurrentUserManagerOwner ? `<button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditScheduleModal('${doc.id}')" title="Edit Schedule">✏️</button><button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem;" onclick="deleteDoc('schedules', '${doc.id}')">✕</button>` : '-'}</td></tr>`;
         });
       });
       unsubscribers.push(u8);
@@ -1113,6 +1274,7 @@
 
       const uPlannerTemplates = famRef.collection('planner_templates')
         .onSnapshot(snap => {
+          cachedRoutineTemplates = [];
           const tTable = document.getElementById('routineTemplatesTable');
           if (tTable) {
             tTable.innerHTML = '';
@@ -1121,6 +1283,7 @@
             } else {
               snap.forEach(doc => {
                 const tmpl = doc.data();
+                cachedRoutineTemplates.push({ id: doc.id, ...tmpl });
                 const daysStr = (tmpl.days || []).join(', ');
                 const bonusStr = tmpl.dailyBonus ? `+${activeCurrency}${tmpl.dailyBonus}` : '—';
                 const targetStr = tmpl.assignedTo === 'all' ? 'All Kids' : (cachedChildren.find(c => c.email === tmpl.assignedTo)?.name || tmpl.assignedTo);
@@ -1139,6 +1302,7 @@
                     <td style="max-width:320px;">${itemsSummary}</td>
                     <td style="color:var(--success); font-weight:800;">${bonusStr}</td>
                     <td>
+                      <button class="btn btn-gray" style="padding:2px 6px; font-size:0.75rem; margin-right:4px;" onclick="editPlannerRoutine('${doc.id}')" title="Edit Routine Template">✏️ Edit</button>
                       <button class="btn btn-red" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteDoc('planner_templates', '${doc.id}')">✕</button>
                     </td>
                   </tr>
@@ -1209,9 +1373,16 @@
     }
 
     async function deleteMember(userId, memberEmail) {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can delete members.");
-      if (memberEmail === activeOwnerEmail) return alert("The family owner cannot be deleted.");
-      if (!confirm(`Are you sure you want to remove ${memberEmail}? This will revoke their platform access immediately.`)) return;
+      if (!isCurrentUserManagerOwner) return showToast("Only the family owner can delete members.", "warning");
+      if (memberEmail === activeOwnerEmail) return showToast("The family owner cannot be deleted.", "warning");
+
+      const confirmed = await showModalConfirm({
+        title: "Remove Member?",
+        message: `Are you sure you want to remove ${memberEmail}? This will revoke their platform access immediately.`,
+        confirmText: "Remove Member",
+        confirmColor: "#ef4444"
+      });
+      if (!confirmed) return;
 
       try {
         const batch = db.batch();
@@ -1223,14 +1394,14 @@
 
         await batch.commit();
         linkedSubscriptionsSet.delete(memberEmail);
-        alert(`Member ${memberEmail} removed successfully.`);
+        showToast(`Member ${memberEmail} removed successfully.`, "info");
       } catch (err) {
-        alert("Error removing member: " + err.message);
+        showToast("Error removing member: " + err.message, "error");
       }
     }
 
     async function linkMemberSubscription(memberEmail, role, btnElement) {
-      if (!familyId) return alert("Family ID missing");
+      if (!familyId) return showToast("Family ID missing", "error");
       const cleanEmail = memberEmail.toLowerCase().trim();
       if (btnElement) {
         btnElement.disabled = true;
@@ -1249,9 +1420,9 @@
 
         linkedSubscriptionsSet.add(cleanEmail);
         refreshMembersTable();
-        alert(`Access granted! ${cleanEmail} can now log in.`);
+        showToast(`Access granted! ${cleanEmail} can now log in.`, "success");
       } catch (err) {
-        alert("Error linking member: " + err.message);
+        showModalAlert("Error linking member: " + err.message, "Error", "error");
         if (btnElement) {
           btnElement.disabled = false;
           btnElement.innerText = "🔗 Link Access";
@@ -1260,7 +1431,7 @@
     }
 
     async function syncAllMembersSubscriptions() {
-      if (!familyId) return alert("No active family found.");
+      if (!familyId) return showToast("No active family found.", "warning");
       try {
         const snap = await db.collection('families').doc(familyId).collection('users').get();
         let count = 0;
@@ -1283,14 +1454,14 @@
         }
 
         refreshMembersTable();
-        alert(`Synced ${count} member account(s)!`);
+        showToast(`Synced ${count} member account(s)!`, "success");
       } catch (err) {
-        alert("Sync error: " + err.message);
+        showModalAlert("Sync error: " + err.message, "Sync Error", "error");
       }
     }
 
     async function addMember() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can add new members.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can add new members.", "Owner Restricted", "warning");
 
       const name = document.getElementById('memName').value.trim();
       const email = document.getElementById('memEmail').value.trim().toLowerCase();
@@ -1298,17 +1469,17 @@
       const pin = document.getElementById('memPin').value.trim();
       const openingBal = Number(document.getElementById('memOpeningBalance').value) || 0;
 
-      if (!name || !email) return alert("Please fill in name and email address.");
-      if (role === 'Child' && !pin) return alert("Please provide a 4-digit PIN for the child.");
+      if (!name || !email) return showToast("Please fill in name and email address.", "warning");
+      if (role === 'Child' && !pin) return showToast("Please provide a 4-digit PIN for the child.", "warning");
 
       const currentParents = (window._cachedMembers || []).filter(m => m.role === 'Parent').length;
       const currentChildren = (window._cachedMembers || []).filter(m => m.role === 'Child').length;
 
       if (role === 'Parent' && currentParents >= (globalLimits.maxParents || 2)) {
-        return alert(`Cannot add parent: Reached quota of ${globalLimits.maxParents || 2} parents.`);
+        return showModalAlert(`Cannot add parent: Reached quota of ${globalLimits.maxParents || 2} parents.`, "Quota Reached", "warning");
       }
       if (role === 'Child' && currentChildren >= (globalLimits.maxChildren || 6)) {
-        return alert(`Cannot add child: Reached quota of ${globalLimits.maxChildren || 6} children.`);
+        return showModalAlert(`Cannot add child: Reached quota of ${globalLimits.maxChildren || 6} children.`, "Quota Reached", "warning");
       }
 
       const famRef = db.collection('families').doc(familyId);
@@ -1346,9 +1517,9 @@
         document.getElementById('memEmail').value = '';
         document.getElementById('memPin').value = '';
         document.getElementById('memOpeningBalance').value = '0';
-        alert(`Member ${name} added successfully!`);
+        showToast(`Member ${name} added successfully!`, "success");
       } catch (err) {
-        alert("Error adding member: " + err.message);
+        showModalAlert("Error adding member: " + err.message, "Error", "error");
       }
     }
 
@@ -1381,32 +1552,36 @@
     }
 
     async function deleteTransaction(txId) {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can delete transactions.");
-      if (!confirm("Are you sure you want to delete this transaction? The child balance will update automatically.")) return;
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can delete transactions.", "Permission Denied", "warning");
+      const ok = await showModalConfirm("Are you sure you want to delete this transaction? The child balance will update automatically.", "Delete Transaction", { isDanger: true });
+      if (!ok) return;
       try {
         await db.collection('families').doc(familyId).collection('transactions').doc(txId).delete();
+        showToast("Transaction deleted", "info");
       } catch (err) {
-        alert("Failed to delete transaction: " + err.message);
+        showModalAlert("Failed to delete transaction: " + err.message, "Error", "error");
       }
     }
 
     async function addChore() {
       const title = document.getElementById('newChoreTitle').value.trim();
       const reward = Number(document.getElementById('newChoreReward').value) || 0;
-      if (!title || !reward) return alert("Fill chore details");
+      if (!title || !reward) return showToast("Please fill in chore title and reward.", "warning");
       await db.collection('families').doc(familyId).collection('chores').add({ title, reward });
       document.getElementById('newChoreTitle').value = '';
       document.getElementById('newChoreReward').value = '';
+      showToast(`Chore "${title}" added!`, "success");
     }
 
     async function addBehaviorRule() {
       const type = document.getElementById('newRuleType').value;
       const title = document.getElementById('newRuleTitle').value.trim();
       const amount = Number(document.getElementById('newRuleAmount').value) || 0;
-      if (!title || !amount) return alert("Fill rule details");
+      if (!title || !amount) return showToast("Please fill in rule title and amount.", "warning");
       await db.collection('families').doc(familyId).collection('rules').add({ type, title, amount });
       document.getElementById('newRuleTitle').value = '';
       document.getElementById('newRuleAmount').value = '';
+      showToast(`Rule "${title}" added!`, "success");
     }
 
     function filterPresetRules() {
@@ -1432,7 +1607,7 @@
       const type = document.getElementById('actionTypeSelect').value;
       const title = document.getElementById('actionTitle').value.trim();
       const amt = Number(document.getElementById('actionAmount').value) || 0;
-      if (!email || !title || !amt) return alert("Enter action details");
+      if (!email || !title || !amt) return showToast("Please fill in all action details.", "warning");
 
       const finalAmt = (type === 'Reward') ? amt : -amt;
       const now = new Date();
@@ -1443,6 +1618,7 @@
       });
       document.getElementById('actionTitle').value = '';
       document.getElementById('actionAmount').value = '';
+      showToast(`Action "${title}" recorded!`, "success");
     }
 
     async function approveChore(logId, email, title, reward) {
@@ -1453,16 +1629,18 @@
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
       await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'approved' });
+      showToast(`Chore "${title}" approved (+${activeCurrency}${reward})`, "success");
     }
 
     async function rejectChore(logId) {
-      const reason = prompt("Enter reason:", "Incomplete");
+      const reason = await showModalPrompt("Enter reason for rejection / redo:", "Incomplete", "Chore Redo");
       if (reason === null) return;
       await db.collection('families').doc(familyId).collection('choreLog').doc(logId).update({ status: 'denied', reason });
+      showToast("Chore sent back for redo", "info");
     }
 
     async function addSchedule() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can add recurring payout schedules.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can add recurring payout schedules.", "Owner Restricted", "warning");
 
       const title = document.getElementById('schedTitle').value.trim();
       const targetEmail = document.getElementById('schedTargetSelect').value;
@@ -1476,7 +1654,7 @@
         scheduleDay = document.getElementById('schedDayText').value.trim();
       }
 
-      if (!title || scheduleDay === '' || !amount) return alert("Please complete all schedule fields.");
+      if (!title || scheduleDay === '' || !amount) return showToast("Please complete all schedule fields.", "warning");
 
       const now = new Date();
       const year = now.getFullYear();
@@ -1523,8 +1701,8 @@
       document.getElementById('schedAmount').value = '';
       if (document.getElementById('schedDayText')) document.getElementById('schedDayText').value = '';
       
-      if (matchesToday) alert(`Schedule "${title}" saved! Today's first payout disbursed.`);
-      else alert(`Schedule "${title}" saved! Payouts start on due date.`);
+      if (matchesToday) showToast(`Schedule "${title}" saved! Today's payout disbursed.`, "success");
+      else showToast(`Schedule "${title}" saved! Payouts start on due date.`, "success");
     }
 
     async function runCatchUpScheduledPayouts(db, familyId, isManualAlert = false) {
@@ -1619,19 +1797,20 @@
           }
         }
 
-        if (isManualAlert) alert(`Catch-up complete! Generated ${totalCatchUpGenerated} missed payouts.`);
+        if (isManualAlert) showToast(`Catch-up complete! Generated ${totalCatchUpGenerated} missed payouts.`, "success");
       } catch (err) {
         console.error("Catch-up execution error:", err);
       }
     }
 
     async function runPeriodClosing() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can close periods.");
-      if (!confirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?")) return;
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can close periods.", "Owner Restricted", "warning");
+      const ok = await showModalConfirm("This will archive all active transactions, clear the activity ledger, and carry forward each child's balance as an opening balance. Continue?", "Close Financial Period", { isDanger: true, confirmText: "Close Period" });
+      if (!ok) return;
 
       const famRef = db.collection('families').doc(familyId);
       const txSnap = await famRef.collection('transactions').get();
-      if (txSnap.empty) return alert("No transactions to archive.");
+      if (txSnap.empty) return showToast("No transactions to archive.", "info");
 
       const balMap = {};
       const archiveBatch = db.batch();
@@ -1663,18 +1842,18 @@
       });
 
       await forwardBatch.commit();
-      alert(`Period successfully closed! Archived ${txSnap.size} transactions.`);
+      showModalAlert(`Period successfully closed! Archived ${txSnap.size} transactions and forwarded balances.`, "Period Closed", "success");
     }
 
     async function saveCurrency() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can change the currency.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can change the currency.", "Owner Restricted", "warning");
       const currency = document.getElementById('setCurrency').value.trim();
       await db.collection('families').doc(familyId).update({ currency });
-      alert("Currency saved!");
+      showToast("Currency saved!", "success");
     }
 
     async function saveAiSettings() {
-      if (!isCurrentUserManagerOwner) return alert("Only the family owner can change AI secrets.");
+      if (!isCurrentUserManagerOwner) return showModalAlert("Only the family owner can change AI secrets.", "Owner Restricted", "warning");
       const geminiApiKey = document.getElementById('setGeminiKey').value.trim();
       const aiEnabled = document.getElementById('setAiEnabled').checked;
 
@@ -1685,7 +1864,7 @@
       batch.set(famRef.collection('settings').doc('secrets'), { geminiApiKey }, { merge: true });
 
       await batch.commit();
-      alert("AI Settings securely updated in private vault!");
+      showToast("AI Settings securely updated in private vault!", "success");
     }
 
     // =========================================================================
@@ -1820,6 +1999,8 @@
         return;
       }
 
+      cachedDailyTasks = allTasks;
+
       let childHtml = '';
 
       cachedChildren.forEach(child => {
@@ -1870,6 +2051,9 @@
             actionButtons = `<span class="action-text-penalized" style="color:var(--danger); font-size:0.78rem; font-weight:800;">🛑 Deducted</span>`;
           }
 
+          const editButton = `<button class="btn btn-gray" style="padding:2px 6px; font-size:0.7rem; margin-right:4px;" onclick="openEditTaskModal('${t.id}')" title="Edit Task Details">✏️</button>`;
+          const deleteButton = `<button class="btn btn-red" style="padding:2px 6px; font-size:0.7rem; margin-left:4px;" onclick="deleteDoc('planner_tasks', '${t.id}')" title="Delete Task">✕</button>`;
+
           taskRows += `
             <tr>
               <td><span class="time-slot-pill">⏰ ${t.timeRange || (t.startTime + ' - ' + t.endTime)}</span></td>
@@ -1880,7 +2064,11 @@
               <td>${t.reward ? `<span style="color:var(--success); font-weight:700;">+${activeCurrency}${t.reward}</span>` : '—'}</td>
               <td>${t.penalty ? `<span style="color:var(--danger); font-weight:700;">-${activeCurrency}${t.penalty}</span>` : '—'}</td>
               <td>${badgeHtml}</td>
-              <td>${actionButtons}</td>
+              <td style="white-space:nowrap;">
+                ${editButton}
+                ${actionButtons}
+                ${deleteButton}
+              </td>
             </tr>
           `;
         });
@@ -1941,19 +2129,19 @@
     }
 
     async function savePlannerRoutine() {
-      if (!familyId) return alert("Family ID missing");
+      if (!familyId) return showToast("Family ID missing", "error");
       const title = document.getElementById('routineTitle').value.trim();
-      if (!title) return alert("Please enter a routine title (e.g. Weekday School Schedule).");
+      if (!title) return showToast("Please enter a routine title (e.g. Weekday School Schedule).", "warning");
 
       const assignedTo = document.getElementById('routineTargetChild').value;
       const dailyBonus = Number(document.getElementById('routineDailyBonus').value) || 0;
 
       const dayCheckboxes = document.querySelectorAll('input[name="routineDay"]:checked');
       const days = Array.from(dayCheckboxes).map(cb => cb.value);
-      if (days.length === 0) return alert("Please select at least one active day of the week.");
+      if (days.length === 0) return showToast("Please select at least one active day of the week.", "warning");
 
       const rows = document.querySelectorAll('#routineItemsTable .routine-row');
-      if (rows.length === 0) return alert("Please add at least one task slot to the routine.");
+      if (rows.length === 0) return showToast("Please add at least one task slot to the routine.", "warning");
 
       const items = [];
       let hasError = false;
@@ -1979,32 +2167,44 @@
       });
 
       if (hasError || items.length === 0) {
-        return alert("Please enter a title for every task slot row.");
+        return showToast("Please enter a title for every task slot row.", "warning");
       }
 
       try {
         const famRef = db.collection('families').doc(familyId);
-        await famRef.collection('planner_templates').add({
-          title,
-          assignedTo,
-          days,
-          dailyBonus,
-          items,
-          status: 'active',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        alert("Routine Schedule successfully created!");
-        document.getElementById('routineTitle').value = '';
+        if (editingRoutineId) {
+          await famRef.collection('planner_templates').doc(editingRoutineId).update({
+            title,
+            assignedTo,
+            days,
+            dailyBonus,
+            items,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast(`Routine "${title}" updated successfully!`, "success");
+          cancelPlannerRoutineEdit();
+        } else {
+          await famRef.collection('planner_templates').add({
+            title,
+            assignedTo,
+            days,
+            dailyBonus,
+            items,
+            status: 'active',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast(`Routine "${title}" created successfully!`, "success");
+          document.getElementById('routineTitle').value = '';
+        }
         await ensureDailyPlannerTasks(db, familyId, currentReportDate, cachedChildren);
         loadDailyPlannerReport(currentReportDate);
       } catch (err) {
-        alert("Error saving routine: " + err.message);
+        showModalAlert("Error saving routine: " + err.message, "Error", "error");
       }
     }
 
     async function dispatchQuickPlannerTask() {
-      if (!familyId) return alert("Family ID missing");
+      if (!familyId) return showToast("Family ID missing", "error");
       const childEmail = document.getElementById('quickTaskChildSelect').value;
       const title = document.getElementById('quickTaskTitle').value.trim();
       const startTime = document.getElementById('quickTaskStart').value;
@@ -2012,7 +2212,7 @@
       const reward = Number(document.getElementById('quickTaskReward').value) || 0;
       const penalty = Number(document.getElementById('quickTaskPenalty').value) || 0;
 
-      if (!title) return alert("Please provide a task title.");
+      if (!title) return showToast("Please provide a task title.", "warning");
 
       try {
         const famRef = db.collection('families').doc(familyId);
@@ -2020,7 +2220,7 @@
           ? cachedChildren 
           : cachedChildren.filter(c => c.email.toLowerCase() === childEmail.toLowerCase());
 
-        if (targetKids.length === 0) return alert("No children found to assign this task to.");
+        if (targetKids.length === 0) return showToast("No children found to assign this task to.", "warning");
 
         const batch = db.batch();
         targetKids.forEach(kid => {
@@ -2043,16 +2243,16 @@
         });
 
         await batch.commit();
-        alert(`Task "${title}" added for ${currentReportDate}!`);
+        showToast(`Task "${title}" added for ${currentReportDate}!`, "success");
         document.getElementById('quickTaskTitle').value = '';
         loadDailyPlannerReport(currentReportDate);
       } catch (err) {
-        alert("Error adding task: " + err.message);
+        showModalAlert("Error adding task: " + err.message, "Error", "error");
       }
     }
 
     async function approvePlannerTask(taskId, email, childName, title, reward) {
-      if (!familyId) return alert("Family ID missing");
+      if (!familyId) return showToast("Family ID missing", "error");
       try {
         const famRef = db.collection('families').doc(familyId);
         const numReward = Number(reward) || 0;
@@ -2080,13 +2280,14 @@
         }
 
         await batch.commit();
+        showToast(`Approved task "${title}" (+${activeCurrency}${numReward})`, "success");
       } catch (err) {
-        alert("Error approving task: " + err.message);
+        showModalAlert("Error approving task: " + err.message, "Error", "error");
       }
     }
 
     async function rejectPlannerTask(taskId) {
-      const reason = prompt("Enter reason for redo / rejection:", "Please complete properly");
+      const reason = await showModalPrompt("Enter reason for redo / rejection:", "Please complete properly", "Task Redo Required");
       if (reason === null) return;
       try {
         const famRef = db.collection('families').doc(familyId);
@@ -2095,16 +2296,17 @@
           rejectReason: reason,
           reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        showToast("Task marked for redo", "info");
       } catch (err) {
-        alert("Error resetting task: " + err.message);
+        showModalAlert("Error resetting task: " + err.message, "Error", "error");
       }
     }
 
     async function penalizePlannerTask(taskId, email, childName, title, defaultPenalty) {
-      const penaltyInput = prompt(`Enter penalty amount to deduct from ${childName} for "${title}" (${activeCurrency}):`, defaultPenalty || 10);
+      const penaltyInput = await showModalPrompt(`Enter penalty amount to deduct from ${childName} for "${title}" (${activeCurrency}):`, defaultPenalty || 10, "Apply Accountability Penalty", { inputType: 'number' });
       if (penaltyInput === null) return;
       const numPenalty = Number(penaltyInput) || 0;
-      if (numPenalty <= 0) return alert("Penalty amount must be greater than 0");
+      if (numPenalty <= 0) return showToast("Penalty amount must be greater than 0", "warning");
 
       try {
         const famRef = db.collection('families').doc(familyId);
@@ -2130,14 +2332,14 @@
         });
 
         await batch.commit();
-        alert(`Deducted ${activeCurrency}${numPenalty} penalty from ${childName}.`);
+        showToast(`Deducted ${activeCurrency}${numPenalty} penalty from ${childName}.`, "info");
       } catch (err) {
-        alert("Error applying penalty: " + err.message);
+        showModalAlert("Error applying penalty: " + err.message, "Error", "error");
       }
     }
 
     async function awardDailyBonus(childEmail, childName, bonusAmt, dateStr) {
-      const bonus = prompt(`Award full-day completion bonus to ${childName} for ${dateStr} (${activeCurrency}):`, bonusAmt || 50);
+      const bonus = await showModalPrompt(`Award full-day completion bonus to ${childName} for ${dateStr} (${activeCurrency}):`, bonusAmt || 50, "Award 100% Day Bonus", { inputType: 'number' });
       if (bonus === null) return;
       const numBonus = Number(bonus) || 0;
       if (numBonus <= 0) return;
@@ -2152,9 +2354,9 @@
           date: dateStr,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        alert(`Awarded ${activeCurrency}${numBonus} daily bonus to ${childName}!`);
+        showToast(`Awarded ${activeCurrency}${numBonus} daily bonus to ${childName}!`, "success");
       } catch (err) {
-        alert("Error awarding bonus: " + err.message);
+        showModalAlert("Error awarding bonus: " + err.message, "Error", "error");
       }
     }
 
@@ -2256,8 +2458,263 @@
     });
 
     async function deleteDoc(coll, id) {
-      if (confirm("Delete this entry?")) {
+      const ok = await showModalConfirm("Are you sure you want to permanently delete this entry?", "Confirm Deletion", { isDanger: true, confirmText: "Delete" });
+      if (!ok) return;
+      try {
         await db.collection('families').doc(familyId).collection(coll).doc(id).delete();
+        showToast("Entry deleted", "info");
+      } catch (err) {
+        showModalAlert("Error deleting entry: " + err.message, "Error", "error");
+      }
+    }
+
+    // =========================================================================
+    // EDIT MODAL HANDLERS (CHORES, RULES, SCHEDULES, ROUTINES, DAILY TASKS)
+    // =========================================================================
+
+    // 1. Chores
+    function openEditChoreModal(id) {
+      const chore = cachedChores.find(c => c.id === id);
+      if (!chore) return;
+      document.getElementById('editChoreId').value = id;
+      document.getElementById('editChoreTitle').value = chore.title || '';
+      document.getElementById('editChoreReward').value = chore.reward || 0;
+      document.getElementById('editChoreModal').classList.add('active');
+    }
+
+    function closeEditChoreModal() {
+      document.getElementById('editChoreModal').classList.remove('active');
+    }
+
+    async function saveEditChore() {
+      const id = document.getElementById('editChoreId').value;
+      const title = document.getElementById('editChoreTitle').value.trim();
+      const reward = Number(document.getElementById('editChoreReward').value) || 0;
+      if (!title || !reward) return showToast("Please enter chore title and reward.", "warning");
+
+      try {
+        await db.collection('families').doc(familyId).collection('chores').doc(id).update({ title, reward });
+        closeEditChoreModal();
+        showToast(`Chore "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update chore: " + err.message, "Error", "error");
+      }
+    }
+
+    // 2. Rules
+    function openEditRuleModal(id) {
+      const rule = cachedRules.find(r => r.id === id);
+      if (!rule) return;
+      document.getElementById('editRuleId').value = id;
+      document.getElementById('editRuleType').value = rule.type || 'Reward';
+      document.getElementById('editRuleTitle').value = rule.title || '';
+      document.getElementById('editRuleAmount').value = rule.amount || 0;
+      document.getElementById('editRuleModal').classList.add('active');
+    }
+
+    function closeEditRuleModal() {
+      document.getElementById('editRuleModal').classList.remove('active');
+    }
+
+    async function saveEditRule() {
+      const id = document.getElementById('editRuleId').value;
+      const type = document.getElementById('editRuleType').value;
+      const title = document.getElementById('editRuleTitle').value.trim();
+      const amount = Number(document.getElementById('editRuleAmount').value) || 0;
+      if (!title || !amount) return showToast("Please enter rule title and amount.", "warning");
+
+      try {
+        await db.collection('families').doc(familyId).collection('rules').doc(id).update({ type, title, amount });
+        closeEditRuleModal();
+        showToast(`Rule "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update rule: " + err.message, "Error", "error");
+      }
+    }
+
+    // 3. Recurring Schedules
+    function openEditScheduleModal(id) {
+      const s = cachedSchedules.find(x => x.id === id);
+      if (!s) return;
+      document.getElementById('editScheduleId').value = id;
+      document.getElementById('editScheduleTitle').value = s.title || '';
+
+      const childSelect = document.getElementById('editScheduleTargetChild');
+      childSelect.innerHTML = '<option value="all">🌟 All Children (Individual Payouts)</option>';
+      cachedChildren.forEach(c => {
+        childSelect.innerHTML += `<option value="${c.email}">${c.name} (${c.email})</option>`;
+      });
+      childSelect.value = s.targetEmail || 'all';
+
+      document.getElementById('editScheduleFreq').value = s.frequency || 'WEEKLY';
+      onEditScheduleFreqChange();
+
+      if (s.frequency === 'WEEKLY') {
+        document.getElementById('editScheduleDaySelect').value = s.scheduleDay || '5';
+      } else {
+        document.getElementById('editScheduleDayText').value = s.scheduleDay || '';
+      }
+      document.getElementById('editScheduleAmount').value = s.amount || 0;
+
+      document.getElementById('editScheduleModal').classList.add('active');
+    }
+
+    function onEditScheduleFreqChange() {
+      const freq = document.getElementById('editScheduleFreq').value;
+      const daySelect = document.getElementById('editScheduleDaySelect');
+      const dayText = document.getElementById('editScheduleDayText');
+      const dayLabel = document.getElementById('editScheduleDayLabel');
+      const amtLabel = document.getElementById('editScheduleAmountLabel');
+
+      if (freq === 'WEEKLY') {
+        daySelect.style.display = 'block';
+        dayText.style.display = 'none';
+        dayLabel.innerText = 'Payout Day of Week';
+        amtLabel.innerText = `Weekly Amount (${activeCurrency})`;
+      } else if (freq === 'MONTHLY') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'Day of Month (1-31)';
+        dayLabel.innerText = 'Day of Month (1-31)';
+        amtLabel.innerText = `Monthly Amount (${activeCurrency})`;
+      } else if (freq === 'ANNUAL' || freq === 'ANNUAL_DATE') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'DD/MM (e.g. 18/05)';
+        dayLabel.innerText = 'Birthday / Date (DD/MM)';
+        amtLabel.innerText = `Annual Amount (${activeCurrency})`;
+      } else if (freq === 'INTEREST_MONTHLY') {
+        daySelect.style.display = 'none';
+        dayText.style.display = 'block';
+        dayText.placeholder = 'Day of Month (1-31)';
+        dayLabel.innerText = 'Compound Date (1-31)';
+        amtLabel.innerText = 'Savings Bonus Rate (%)';
+      }
+    }
+
+    function closeEditScheduleModal() {
+      document.getElementById('editScheduleModal').classList.remove('active');
+    }
+
+    async function saveEditSchedule() {
+      const id = document.getElementById('editScheduleId').value;
+      const title = document.getElementById('editScheduleTitle').value.trim();
+      const targetEmail = document.getElementById('editScheduleTargetChild').value;
+      const frequency = document.getElementById('editScheduleFreq').value;
+      const amount = Number(document.getElementById('editScheduleAmount').value) || 0;
+
+      let scheduleDay = '';
+      if (frequency === 'WEEKLY') {
+        scheduleDay = document.getElementById('editScheduleDaySelect').value;
+      } else {
+        scheduleDay = document.getElementById('editScheduleDayText').value.trim();
+      }
+
+      if (!title || scheduleDay === '' || !amount) {
+        return showToast("Please complete all schedule fields.", "warning");
+      }
+
+      try {
+        await db.collection('families').doc(familyId).collection('schedules').doc(id).update({
+          title, targetEmail, frequency, scheduleDay, amount
+        });
+        closeEditScheduleModal();
+        showToast(`Schedule "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update schedule: " + err.message, "Error", "error");
+      }
+    }
+
+    // 4. Routine Templates
+    function editPlannerRoutine(id) {
+      const tmpl = cachedRoutineTemplates.find(t => t.id === id);
+      if (!tmpl) return;
+      editingRoutineId = id;
+
+      document.getElementById('routineEditBanner').style.display = 'flex';
+      document.getElementById('editingRoutineTitleName').innerText = tmpl.title;
+      document.getElementById('routineBuilderHeading').innerText = '✏️ Edit Recurring Routine Schedule';
+      document.getElementById('routineTitle').value = tmpl.title || '';
+      document.getElementById('routineTargetChild').value = tmpl.assignedTo || 'all';
+      document.getElementById('routineDailyBonus').value = tmpl.dailyBonus || 0;
+
+      const days = tmpl.days || [];
+      document.querySelectorAll('input[name="routineDay"]').forEach(cb => {
+        cb.checked = days.includes(cb.value);
+      });
+
+      const container = document.getElementById('routineItemsTable');
+      container.innerHTML = '';
+      if (tmpl.items && tmpl.items.length > 0) {
+        tmpl.items.forEach(it => addRoutineItemRow(it));
+      } else {
+        addRoutineItemRow();
+      }
+
+      document.getElementById('btnSavePlannerRoutine').innerText = '💾 Update Routine Schedule';
+      document.getElementById('btnCancelPlannerRoutine').style.display = 'inline-block';
+
+      document.getElementById('routineScheduleBuilder').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelPlannerRoutineEdit() {
+      editingRoutineId = null;
+      document.getElementById('routineEditBanner').style.display = 'none';
+      document.getElementById('routineBuilderHeading').innerText = '🛠️ Create Recurring Routine Schedule';
+      document.getElementById('routineTitle').value = '';
+      document.getElementById('routineTargetChild').value = 'all';
+      document.getElementById('routineDailyBonus').value = '0';
+      document.querySelectorAll('input[name="routineDay"]').forEach(cb => {
+        cb.checked = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(cb.value);
+      });
+      const container = document.getElementById('routineItemsTable');
+      container.innerHTML = '';
+      addRoutineItemRow({ startTime: '16:00', endTime: '16:30', title: 'Quran class', reward: 0, penalty: 0 });
+      addRoutineItemRow({ startTime: '17:00', endTime: '18:00', title: 'Clean dishes', reward: 30, penalty: 10 });
+      addRoutineItemRow({ startTime: '18:00', endTime: '20:00', title: 'Do homework', reward: 20, penalty: 0 });
+      addRoutineItemRow({ startTime: '20:00', endTime: '20:15', title: 'Brush teeth', reward: 10, penalty: 0 });
+      addRoutineItemRow({ startTime: '21:00', endTime: '21:30', title: 'Go to bed', reward: 0, penalty: 0 });
+
+      document.getElementById('btnSavePlannerRoutine').innerText = '💾 Save Routine Schedule';
+      document.getElementById('btnCancelPlannerRoutine').style.display = 'none';
+    }
+
+    // 5. Daily Scheduled Tasks
+    function openEditTaskModal(id) {
+      const task = cachedDailyTasks.find(t => t.id === id);
+      if (!task) return;
+      document.getElementById('editTaskId').value = id;
+      document.getElementById('editTaskTitle').value = task.title || '';
+      document.getElementById('editTaskStartTime').value = task.startTime || '16:00';
+      document.getElementById('editTaskEndTime').value = task.endTime || '16:30';
+      document.getElementById('editTaskReward').value = task.reward || 0;
+      document.getElementById('editTaskPenalty').value = task.penalty || 0;
+      document.getElementById('editTaskModal').classList.add('active');
+    }
+
+    function closeEditTaskModal() {
+      document.getElementById('editTaskModal').classList.remove('active');
+    }
+
+    async function saveEditTask() {
+      const id = document.getElementById('editTaskId').value;
+      const title = document.getElementById('editTaskTitle').value.trim();
+      const startTime = document.getElementById('editTaskStartTime').value || '16:00';
+      const endTime = document.getElementById('editTaskEndTime').value || '16:30';
+      const reward = Number(document.getElementById('editTaskReward').value) || 0;
+      const penalty = Number(document.getElementById('editTaskPenalty').value) || 0;
+
+      if (!title) return showToast("Please provide task title", "warning");
+
+      try {
+        const timeRange = formatTimeRange(startTime, endTime);
+        await db.collection('families').doc(familyId).collection('planner_tasks').doc(id).update({
+          title, startTime, endTime, timeRange, reward, penalty
+        });
+        closeEditTaskModal();
+        showToast(`Task "${title}" updated!`, "success");
+      } catch (err) {
+        showModalAlert("Failed to update task: " + err.message, "Error", "error");
       }
     }
   </script>
