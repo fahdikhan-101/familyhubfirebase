@@ -210,6 +210,35 @@
       border-color: #cbd5e1;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
     }
+
+    @media (max-width: 520px) {
+      .app-modal-backdrop {
+        padding: 12px;
+      }
+      .app-modal-box {
+        padding: 20px 16px;
+        border-radius: 16px;
+        max-width: calc(100vw - 24px);
+        max-height: 92vh;
+        overflow-y: auto;
+      }
+      .app-modal-actions {
+        flex-direction: column-reverse;
+        gap: 8px;
+      }
+      .app-modal-btn {
+        width: 100%;
+        padding: 11px 16px;
+        font-size: 0.92rem;
+      }
+      .app-toast-container {
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+        max-width: 100%;
+      }
+    }
   `;
   document.head.appendChild(style);
 

@@ -261,10 +261,29 @@
     .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
     .btn-gray { background: rgba(255,255,255,0.1); color: #cbd5e1; }
     button.btn-google, .btn-google { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1; font-weight: 800; }
+    /* Responsive Table Styles */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+    }
+    .table-responsive table {
+      width: 100%;
+      min-width: 540px;
+      border-collapse: collapse;
+      margin-top: 0;
+    }
+    .table-responsive.tight table {
+      min-width: 320px;
+    }
+
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); }
+    th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); padding: 10px; border-bottom: 1px solid var(--card-border); white-space: nowrap; }
     td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.88rem; }
-    .badge { font-size: 0.72rem; font-weight: 800; padding: 4px 9px; border-radius: 6px; text-transform: uppercase; display: inline-block; }
+    .badge { font-size: 0.72rem; font-weight: 800; padding: 4px 9px; border-radius: 6px; text-transform: uppercase; display: inline-block; white-space: nowrap; }
     .badge-reward { background: rgba(16,185,129,0.2); color: #34d399; }
     .badge-penalty { background: rgba(239,68,68,0.2); color: #fca5a5; }
     .badge-transfer { background: rgba(6,182,212,0.2); color: #67e8f9; }
@@ -274,10 +293,126 @@
     .badge-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
     .badge-approved { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .badge-penalized { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-    .time-slot-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(99, 102, 241, 0.15); color: #a5b4fc; font-size: 0.75rem; font-weight: 700; }
-    .routine-row { display: grid; grid-template-columns: 110px 110px 1.5fr 100px 100px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
-    @media (max-width: 650px) {
-      .routine-row { grid-template-columns: 1fr 1fr; gap: 6px; background: rgba(15,23,42,0.4); padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+    .time-slot-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; background: rgba(99, 102, 241, 0.15); color: #a5b4fc; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    
+    .mobile-only-label { display: none; }
+    .routine-row { display: grid; grid-template-columns: 105px 105px 1.5fr 90px 90px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+
+    @media (max-width: 768px) {
+      .container { padding: 14px 12px 70px; }
+      .card { padding: 16px 14px; border-radius: 14px; margin-bottom: 12px; }
+      .header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 0 16px;
+      }
+      .header-bar > div:last-child {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .user-account-group {
+        max-width: 100%;
+        overflow: hidden;
+      }
+      #userAuthBadge {
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .stat-box { padding: 12px; }
+      .stat-value { font-size: 1.5rem; }
+
+      /* Mobile Form Stack Overrides */
+      .mobile-stack-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .form-grid-chore {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+      }
+      .form-grid-chore button {
+        width: 100%;
+        padding: 12px;
+      }
+      .form-grid-rule {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+      }
+      .form-grid-rule button {
+        width: 100%;
+        padding: 12px;
+      }
+      .form-grid-sched {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .form-grid-sched button {
+        width: 100%;
+        padding: 12px;
+      }
+      .form-grid-member {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .form-grid-member button {
+        width: 100%;
+        padding: 12px;
+      }
+      .desktop-routine-headers {
+        display: none !important;
+      }
+
+      /* Routine slot builder on mobile */
+      .routine-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid var(--card-border);
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+      }
+      [data-theme="light"] .routine-row {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+      .routine-row .slot-title-wrap {
+        grid-column: 1 / -1;
+      }
+      .routine-row .slot-action-wrap {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 4px;
+      }
+      .routine-row .slot-action-wrap button {
+        width: 100%;
+      }
+      .mobile-only-label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 3px;
+        text-transform: uppercase;
+      }
+
+      /* Modals on mobile */
+      .app-modal-box {
+        max-width: calc(100vw - 24px) !important;
+        width: 100% !important;
+        padding: 18px 14px !important;
+        border-radius: 16px !important;
+      }
     }
   </style>
   <script src="config.js"></script>
@@ -339,18 +474,22 @@
 
         <div class="card">
           <h3>🧒 Children Balances</h3>
-          <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Balance</th><th style="width:150px;">Child View</th></tr></thead>
-            <tbody id="childrenBalancesTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Balance</th><th style="width:150px;">Child View</th></tr></thead>
+              <tbody id="childrenBalancesTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card">
           <h3>📜 Live Activity Feed</h3>
-          <table>
-            <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th><th>Action</th></tr></thead>
-            <tbody id="transactionsTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Date</th><th>Child</th><th>Type</th><th>Amount</th><th>Description</th><th>Action</th></tr></thead>
+              <tbody id="transactionsTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -363,10 +502,12 @@
             <span id="pendingPlannerBadge" class="badge badge-todo">0 Pending</span>
           </div>
           <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Kids have marked these daily routine tasks as done. Review and approve rewards or apply penalties.</p>
-          <table>
-            <thead><tr><th>Date & Time</th><th>Child</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Actions</th></tr></thead>
-            <tbody id="pendingPlannerTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Date & Time</th><th>Child</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Actions</th></tr></thead>
+              <tbody id="pendingPlannerTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- 2. DAILY COMPLIANCE & PROGRESS REPORT -->
@@ -467,6 +608,14 @@
               <strong style="font-size:0.9rem;">Time Slots & Tasks in Routine</strong>
               <button class="btn btn-gray" type="button" style="padding:4px 10px; font-size:0.75rem;" onclick="addRoutineItemRow()">+ Add Task Slot</button>
             </div>
+            <div class="desktop-routine-headers" style="display:grid; grid-template-columns: 105px 105px 1.5fr 90px 90px 36px; gap:8px; margin-bottom:4px; font-size:0.72rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">
+              <span>Start Time</span>
+              <span>End Time</span>
+              <span>Task Title</span>
+              <span>Reward</span>
+              <span>Penalty</span>
+              <span></span>
+            </div>
             <div id="routineItemsTable"></div>
           </div>
 
@@ -479,10 +628,12 @@
         <!-- 5. ACTIVE ROUTINE SCHEDULES LIST -->
         <div class="card">
           <h3>📑 Active Routine Templates</h3>
-          <table>
-            <thead><tr><th>Title</th><th>Target</th><th>Days</th><th>Tasks</th><th>Bonus</th><th>Actions</th></tr></thead>
-            <tbody id="routineTemplatesTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Title</th><th>Target</th><th>Days</th><th>Tasks</th><th>Bonus</th><th>Actions</th></tr></thead>
+              <tbody id="routineTemplatesTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -490,23 +641,27 @@
       <div id="tab-chores" class="tab-pane">
         <div class="card" style="border-left: 4px solid var(--warning);">
           <h3>⏳ Pending Chore Submissions</h3>
-          <table>
-            <thead><tr><th>Date</th><th>Child</th><th>Chore</th><th>Reward</th><th>Actions</th></tr></thead>
-            <tbody id="pendingChoresTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Date</th><th>Child</th><th>Chore</th><th>Reward</th><th>Actions</th></tr></thead>
+              <tbody id="pendingChoresTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card">
           <h3>🧹 Chores Catalog</h3>
-          <table>
-            <thead><tr><th>Title</th><th>Reward</th><th>Actions</th></tr></thead>
-            <tbody id="choresCatalogTable"></tbody>
-          </table>
+          <div class="table-responsive tight">
+            <table>
+              <thead><tr><th>Title</th><th>Reward</th><th>Actions</th></tr></thead>
+              <tbody id="choresCatalogTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card">
           <h3>+ Add Chore</h3>
-          <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; align-items:flex-end;">
+          <div class="form-grid-chore" style="display:grid; grid-template-columns: 2fr 1fr auto; gap:10px; align-items:flex-end;">
             <div class="form-group" style="margin:0;"><label>Chore Title</label><input type="text" id="newChoreTitle" placeholder="e.g. Wash Dishes"></div>
             <div class="form-group" style="margin:0;"><label>Reward Amount</label><input type="number" id="newChoreReward" placeholder="50"></div>
             <button class="btn btn-green" onclick="addChore()">Add</button>
@@ -518,12 +673,12 @@
       <div id="tab-behavior" class="tab-pane">
         <div class="card">
           <h3>⚡ Quick Action</h3>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="mobile-stack-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Child</label><select id="actionChildSelect"></select></div>
             <div class="form-group"><label>Action Type</label><select id="actionTypeSelect" onchange="filterPresetRules()"><option value="Reward">🎁 Reward</option><option value="Penalty">🛑 Penalty</option></select></div>
           </div>
           <div class="form-group"><label>Preset Rule</label><select id="actionPresetSelect" onchange="applyPresetRule()"><option value="">-- Custom Action --</option></select></div>
-          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+          <div class="mobile-stack-grid" style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
             <div class="form-group"><label>Reason / Title</label><input type="text" id="actionTitle"></div>
             <div class="form-group"><label>Amount</label><input type="number" id="actionAmount"></div>
           </div>
@@ -532,15 +687,17 @@
 
         <div class="card">
           <h3>📜 Behavior Rules Preset Catalog</h3>
-          <table>
-            <thead><tr><th>Type</th><th>Title</th><th>Amount</th><th>Actions</th></tr></thead>
-            <tbody id="rulesCatalogTable"></tbody>
-          </table>
+          <div class="table-responsive tight">
+            <table>
+              <thead><tr><th>Type</th><th>Title</th><th>Amount</th><th>Actions</th></tr></thead>
+              <tbody id="rulesCatalogTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="card" style="border-left: 4px solid var(--accent);">
           <h3>+ Add Preset Rule</h3>
-          <div style="display:grid; grid-template-columns: 1.2fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
+          <div class="form-grid-rule" style="display:grid; grid-template-columns: 1.2fr 2fr 1fr auto; gap:10px; align-items:flex-end;">
             <div class="form-group" style="margin:0;"><label>Type</label><select id="newRuleType"><option value="Reward">Reward</option><option value="Penalty">Penalty</option></select></div>
             <div class="form-group" style="margin:0;"><label>Title</label><input type="text" id="newRuleTitle" placeholder="e.g. Clean Room Fast"></div>
             <div class="form-group" style="margin:0;"><label>Default Amount</label><input type="number" id="newRuleAmount" placeholder="100"></div>
@@ -552,23 +709,25 @@
       <!-- TAB 4: SCHEDULES -->
       <div id="tab-schedules" class="tab-pane">
         <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
             <h3 style="margin:0;">📅 Active Payout Schedules</h3>
             <button class="btn btn-gray" onclick="runCatchUpScheduledPayouts(db, familyId, true)">⚡ Force Catch-Up Schedules</button>
           </div>
-          <table>
-            <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Schedule Day/Date</th><th>Amount</th><th>Actions</th></tr></thead>
-            <tbody id="schedulesTable"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Title</th><th>Target</th><th>Frequency</th><th>Schedule Day/Date</th><th>Amount</th><th>Actions</th></tr></thead>
+              <tbody id="schedulesTable"></tbody>
+            </table>
+          </div>
         </div>
 
         <div id="ownerAddScheduleCard" class="card" style="display:none;">
           <h3>+ Add Schedule</h3>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="form-grid-sched" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Title</label><input type="text" id="schedTitle" placeholder="e.g. Weekly Allowance, Birthday Bonus"></div>
             <div class="form-group"><label>Target Recipient</label><select id="schedTargetSelect"><option value="all">All Children</option></select></div>
           </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+          <div class="form-grid-sched" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
             <div class="form-group">
               <label>Frequency</label>
               <select id="schedFrequency" onchange="updateScheduleDayInput(this.value)">
@@ -599,23 +758,25 @@
       <!-- TAB 5: MEMBERS -->
       <div id="tab-members" class="tab-pane">
         <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
             <div>
               <h3 style="margin:0;">👨‍👩‍👧‍👦 Family Members</h3>
               <span id="quotaDisplay" style="font-size:0.75rem; color:var(--text-muted);"></span>
             </div>
             <button id="btnSyncAllMembers" class="btn btn-gray" style="font-size:0.75rem; padding:6px 12px; display:none;" onclick="syncAllMembersSubscriptions()">🔄 Sync Member Access</button>
           </div>
-          <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Portal Access</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
+          <div class="table-responsive">
+            <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Portal Access</th><th>Actions</th></tr></thead><tbody id="membersTable"></tbody></table>
+          </div>
         </div>
 
         <div id="addMemberCard" class="card" style="border-left:4px solid var(--cyan); display:none;">
           <h3>+ Add Family Member & Opening Balance</h3>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="form-grid-member" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div class="form-group"><label>Full Name</label><input type="text" id="memName" placeholder="e.g. Sabeen, Abdullah"></div>
             <div class="form-group"><label>Email Address</label><input type="email" id="memEmail" placeholder="member@gmail.com"></div>
           </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+          <div class="form-grid-member" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
             <div class="form-group">
               <label>Role</label>
               <select id="memRole" onchange="toggleMemberRoleFields(this.value)">
@@ -2111,10 +2272,12 @@
               <div style="background:linear-gradient(90deg, #10b981 0%, #06b6d4 100%); height:100%; width:${cPct}%; border-radius:9999px; transition:width 0.3s ease;"></div>
             </div>
 
-            <table>
-              <thead><tr><th>Time</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>${taskRows}</tbody>
-            </table>
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>Time</th><th>Task</th><th>Reward</th><th>Penalty</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>${taskRows}</tbody>
+              </table>
+            </div>
           </div>
         `;
       });
@@ -2136,12 +2299,12 @@
       row.className = 'routine-row';
       row.id = id;
       row.innerHTML = `
-        <div><input type="time" class="slot-start" value="${startTime}" title="Start Time"></div>
-        <div><input type="time" class="slot-end" value="${endTime}" title="End Time"></div>
-        <div><input type="text" class="slot-title" value="${title}" placeholder="e.g. Quran class / Dishes"></div>
-        <div><input type="number" class="slot-reward" value="${reward}" placeholder="Reward"></div>
-        <div><input type="number" class="slot-penalty" value="${penalty}" placeholder="Penalty"></div>
-        <div><button type="button" class="btn btn-red" style="padding:4px 8px; font-size:0.75rem;" onclick="document.getElementById('${id}').remove()">✕</button></div>
+        <div class="slot-time-start"><label class="mobile-only-label">Start</label><input type="time" class="slot-start" value="${startTime}" title="Start Time"></div>
+        <div class="slot-time-end"><label class="mobile-only-label">End</label><input type="time" class="slot-end" value="${endTime}" title="End Time"></div>
+        <div class="slot-title-wrap"><label class="mobile-only-label">Task Name</label><input type="text" class="slot-title" value="${title}" placeholder="e.g. Quran class / Dishes"></div>
+        <div class="slot-reward-wrap"><label class="mobile-only-label">Reward</label><input type="number" class="slot-reward" value="${reward}" placeholder="Reward"></div>
+        <div class="slot-penalty-wrap"><label class="mobile-only-label">Penalty</label><input type="number" class="slot-penalty" value="${penalty}" placeholder="Penalty"></div>
+        <div class="slot-action-wrap"><button type="button" class="btn btn-red" style="padding:6px 12px; font-size:0.75rem;" onclick="document.getElementById('${id}').remove()">✕ Remove</button></div>
       `;
       container.appendChild(row);
     }
